@@ -6,6 +6,7 @@ import { GhidraProvider } from "../ghidra/GhidraProvider.js";
 import { IdaProvider } from "../ida/IdaProvider.js";
 import { OfficialIdaProvider } from "../ida/OfficialIdaProvider.js";
 import { BinaryNinjaProvider } from "../binaryNinja/BinaryNinjaProvider.js";
+import { Radare2Provider } from "../radare2/Radare2Provider.js";
 import type { Logger } from "pino";
 import { auxiliaryAnalysisProviderDeclarations } from "./auxiliaryAnalysisProviders.js";
 import { AnalysisProviderRegistry } from "../application/binary/AnalysisProviderRegistry.js";
@@ -29,9 +30,10 @@ export const createBinarySession = (
   const ida = new IdaProvider(config, environment);
   const officialIda = new OfficialIdaProvider(config, environment);
   const binaryNinja = new BinaryNinjaProvider(config, environment);
+  const radare2 = new Radare2Provider(config, environment);
   return composeBinarySession(
     new AnalysisProviderRegistry(
-      [hopper, ghidra, ida, officialIda, binaryNinja],
+      [hopper, ghidra, ida, officialIda, binaryNinja, radare2],
       config.analysisProvider,
     ),
     auxiliaryAnalysisProviderDeclarations(environment).map(

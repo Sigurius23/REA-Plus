@@ -103,6 +103,32 @@ describe("runtime configuration", () => {
     );
   });
 
+  it("parses the optional radare2 executable, analysis level and deadline", () => {
+    expect(parseConfig({})).toMatchObject({
+      ok: true,
+      value: { radare2AnalysisLevel: "aaa", radare2AnalysisTimeoutMs: 600_000 },
+    });
+    expect(
+      parseConfig({
+        REA_RADARE2_PATH: "/opt/radare2/bin/r2",
+        REA_RADARE2_ANALYSIS: "aa",
+        REA_RADARE2_ANALYSIS_TIMEOUT_MS: "120000",
+      }),
+    ).toMatchObject({
+      ok: true,
+      value: {
+        radare2Path: "/opt/radare2/bin/r2",
+        radare2AnalysisLevel: "aa",
+        radare2AnalysisTimeoutMs: 120_000,
+      },
+    });
+    expect(parseConfig({ REA_RADARE2_PATH: "r2" }).ok).toBe(false);
+    expect(parseConfig({ REA_RADARE2_ANALYSIS: "aaaaa" }).ok).toBe(false);
+    expect(parseConfig({ REA_RADARE2_ANALYSIS_TIMEOUT_MS: "0" }).ok).toBe(
+      false,
+    );
+  });
+
   it("parses optional absolute Frida Python and Objection CLI paths", () => {
     expect(
       parseConfig({
