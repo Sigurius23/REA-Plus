@@ -370,7 +370,7 @@ export const createServer = (
     analysisAdmission,
   );
   registerMobileRuntimeTools(server, mobileRuntimeService, toolLogger, {
-    recordEvidence,
+    ...(recordEvidence === undefined ? {} : { recordEvidence }),
     withAdmittedAnalysis: analysisAdmission,
   });
   registerObservationTools(toolContext);
