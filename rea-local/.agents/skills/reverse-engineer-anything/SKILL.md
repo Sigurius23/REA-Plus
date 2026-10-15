@@ -64,8 +64,9 @@ explicit path or endpoint and do not need it.
 - Retained HAR, native mitmproxy, classic PCAP or PCAPNG capture:
   `inspect_web_network_capture`. Select original record ordinals when useful;
   inspect producer fields, packet ranges and exact byte/number sidecars without
-  fetching recorded URLs or claiming live attribution. Packet output stops at
-  bounded link/IP/TCP/UDP metadata; it does not decrypt TLS or reassemble
+  fetching recorded URLs or claiming live attribution. Packet output adds
+  bounded link/IP/TCP/UDP metadata plus HTTP/1.x heads, TLS hello SNI/ALPN and
+  DNS messages that begin in one packet; it does not decrypt TLS or reassemble
   streams. See [historical captures](https://github.com/morluto/rea/blob/main/docs/web-network-captures.md)
   for parser profiles and privacy boundaries.
 - User-owned Electron runtime already open: `list_electron_targets`.

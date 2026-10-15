@@ -42,6 +42,10 @@ interface PacketDecode {
   readonly network: UnknownObject | null;
   readonly transport: UnknownObject | null;
   readonly flow: UnknownObject | null;
+  /** Application metadata beginning in this packet; never reassembled. */
+  readonly application: UnknownObject | null;
+  /** Pointers whose transport credentials the decoder removed. */
+  readonly credentialPointers: readonly string[];
   readonly status: string;
 }
 

@@ -54,6 +54,8 @@ const createPacketRecord = (
   );
   const decoded = decodeFrame(frameBytes, packet.linkType);
   const redactor = new CaptureRedaction(collector.sensitiveValues);
+  for (const pointer of decoded.credentialPointers)
+    redactor.credential(pointer);
   const projection = projectPcapValue(
     packetReported(packet, decoded),
     collector.sensitiveValues,
@@ -69,6 +71,7 @@ const createPacketRecord = (
     frameBytes,
     redactor,
     collector.sensitiveValues,
+    decoded.credentialPointers.length > 0,
   );
   return {
     ordinal: packet.ordinal,
@@ -116,25 +119,30 @@ const packetReported = (
   network: decoded.network,
   transport: decoded.transport,
   flow: decoded.flow,
+  application: decoded.application,
 });
 
 const packetBinaryFields = (
   frameBytes: Buffer,
   redactor: CaptureRedaction,
   sensitiveValues: readonly string[],
+  carriesCredential: boolean,
 ): WebNetworkCaptureRecord["binary_fields"] => {
   const base64 = frameBytes.toString("base64");
   const sha256 = createHash("sha256").update(frameBytes).digest("hex");
-  const hidden =
+  const sensitive =
     redactor.sensitiveBytes(frameBytes) ||
     sensitiveValues.some(
       (literal) => base64.includes(literal) || sha256.includes(literal),
     );
-  if (hidden)
+  // Frame bytes holding a decoded credential cannot be retained, even hashed.
+  if (carriesCredential) redactor.credential("/frame/data");
+  else if (sensitive)
     redactor.redactions.push({
       pointer: "/frame/data",
       reason: "explicit-sensitive-value",
     });
+  const hidden = carriesCredential || sensitive;
   return [
     hidden
       ? {

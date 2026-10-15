@@ -14,6 +14,8 @@ interface TransportDecode {
   readonly sourcePort?: number;
   readonly destinationPort?: number;
   readonly status?: string;
+  /** Captured transport payload within the frame, when its header decoded. */
+  readonly payload?: { readonly offset: number; readonly length: number };
 }
 
 interface FlowInput {
@@ -88,6 +90,10 @@ const decodeUdp = (
       destinationPort,
       status: "malformed-transport-header",
     };
+  const capturedPayloadBytes = Math.max(
+    0,
+    Math.min(length, declaredBytes, frame.length - offset) - 8,
+  );
   return {
     reported: {
       protocol,
@@ -101,6 +107,7 @@ const decodeUdp = (
     protocol,
     sourcePort,
     destinationPort,
+    payload: { offset: offset + 8, length: capturedPayloadBytes },
     ...(declaredBytes > length ? { status: "truncated-udp-packet" } : {}),
   };
 };
@@ -210,6 +217,13 @@ const tcpMetadata = ({
     protocol,
     sourcePort,
     destinationPort,
+    payload: {
+      offset: offset + headerBytes,
+      length: Math.max(
+        0,
+        Math.min(length, frame.length - offset) - headerBytes,
+      ),
+    },
   };
 };
 

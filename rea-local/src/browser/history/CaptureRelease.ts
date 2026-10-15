@@ -33,7 +33,7 @@ export const MITMPROXY_CAPTURE_PROVIDER_IDENTITY = {
 export const PCAP_CAPTURE_PROVIDER_IDENTITY = {
   id: "rea-offline-pcap",
   name: "REA+ offline PCAP/PCAPNG adapter",
-  version: "1.0.0",
+  version: "1.1.0",
 } as const;
 
 /** Fixed V8 heap settings used by the owned PCAP/PCAPNG decoder process. */

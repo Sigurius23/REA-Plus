@@ -4,6 +4,7 @@ import {
   decodeIpv6,
   type NetworkDecode,
 } from "./PcapNetworkDecoder.js";
+import { decodeApplication } from "./PcapApplicationDecoder.js";
 import { createFlow, decodeTransport } from "./PcapTransportDecoder.js";
 import type { PacketDecode, UnknownObject } from "./PcapCaptureTypes.js";
 
@@ -30,6 +31,8 @@ export const decodeFrame = (frame: Buffer, linkType: number): PacketDecode => {
       network: null,
       transport: null,
       flow: null,
+      application: null,
+      credentialPointers: [],
       status:
         layer.protocolType === 0
           ? "unknown-raw-network-version"
@@ -181,6 +184,8 @@ const emptyNetworkResult = (layer: LinkDecode): PacketDecode => ({
   network: null,
   transport: null,
   flow: null,
+  application: null,
+  credentialPointers: [],
   status: layer.status,
 });
 
@@ -210,11 +215,27 @@ const completeNetworkDecode = (
           protocol: transport.protocol,
         })
       : null;
+  const application =
+    transport?.payload === undefined ||
+    transport.sourcePort === undefined ||
+    transport.destinationPort === undefined
+      ? null
+      : decodeApplication({
+          payload: frame.subarray(
+            transport.payload.offset,
+            transport.payload.offset + transport.payload.length,
+          ),
+          protocol: transport.protocol,
+          sourcePort: transport.sourcePort,
+          destinationPort: transport.destinationPort,
+        });
   return {
     link,
     network: network.reported,
     transport: transport?.reported ?? null,
     flow,
+    application: application?.reported ?? null,
+    credentialPointers: application?.credentialPointers ?? [],
     status: network.status ?? transport?.status ?? "decoded-network-layer",
   };
 };
