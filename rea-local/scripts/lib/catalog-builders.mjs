@@ -28,6 +28,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.artifactContracts.ARTIFACT_TOOL_CONTRACTS,
         ...sources.evmContracts.EVM_TOOL_CONTRACTS,
         ...sources.wasmContracts.WASM_TOOL_CONTRACTS,
+        ...sources.jvmContracts.JVM_TOOL_CONTRACTS,
       ],
     },
     {
@@ -193,6 +194,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.wasmProvider.WABT_PROVIDER_IDENTITY,
       contracts: sources.wasmContracts.WASM_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.jvmProvider.CFR_PROVIDER_IDENTITY,
+      contracts: sources.jvmContracts.JVM_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

@@ -1,6 +1,9 @@
 import type { WasmArtifactService } from "../application/wasm/WasmArtifactService.js";
+import type { JvmArtifactService } from "../application/jvm/JvmArtifactService.js";
 import { createWasmArtifactService } from "../composition/wasm.js";
 import { registerWasmTools } from "./registerWasmTools.js";
+import { createJvmArtifactService } from "../composition/jvm.js";
+import { registerJvmTools } from "./registerJvmTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -116,6 +119,7 @@ export interface CreateServerOptions {
   readonly environment?: Readonly<NodeJS.ProcessEnv>;
   readonly delivery?: ToolResultDelivery;
   readonly wasmArtifact?: WasmArtifactService;
+  readonly jvmArtifact?: JvmArtifactService;
   readonly evmInterface?: EvmInterfaceService;
   readonly logger?: Logger;
   readonly binaryLayout?: BinaryLayoutService;
@@ -157,6 +161,9 @@ const installSessionToolAvailability = (
       wasmArtifactEnabled:
         options.wasmArtifact !== undefined ||
         isAbsolute(environment.REA_WABT_BIN_DIRECTORY ?? ""),
+      jvmArtifactEnabled:
+        options.jvmArtifact !== undefined ||
+        isAbsolute(environment.REA_CFR_JAR ?? ""),
       evmInterfaceEnabled: options.evmInterface !== undefined || linuxX64,
       webModuleResolutionEnabled:
         options.webModuleTrace !== undefined ||
@@ -262,6 +269,8 @@ export const createServer = (
     options.androidAnalysis ?? createAndroidAnalysisProvider(environment);
   const wasmArtifact =
     options.wasmArtifact ?? createWasmArtifactService(environment);
+  const jvmArtifact =
+    options.jvmArtifact ?? createJvmArtifactService(environment);
   const apktool =
     options.apktoolAnalysis ??
     createApktoolResourceAnalysisProvider(environment);
@@ -273,6 +282,7 @@ export const createServer = (
     providerClose ??= Promise.allSettled([
       android.close(),
       wasmArtifact.close(),
+      jvmArtifact.close(),
       apktool.close(),
       jeb.close(),
       adbDevice.close(),
@@ -345,6 +355,7 @@ export const createServer = (
     toolContext,
     android,
     wasmArtifact,
+    jvmArtifact,
     jeb,
     firmwareAnalysis,
   );
@@ -425,6 +436,7 @@ const registerConfiguredAnalysisTools = (
   }: ServerToolContext,
   android: AndroidAnalysisPort,
   wasmArtifact: WasmArtifactService,
+  jvmArtifact: JvmArtifactService,
   jeb: JebAnalysisPort,
   firmwareAnalysis: FirmwareAnalysisService,
 ): void => {
@@ -467,6 +479,13 @@ const registerConfiguredAnalysisTools = (
   registerWasmTools(
     server,
     wasmArtifact,
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerJvmTools(
+    server,
+    jvmArtifact,
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

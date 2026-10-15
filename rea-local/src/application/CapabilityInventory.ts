@@ -33,6 +33,7 @@ type ToolAvailabilityReason = "available" | ToolUnavailabilityReason;
 type ProviderDescriptor = ProviderCapability;
 export type AvailabilityPolicy = {
   readonly wasmArtifactEnabled?: boolean;
+  readonly jvmArtifactEnabled?: boolean;
   readonly evmInterfaceEnabled?: boolean;
   readonly processCaptureEnabled: boolean;
   readonly optionalProviderLoadFailures?: OptionalProviderLoadFailures;
@@ -329,6 +330,14 @@ const workflowAvailabilityFor = ({
           reason: "provider_missing",
           remediation:
             "Supply WABT 1.0.42 via absolute REA_WABT_BIN_DIRECTORY. No active binary target is required; tools are checked at execution.",
+        };
+  if (name === "inspect_jvm_artifact")
+    return policy.jvmArtifactEnabled === true
+      ? { reason: "available", remediation: null }
+      : {
+          reason: "provider_missing",
+          remediation:
+            "Supply CFR 0.152 via absolute REA_CFR_JAR and Java via JAVA_HOME or PATH. No active binary target is required; tools are checked at execution.",
         };
   if (name === "inspect_pe_resources")
     return { reason: "available", remediation: null };

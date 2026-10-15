@@ -1,4 +1,5 @@
 import { WASM_TOOL_CONTRACTS } from "./wasm/wasmToolContracts.js";
+import { JVM_TOOL_CONTRACTS } from "./jvm/jvmToolContracts.js";
 import { EVM_TOOL_CONTRACTS } from "./evm/evmToolContracts.js";
 import { ANALYSIS_VIEW_TOOL_CONTRACTS } from "./analysisViewToolContracts.js";
 import { BINARY_DIAGNOSTICS_TOOL_CONTRACTS } from "./native/binaryDiagnosticsToolContracts.js";
@@ -35,6 +36,7 @@ export const TOOL_CONTRACTS = [
   ...ARTIFACT_TOOL_CONTRACTS,
   ...EVM_TOOL_CONTRACTS,
   ...WASM_TOOL_CONTRACTS,
+  ...JVM_TOOL_CONTRACTS,
   ...MANAGED_TOOL_CONTRACTS,
   ...ANDROID_TOOL_CONTRACTS,
   ...APKTOOL_TOOL_CONTRACTS,

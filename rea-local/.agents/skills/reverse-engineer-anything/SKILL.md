@@ -70,6 +70,9 @@ explicit path or endpoint and do not need it.
   streams. See [historical captures](https://github.com/morluto/rea/blob/main/docs/web-network-captures.md)
   for parser profiles and privacy boundaries.
 - User-owned Electron runtime already open: `list_electron_targets`.
+- Explicit local JAR or `.class` file: `inspect_jvm_artifact` lists classes and
+  decompiles named classes with caller-supplied CFR 0.152 (`REA_CFR_JAR`);
+  decompiled Java is a reconstruction, not original source.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

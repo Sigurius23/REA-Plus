@@ -9,6 +9,7 @@ export interface SessionAvailabilityDefaults {
   readonly optionalFeatures?: Pick<
     AvailabilityPolicy,
     | "wasmArtifactEnabled"
+    | "jvmArtifactEnabled"
     | "evmInterfaceEnabled"
     | "browserObservationEnabled"
     | "browserScenarioEnabled"
@@ -34,6 +35,8 @@ export const sessionAvailabilityPolicy = (
     (() => ({
       wasmArtifactEnabled:
         defaults.optionalFeatures?.wasmArtifactEnabled ?? false,
+      jvmArtifactEnabled:
+        defaults.optionalFeatures?.jvmArtifactEnabled ?? false,
       evmInterfaceEnabled:
         defaults.optionalFeatures?.evmInterfaceEnabled ?? false,
       processCaptureEnabled: platform !== "win32",
