@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aere-workbench.invalid/schemas/evidence-bundle.v1.schema.json",
+  "title": "AERE evidence bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "exported_at", "artifact", "run", "evidence", "coverage", "export_policy"],
+  "properties": {
+    "schema": { "const": "aere.evidence-bundle" },
+    "schema_version": { "const": 1 },
+    "exported_at": { "type": "string", "format": "date-time" },
+    "artifact": { "$ref": "#/$defs/artifact" },
+    "run": { "$ref": "#/$defs/run" },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+    "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage" } },
+    "export_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["absolute_source_paths_included", "target_bytes_included"],
+      "properties": {
+        "absolute_source_paths_included": { "const": false },
+        "target_bytes_included": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256", "display_name", "format", "size", "probe", "imported_at"],
+      "properties": {
+        "artifact_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "display_name": { "type": "string" },
+        "format": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0 },
+        "probe": { "type": "object" },
+        "imported_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "workflow", "provider_id", "status", "config", "created_at", "finished_at"],
+      "properties": {
+        "run_id": { "type": "string", "pattern": "^run_[0-9a-f]+$" },
+        "workflow": { "type": "string" },
+        "provider_id": { "type": "string" },
+        "status": { "enum": ["created", "complete", "partial", "failed", "cancelled"] },
+        "config": { "type": "object" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "run_id", "artifact_id", "kind", "claim", "source_tool", "source_version", "locator", "data", "supports", "caveats", "confidence", "created_at"],
+      "properties": {
+        "evidence_id": { "type": "string", "pattern": "^ev_[0-9a-f]+$" },
+        "run_id": { "type": "string", "pattern": "^run_[0-9a-f]+$" },
+        "artifact_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "kind": { "enum": ["observation", "inference", "hypothesis", "unknown"] },
+        "claim": { "type": "string", "minLength": 1 },
+        "source_tool": { "type": "string", "minLength": 1 },
+        "source_version": { "type": ["string", "null"] },
+        "locator": { "type": "object" },
+        "data": { "type": "object" },
+        "supports": { "type": "array", "items": { "type": "string", "pattern": "^ev_[0-9a-f]+$" } },
+        "caveats": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage_id", "run_id", "subject", "status", "scope", "provider_id", "provider_version", "operation_id", "units_examined", "units_total", "excluded", "limitations", "notes", "created_at"],
+      "properties": {
+        "coverage_id": { "type": "string", "pattern": "^cov_[0-9a-f]+$" },
+        "run_id": { "type": "string", "pattern": "^run_[0-9a-f]+$" },
+        "subject": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["complete", "partial", "unsupported", "not_attempted", "unknown"] },
+        "scope": { "type": "string", "minLength": 1 },
+        "provider_id": { "type": "string", "minLength": 1 },
+        "provider_version": { "type": ["string", "null"] },
+        "operation_id": { "type": "string", "minLength": 1 },
+        "units_examined": { "type": ["integer", "null"], "minimum": 0 },
+        "units_total": { "type": ["integer", "null"], "minimum": 0 },
+        "excluded": { "type": "array", "items": { "type": "string" } },
+        "limitations": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "array", "items": { "type": "string" } },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+# REA-Plus (Reverse Engineer Anything Plus)
+
+An agentic reverse-engineering ecosystem, tools workbench, and multi-platform research index.
+
+---
+
+## Overview
+
+**REA-Plus** combines the [REA (Reverse Engineer Anything)](./rea-local) platform with agentic reverse engineering toolsets, mobile & native binary runtime instrumentation, and comprehensive ecosystem research covering Android and Steam game/application reversing.
+
+```
+.
+├── rea-local/                             # Core REA+ MCP server & CLI engine
+│   ├── src/application/mobileRuntime/     # Mobile runtime instrumentation (Frida / Android)
+│   ├── src/binaryNinja/                   # Binary Ninja provider integration
+│   ├── src/ida/                           # IDA Pro official MCP connection & runner
+│   ├── src/browser/history/               # PCAP packet capture & decoding
+│   └── bridge/frida/                      # Frida scripts & bridge agents
+├── agentic-reverse-engineering/           # AERE (Agentic Reverse Engineering) Workbench
+│   ├── src/                               # Python analysis engine & pipeline
+│   ├── skills/                            # Agent skills for reverse-engineering
+│   └── schemas/                           # Shared schemas & protocols
+├── game-modding-research-index/           # 380+ resource catalog across Android & PC modding
+│   ├── resources.json                     # Structured tool database
+│   ├── ECOSYSTEM_COVERAGE.md              # Coverage matrix by engine & platform
+│   └── categories/                        # Categorized references & guides
+├── game-modding-research-index-kplex-vault/ # Obsidian markdown knowledge vault
+├── consensus-open-source-rebuild/         # App analysis & rebuild consensus documentation
+├── repo-completeness-review.md            # In-depth stack & tool completeness audit
+└── agent-reverse-engineering-stack-comparison.md # Cross-stack comparison
+```
+
+---
+
+## Components
+
+### 1. [REA+ Core Engine (`rea-local/`)](./rea-local)
+A Model Context Protocol (MCP) server and CLI tool designed for AI agents to investigate compiled binaries, applications, and runtime behavior:
+- **Expanded Provider Ecosystem**: Integrated support for Ghidra, IDA Pro, Binary Ninja, and Hopper.
+- **Mobile Runtime Instrumentation**: Dynamic tracing, Frida integration, and Android app evidence collection.
+- **Network & Protocol Analysis**: Native PCAP/PCAP-NG capture, TCP/UDP frame decoding, and traffic correlation.
+- **Cross-Language Support**: Documentation and localization across 18 languages.
+
+### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
+A Python-based workbench designed for autonomous reverse-engineering workflows:
+- Automated disassembly, function clustering, and symbol recovery.
+- Reusable agent skills and CLI workflows.
+- Available as a pre-packaged wheel (`aere_workbench-0.2.0-py3-none-any.whl`).
+
+### 3. [Game Modding & Reverse Engineering Research Index (`game-modding-research-index/`)](./game-modding-research-index)
+A curated database of 384 reverse engineering, modding, decompression, and memory inspection tools:
+- Android APK/DEX/SO tooling (JADX, Apktool, MobSF, Frida, Objection).
+- Steam & PC engine mappings (Unity, Unreal Engine, Godot, Source 2, GameMaker, RPG Maker).
+- Comprehensive coverage matrices and platform audit reports.
+
+### 4. Obsidian Knowledge Vault (`game-modding-research-index-kplex-vault/`)
+A graph-connected Obsidian vault containing structured notes, taxonomies, and entity relations for the reversing catalog.
+
+### 5. Research & Comparative Audits
+- **[`repo-completeness-review.md`](./repo-completeness-review.md)**: Comparative matrix ranking tools by workflow roles (static analysis, agent operations, merging, runtime inspection).
+- **[`agent-reverse-engineering-stack-comparison.md`](./agent-reverse-engineering-stack-comparison.md)**: Deep dive comparing standalone decompilers vs. agentic orchestration frameworks.
+
+---
+
+## License
+
+Components in this repository retain their respective open-source licenses (MIT / Apache-2.0). Refer to individual component directories for details.

@@ -1,0 +1,32 @@
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Editors & IDEs
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node / JS
+node_modules/
+.turbo/
+.cache/
+
+# Environments
+.venv/
+venv/
+env/
+.config/
+

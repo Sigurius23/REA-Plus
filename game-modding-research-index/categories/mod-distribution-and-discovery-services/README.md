@@ -1,0 +1,68 @@
+# Mod distribution and discovery services
+
+<!-- Generated from resources.json by scripts/build_categories.py; edit the catalog, not this file. -->
+
+**31 resources.** [Category index](../README.md) · [Main README](../../README.md) · [JSON catalog](../../resources.json)
+
+- **[Brotato Steam Workshop](<https://steamcommunity.com/app/1942280/workshop/>)** — Steam Workshop hub for Brotato with player-made mods and a game-specific distribution route. Workshop availability is Steam-specific and does not establish support for mobile, console, other storefronts, or every game/mod version.
+  - Tags: brotato, steam-workshop, mod-distribution, game-specific
+- **[CurseForge Project Publishing Guide](<https://support.curseforge.com/support/solutions/articles/9000197241-creating-and-submitting-a-project>)** — Official CurseForge author guidance for creating a project and submitting files for moderation; supported games, file types, and release channels vary by title.
+  - Tags: curseforge, distribution, mod-hosting, publishing-guidelines, official-docs
+- **[Dome Keeper Steam Workshop](<https://steamcommunity.com/app/1637320/workshop/>)** — Steam Workshop hub for Dome Keeper player-made mods. The current listing includes items labeled V4 stable and v4.2 legacy; Workshop presence is not evidence of compatibility with the later v5 game build or other stores/platforms.
+  - Tags: dome-keeper, steam-workshop, mod-distribution, game-specific
+- **[Doomworld /idgames archive frontend](<https://www.doomworld.com/idgames/>)** — Community frontend for discovering classic DOOM maps and files in the /idgames archive. The site explicitly says it is not an official /idgames mirror; it is an archive/discovery path, not a loader, compatibility test, or official rerelease upload channel.
+  - Tags: doom, idgames, archive, discovery, community
+- **[Factorio Mod Portal](<https://mods.factorio.com/>)** — Official Factorio mod hosting and discovery portal linked from the game and API docs. The in-game manager downloads, updates, and enables mods; portal entries expose version-specific packages and history. Factorio-specific distribution, not a general mod API or compatibility guarantee.
+  - Tags: factorio, mod-portal, mod-discovery, distribution, game-specific
+- **[Half-Life 2 Steam Workshop](<https://steamcommunity.com/app/220/workshop/>)** — Steam's Half-Life 2-specific community page for browsing user-created addons. Valve added in-game Workshop support with the 2024 20th Anniversary update. Steam/branch-specific discovery and hosting; listings do not establish compatibility with every game build or Source mod.
+  - Tags: half-life-2, source-engine, steam-workshop, mod-discovery, steam-only
+- **[Half-Life: Alyx Steam Workshop](<https://steamcommunity.com/app/546560/workshop/>)** — Steam's Half-Life: Alyx-specific community page for add-ons. Valve's page links directly to the game's Workshop Tools documentation. This is a Steam distribution/discovery surface, not a loader for other Source 2 games or a compatibility guarantee for individual items.
+  - Tags: half-life-alyx, source-2, steam-workshop, mod-discovery, steam-only
+- **[Melty (PC mod and mashup platform)](<https://melty.gg/>)** — Platform for discovering, publishing, and sharing user-made PC game mods and cross-game mashups, including creator workflows using coding agents or connected GitHub repositories. The website is a distribution/discovery service; its separate Windows desktop client is catalogued independently. It is not a universal runtime loader or compatibility certification.
+  - Tags: melty, mod-platform, game-mashups, pc-games, mod-discovery, creator-tools
+- **[Melty Discover (user-published mods and mashups)](<https://melty.gg/discover>)** — Melty's browse page for user-published mashups and mods. Listings have their own game, build, store, runtime, and dependency requirements; presence in the directory is not a compatibility statement for any other tool or game release.
+  - Tags: melty, mod-discovery, game-mashups, user-generated-content
+- **[mod.io Console Platform Support Documentation](<https://docs.mod.io/platforms/console>)** — mod.io's provider documentation describes UGC integration support for Xbox One/Series, PlayStation 4/5, Nintendo Switch, and Switch 2. Console support is implemented through title-specific integrations; the documentation does not describe a player-side console mod tool or establish support for every title.
+  - Tags: mod-io, console-ugc, developer-integration, title-integration, playstation, xbox, nintendo-switch
+- **[mod.io REST API Documentation](<https://docs.mod.io/restapi>)** — Official REST API reference for developers integrating mod.io UGC. The docs identify web apps needing JSON APIs and game developers building custom integrations as use cases; Unreal/Unity plugins and a C++ SDK are also listed. It is not a generic way to mod arbitrary browser, mobile, or retail games.
+  - Tags: mod-io, rest-api, ugc, web-apps, developer-api, official-docs, cross-platform
+- **[mod.io UGC Documentation](<https://docs.mod.io/getting-started>)** — Official developer documentation for integrating mod.io UGC through Unity/Unreal plugins, a C++ SDK, or the REST API. Console/mobile UGC uses game-specific integrations; this path does not add mod support to arbitrary retail games.
+  - Tags: mod-io, distribution, ugc, developer-api, cross-platform, official-docs
+- **[mods.one (OMORI mod discovery and hosting)](<https://mods.one/>)** — Unofficial OMORI mod-hosting and discovery site. The page displayed featured content updated through 2026-09-12 when reviewed. This is a community index/host, not a loader.
+  - Tags: omori, mod-discovery, mod-hosting, community-index
+- **[Nexus Mods Submission Guidelines](<https://help.nexusmods.com/article/28-file-submission-guidelines>)** — Official Nexus Mods file-submission and moderation guidance for publishing projects.
+  - Tags: nexus-mods, distribution, publishing-guidelines, official-docs
+- **[Nexus Mods — Dark Souls III](<https://www.nexusmods.com/games/darksouls3/mods>)** — Community mod browse/discovery page for Dark Souls III. It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: dark-souls-iii, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Elden Ring](<https://www.nexusmods.com/games/eldenring/mods>)** — Community mod browse/discovery page for Elden Ring. It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: elden-ring, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Fear & Hunger](<https://www.nexusmods.com/games/fearandhunger/mods>)** — Nexus Mods community browse page for the original Fear & Hunger. Hosting/discovery only; listings and endorsements do not certify a loader, storefront, game build, or individual mod's compatibility.
+  - Tags: fear-and-hunger, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Fear & Hunger 2: Termina](<https://www.nexusmods.com/games/fearandhunger2termina/mods>)** — Nexus Mods community browse page for Fear & Hunger 2: Termina. Hosting/discovery only; listings and endorsements do not certify a loader, storefront, game build, or individual mod's compatibility.
+  - Tags: fear-and-hunger, termina, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Monster Hunter Rise](<https://www.nexusmods.com/games/monsterhunterrise/mods>)** — Community mod browse/discovery page for Monster Hunter Rise. It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: monster-hunter-rise, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Resident Evil 2 (2019)](<https://www.nexusmods.com/games/residentevil22019/mods>)** — Community mod browse/discovery page for Resident Evil 2 (2019). It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: resident-evil-2, re2, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Resident Evil 3 (2020)](<https://www.nexusmods.com/games/residentevil32020/mods>)** — Community mod browse/discovery page for Resident Evil 3 (2020). It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: resident-evil-3, re3, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Resident Evil 4 (2023)](<https://www.nexusmods.com/games/residentevil42023/mods>)** — Community mod browse/discovery page for Resident Evil 4 (2023). It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: resident-evil-4, re4, nexus-mods, mod-discovery, community-hosting
+- **[Nexus Mods — Sekiro: Shadows Die Twice](<https://www.nexusmods.com/games/sekiro/mods>)** — Community mod browse/discovery page for Sekiro: Shadows Die Twice. It is a hosting/discovery page, not a loader or installer; per-mod target versions and requirements are user-published.
+  - Tags: sekiro, nexus-mods, mod-discovery, community-hosting
+- **[Portal 2 Steam Workshop](<https://steamcommunity.com/app/620/workshop/>)** — Steam's Portal 2-specific community page for user-created test chambers and other Workshop content. Discovery/distribution only; it is distinct from the Portal 2 Authoring Tools and does not certify compatibility of a given item with every platform or game build.
+  - Tags: portal-2, source-engine, steam-workshop, custom-maps, mod-discovery, steam-only
+- **[Portal 2: Community Edition Steam Workshop](<https://steamcommunity.com/app/440000/workshop/>)** — P2:CE's separate Steam Workshop is described as the place for sharing P2:CE creations. The game and toolchain are a separate application in open beta; compatibility with the original Portal 2 Workshop is not documented.
+  - Tags: portal-2-community-edition, strata-source, steam-workshop, mod-discovery, open-beta
+- **[Quaddicted](<https://www.quaddicted.com/>)** — Community archive and discovery index for Quake single-player maps and episodes. It is separate from a source port, installer, or proof that a map runs in the original engine, Quake Enhanced, or a particular third-party port.
+  - Tags: quake, single-player-maps, archive, discovery, community
+- **[Quake Live Steam Workshop](<https://steamcommunity.com/app/282440/workshop/>)** — Official Steam Workshop surface for Quake Live user content, including maps and other gameplay/customization items. This is a Steam-specific distribution route for Quake Live, not a general Quake III mod API or compatibility claim for other runtimes;.
+  - Tags: quake-live, quake-iii, steam-workshop, distribution, online-game
+- **[Satisfactory Mod Repository (SMR / FICSIT.app)](<https://ficsit.app/>)** — Title-specific Satisfactory UGC repository linked from the community modding documentation and integrated with Satisfactory Mod Manager. It is a game community service, not a general mod API or engine-level tool.
+  - Tags: satisfactory, mod-hosting, distribution, ugc, game-specific, community
+- **[Steam Workshop (Steamworks documentation)](<https://partner.steamgames.com/doc/features/workshop/implementation>)** — Valve's official Steamworks guide for integrating Workshop item creation, upload, and visibility into a game/tool. Requires a participating game's Steamworks configuration; it is not a universal player-side mod installer.
+  - Tags: steam, workshop, distribution, ugc, official-docs
+- **[Thunderstore](<https://thunderstore.io/>)** — Community mod database organized by game communities, with a related mod manager. Package formats, game support, publishing rules, and loader dependencies vary by community; consult the target game's current publishing documentation.
+  - Tags: thunderstore, distribution, mod-hosting, game-specific
+- **[Windowkill Steam Workshop](<https://steamcommunity.com/app/2726450/workshop/>)** — Steam Workshop hub for Windowkill community-made mods and assets. It confirms a Steam distribution surface but does not certify any particular item against the current game build or other storefront/platforms.
+  - Tags: windowkill, steam-workshop, mod-distribution, game-specific

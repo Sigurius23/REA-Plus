@@ -1,0 +1,94 @@
+# Reverse engineering and agent bridges
+
+<!-- Generated from resources.json by scripts/build_categories.py; edit the catalog, not this file. -->
+
+**44 resources.** [Category index](../README.md) · [Main README](../../README.md) · [JSON catalog](../../resources.json)
+
+- **[010 Editor](<https://www.sweetscape.com/010editor/>)** — Commercial text and binary editor with file templates for structured data inspection. It is an editor, not a game-specific asset pipeline.
+  - Tags: reverse-engineering, hex-editor, binary-formats, commercial
+- **[Android Debug Bridge (ADB) and Logcat](<https://developer.android.com/tools/adb>)** — Official Android SDK Platform-Tools documentation for ADB, which communicates with Android devices and emulators. For live debugging/observation, Android Studio Logcat displays application and system log messages; see the separate official Logcat documentation. These are runtime/debugging tools, not APK decompilers.
+  - Tags: android, adb, logcat, debugging, runtime-observation, official-docs
+- **[Android Studio APK Analyzer](<https://developer.android.com/studio/debug/apk-analyzer>)** — Official Android Studio feature, also available through the apkanalyzer command-line tool, for inspecting APK/AAB contents, DEX structure, manifest, resources, and differences between artifacts. Useful for package inventory and analysis, but it is not a Java/Kotlin source decompiler.
+  - Tags: android, apk, aab, dex, manifest, resources, static-analysis, official-docs
+- **[angr](<https://github.com/angr/angr>)** — Python-based binary-analysis framework with program- and symbolic-analysis components. It is a specialist research toolkit rather than a game modding tool; check supported architectures, loaders, and assumptions against the target.
+  - Tags: reverse-engineering, binary-analysis, symbolic-analysis, framework
+- **[Apktool (Android APK analysis)](<https://github.com/iBotPeaches/Apktool>)** — Open-source Android APK reverse-engineering tool for inspecting decoded resources/manifest and DEX disassembly in Smali; the project also supports rebuilding packages. Latest inspected release: v3.0.3 (2026-07-20). It does not recover original Java/Kotlin source, and decode fidelity varies by package.
+  - Tags: android, apk, smali, resources, reverse-engineering, static-analysis
+- **[BAP (Binary Analysis Platform)](<https://github.com/BinaryAnalysisPlatform/bap>)** — Binary Analysis Platform: libraries and utilities for analyzing programs in machine representation. This is a general analysis framework; verify current development, architecture support, and dependencies before use.
+  - Tags: reverse-engineering, binary-analysis, framework
+- **[Binary Ninja](<https://binary.ninja/>)** — Extensible disassembler, decompiler, debugger, and binary-analysis platform. Binary Ninja 6.0 includes first-party MCP support; consult the official documentation for edition and platform differences. Binary Ninja Cloud is a separate hosted analysis service with its own feature set.
+  - Tags: reverse-engineering, disassembler, decompiler, debugger, mcp
+- **[Binary Ninja Cloud](<https://cloud.binary.ninja/>)** — Free browser-hosted Binary Ninja analysis service with more limited features than local clients. The official page lists PE, Mach-O, and ELF support; its cloud feature set is separate from local clients.
+  - Tags: reverse-engineering, cloud-service, hosted-analysis
+- **[Binary Ninja Headless MCP](<https://github.com/mrphrazer/binary-ninja-headless-mcp>)** — Third-party headless bridge and CLI for Binary Ninja. Binary Ninja 6.0 provides a first-party GUI MCP server in GUI editions and a standalone headless server in Commercial/Ultimate editions on macOS/Linux; native Windows packages do not yet include the headless binary.
+  - Tags: reverse-engineering, binary-ninja, mcp, headless
+- **[Binary Ninja MCP Server](<https://docs.binary.ninja/guide/mcp.html>)** — Official Binary Ninja MCP documentation. The GUI server is included with GUI editions; the standalone headless server has separate Commercial/Ultimate and operating-system requirements.
+  - Tags: mcp, binary-analysis, binary-ninja, official-docs
+- **[Capstone](<https://github.com/capstone-engine/capstone>)** — Multi-architecture disassembly framework/library for embedding instruction decoding in analysis software. It is a component rather than a complete GUI decompiler or game modding workflow.
+  - Tags: reverse-engineering, disassembler, library
+- **[CFF Explorer](<https://ntcore.com/explorer-suite/>)** — Windows Portable Executable (PE32/PE32+) inspector/editor included in NTCore Explorer Suite, with support for PE and .NET metadata. NTCore identifies the freeware suite’s current version as III dated 2012-11-18; current package status and compatibility with newer formats are not listed. It is not a general-purpose decompiler.
+  - Tags: reverse-engineering, pe-format, binary-inspection, windows, legacy
+- **[Cutter](<https://github.com/rizinorg/cutter>)** — Open-source graphical reverse-engineering platform powered by Rizin, combining disassembly, decompilation, and analysis views. A general binary-analysis GUI, not a game mod loader; supported formats and target builds must be checked upstream.
+  - Tags: reverse-engineering, disassembler, decompiler, gui
+- **[Detect It Easy](<https://github.com/horsicq/Detect-It-Easy>)** — File-identification utility that reports executable formats and indicators such as likely compilers or packers. Treat results as heuristics and verify upstream definitions.
+  - Tags: reverse-engineering, file-identification, binary-analysis
+- **[dex2jar](<https://github.com/pxb1988/dex2jar>)** — Android DEX-to-Java class/JAR conversion utilities that can support a local analysis pipeline. Conversion may be incomplete and does not recreate original Java/Kotlin source or a buildable project
+  - Tags: android, mobile-analysis, reverse-engineering
+- **[DynamoRIO](<https://github.com/DynamoRIO/dynamorio>)** — Dynamic binary instrumentation framework for runtime program analysis and transformation. This is a specialist development framework, not a mod loader
+  - Tags: reverse-engineering, dynamic-analysis, instrumentation, framework
+- **[Frida](<https://github.com/frida/frida>)** — Dynamic instrumentation toolkit for inspecting and tracing running processes; useful alongside static analysis for runtime research.
+  - Tags: dynamic-analysis, instrumentation, runtime
+- **[GDB](<https://sourceware.org/gdb/>)** — GNU Project debugger for inspecting program execution and crash state on supported targets.
+  - Tags: reverse-engineering, debugger
+- **[Ghidra](<https://github.com/NationalSecurityAgency/ghidra>)** — Software reverse-engineering framework for disassembly, decompilation, scripting, and analysis of compiled code. Its v11.0.2 importer documentation lists Android APK and Dalvik DEX formats alongside native executable formats; its decompiler output is analysis/pseudocode, not original Java/Kotlin source.
+  - Tags: reverse-engineering, disassembler, decompiler, android, apk, dex, native-binaries
+- **[Ghidra MCP](<https://github.com/bethington/ghidra-mcp>)** — MCP server that connects agent workflows to Ghidra, with GUI and headless analysis options.
+  - Tags: reverse-engineering, ghidra, mcp
+- **[Hopper](<https://www.hopperapp.com/>)** — Commercial disassembler, decompiler, and debugger for supported desktop binaries. The vendor's free demo disables the debugger backend, prevents saving/exporting, and limits sessions to 30 minutes; these limits were checked 2026-10-07.
+  - Tags: reverse-engineering, disassembler, decompiler, debugger, commercial
+- **[HxD](<https://mh-nexus.de/en/hxd/>)** — Windows hex editor for viewing and editing binary data.
+  - Tags: reverse-engineering, hex-editor, windows
+- **[IDA Free](<https://hex-rays.com/ida-free>)** — Hex-Rays’ free, feature-limited edition of IDA for disassembly and binary analysis; it is separate from the commercial IDA Pro record. Edition limits, supported architectures/formats, and licensing can change; this is not a mod loader.
+  - Tags: reverse-engineering, disassembler, free-edition
+- **[IDA MCP](<https://github.com/HexRaysSA/ida-mcp>)** — The official Hex-Rays MCP server for IDA.
+  - Tags: reverse-engineering, ida, mcp
+- **[IDA Pro](<https://hex-rays.com/ida-pro>)** — Hex-Rays' commercial disassembler, decompiler, and debugger for interactive and automated binary analysis; the vendor offers a separate, more limited free edition.
+  - Tags: reverse-engineering, disassembler, decompiler, debugger, commercial
+- **[ImHex](<https://github.com/WerWolv/ImHex>)** — Open-source hex editor and binary-format analysis tool with pattern-language support.
+  - Tags: reverse-engineering, hex-editor, binary-formats
+- **[Intel Pin](<https://www.intel.com/content/www/us/en/developer/articles/tool/pin-a-dynamic-binary-instrumentation-tool.html>)** — Intel’s dynamic binary instrumentation framework for building runtime analysis tools. Supported architectures and operating systems are platform-specific; it is not a game-specific modding tool.
+  - Tags: reverse-engineering, dynamic-analysis, instrumentation, framework
+- **[JADX (Android DEX/APK decompiler)](<https://github.com/skylot/jadx>)** — Command-line and GUI decompiler for Android DEX/APK inputs, with support for AAB/AAR and resource decoding. It reconstructs Java-like views rather than original Java/Kotlin source; output may be incomplete, especially for obfuscated or complex code. Latest inspected release: v1.5.6 (2026-07-10).
+  - Tags: android, apk, dex, decompiler, static-analysis, reverse-engineering
+- **[LLDB](<https://lldb.llvm.org/>)** — LLVM debugger for supported platforms and languages, including C-family program debugging. Check platform, target, and symbol support; this is a general debugging tool, not a game modding route.
+  - Tags: reverse-engineering, debugger
+- **[LLVM MC (llvm-mc)](<https://llvm.org/docs/CommandGuide/llvm-mc.html>)** — LLVM machine-code utility for assembling target-specific instructions and disassembling encoded instruction bytes for supported targets. It is a low-level assembler/disassembler component, not a binary-analysis GUI or high-level decompiler; target coverage depends on the LLVM build.
+  - Tags: reverse-engineering, assembler, disassembler, machine-code, llvm
+- **[MobSF (Mobile Security Framework)](<https://github.com/MobSF/Mobile-Security-Framework-MobSF>)** — Open-source mobile application security-assessment framework. Upstream describes static analysis of mobile app binaries and a dynamic analyzer for Android/iOS testing. It provides automated triage and reports, not a guarantee of complete source recovery or findings.
+  - Tags: android, mobile-security, apk, static-analysis, dynamic-analysis, automation
+- **[Objection](<https://github.com/sensepost/objection>)** — Frida-powered runtime mobile-app exploration toolkit for Android and iOS.
+  - Tags: android, ios, mobile-analysis, runtime-instrumentation
+- **[PE-bear](<https://github.com/hasherezade/pe-bear>)** — Portable Executable (PE) file-format viewer/editor for Windows executable analysis. Its format scope is PE
+  - Tags: reverse-engineering, pe-format, binary-analysis
+- **[QEMU](<https://www.qemu.org/>)** — Open-source machine and user-mode emulation platform that can support isolated analysis of supported architectures and systems. Emulation is distinct from decompilation or game modding; firmware, operating-system, and target setup compatibility varies.
+  - Tags: reverse-engineering, emulation, virtualization
+- **[radare2](<https://github.com/radareorg/radare2>)** — The radare2 reverse-engineering framework itself, with command-line binary-analysis tools. This is distinct from the separately catalogued radare2-mcp connector; it is not a game mod loader.
+  - Tags: reverse-engineering, binary-analysis, framework
+- **[radare2-mcp](<https://github.com/radareorg/radare2-mcp>)** — Official radare2 MCP server for AI-agent-assisted binary analysis.
+  - Tags: reverse-engineering, radare2, mcp
+- **[REA](<https://github.com/morluto/rea>)** — Agent-oriented reverse-engineering project spanning application behavior through native binaries.
+  - Tags: reverse-engineering, ai-agents, native-binaries
+- **[RetDec](<https://github.com/avast/retdec>)** — Retargetable machine-code decompiler and binary-analysis framework. Upstream describes the project as being in limited maintenance; confirm current platform, format, and build support before relying on it. Decompiler output is reconstructed analysis, not original source.
+  - Tags: reverse-engineering, decompiler, maintenance-limited
+- **[ReVanced Patcher](<https://github.com/ReVanced/revanced-patcher>)** — Library for patching Android applications, including Dalvik bytecode, APK resources, and arbitrary APK files; used by ReVanced Manager and CLI.
+  - Tags: android, apk, dalvik-bytecode, patching-library
+- **[Rizin](<https://github.com/rizinorg/rizin>)** — Open-source reverse-engineering framework and command-line toolkit for analyzing binaries. Distinct from Cutter (its GUI) and from the separately catalogued radare2 framework; not a game-specific modding route.
+  - Tags: reverse-engineering, binary-analysis, framework
+- **[Snowman](<https://github.com/yegord/snowman>)** — Legacy native-code decompiler project; its repository was archived in 2024. Keep it as a historical reference rather than a current default, and expect limited compatibility with modern binaries.
+  - Tags: reverse-engineering, decompiler, archived, historical
+- **[Unicorn](<https://github.com/unicorn-engine/unicorn>)** — CPU emulation engine/library for supported instruction architectures, often embedded in analysis tooling. It is not a full system emulator or game runtime; confirm architecture and project requirements upstream.
+  - Tags: reverse-engineering, emulation, library
+- **[WinDbg](<https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/>)** — Microsoft debugging tools and documentation for Windows user-mode and kernel-mode debugging and dump analysis.
+  - Tags: reverse-engineering, debugger, windows, official-documentation
+- **[x64dbg](<https://github.com/x64dbg/x64dbg>)** — Open-source Windows user-mode debugger for x86 and x64 programs.
+  - Tags: reverse-engineering, debugger, windows
