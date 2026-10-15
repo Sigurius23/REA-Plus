@@ -13,8 +13,10 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 ├── rea-local/                             # Core REA+ MCP server & CLI engine
 │   ├── src/application/mobileRuntime/     # Mobile runtime instrumentation (Frida / Android)
 │   ├── src/binaryNinja/                   # Binary Ninja provider integration
+│   ├── src/radare2/                       # radare2 deep-analysis provider
+│   ├── src/jvm/                           # CFR-based JAR/.class decompilation
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
-│   ├── src/browser/history/               # PCAP packet capture & decoding
+│   ├── src/browser/history/               # Offline HAR, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
 ├── agentic-reverse-engineering/           # AERE (Agentic Reverse Engineering) Workbench
 │   ├── src/                               # Python analysis engine & pipeline
@@ -36,9 +38,10 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 
 ### 1. [REA+ Core Engine (`rea-local/`)](./rea-local)
 A Model Context Protocol (MCP) server and CLI tool designed for AI agents to investigate compiled binaries, applications, and runtime behavior:
-- **Expanded Provider Ecosystem**: Integrated support for Ghidra, IDA Pro, Binary Ninja, and Hopper.
+- **Expanded Provider Ecosystem**: Integrated support for Ghidra, IDA Pro, Binary Ninja, Hopper, and radare2 ([guide](./rea-local/docs/radare2-provider.md)).
 - **Mobile Runtime Instrumentation**: Dynamic tracing, Frida integration, and Android app evidence collection.
-- **Network & Protocol Analysis**: Native PCAP/PCAP-NG capture, TCP/UDP frame decoding, and traffic correlation.
+- **Network & Protocol Analysis**: Offline HAR, mitmproxy and PCAP/PCAPNG inspection with link/IP/TCP/UDP decoding, HTTP/1.x heads, TLS hello SNI/ALPN and DNS messages ([guide](./rea-local/docs/web-network-captures.md)). Captures are read from files; REA+ does not capture live traffic.
+- **JVM Decompilation**: Class inventories and CFR-decompiled Java for selected classes in JARs and `.class` files ([guide](./rea-local/docs/jvm-decompilation.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
