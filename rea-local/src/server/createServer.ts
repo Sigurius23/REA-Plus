@@ -6,9 +6,11 @@ import { registerWasmTools } from "./registerWasmTools.js";
 import { createJvmArtifactService } from "../composition/jvm.js";
 import { createIl2CppMetadataService } from "../composition/il2cpp.js";
 import { createCoverageLogService } from "../composition/coverage.js";
+import { createMinidumpService } from "../composition/minidump.js";
 import { registerJvmTools } from "./registerJvmTools.js";
 import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { registerCoverageTools } from "./registerCoverageTools.js";
+import { registerMinidumpTools } from "./registerMinidumpTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -514,6 +516,13 @@ const registerConfiguredAnalysisTools = (
   registerCoverageTools(
     server,
     createCoverageLogService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerMinidumpTools(
+    server,
+    createMinidumpService(),
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

@@ -57,6 +57,8 @@ const SOURCE_PATHS = {
   il2cppProvider: "dist/il2cpp/R2UnityRelease.js",
   coverageContracts: "dist/contracts/drcov/coverageToolContracts.js",
   coverageProvider: "dist/drcov/CoverageLogReader.js",
+  minidumpContracts: "dist/contracts/minidump/minidumpToolContracts.js",
+  minidumpProvider: "dist/minidump/MinidumpInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

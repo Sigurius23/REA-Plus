@@ -82,6 +82,10 @@ explicit path or endpoint and do not need it.
   `inspect_coverage_log` summarizes executed modules and pages a module's
   blocks; pass a baseline log of a run without the action to keep only the
   blocks that action added, then inspect their static addresses.
+- Crash minidump (Windows `.dmp`, Breakpad or Crashpad): `inspect_minidump`
+  names the exception and gives the faulting module+offset, threads, registers,
+  modules with symbol identifiers and a return-address stack scan; the scan is
+  a heuristic, not an unwound stack.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path
