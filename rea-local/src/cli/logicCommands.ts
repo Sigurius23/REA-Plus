@@ -32,7 +32,11 @@ export const registerLogicCommands = (
         .array(z.string())
         .optional()
         .describe("Annotation classes of the top decoder"),
-      annotation_limit: z.coerce.number().int().optional(),
+      annotation_limit: z.coerce
+        .number()
+        .int()
+        .optional()
+        .describe("Most annotations to return per class"),
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {

@@ -24,8 +24,15 @@ export const registerPatternCommands = (
     args: z.object({ path: z.string().describe("Local binary") }),
     options: z.object({
       pattern: z.array(z.string()).describe("Byte pattern; repeat for more"),
-      scope: z.enum(["executable", "all"]).optional(),
-      max_matches: z.coerce.number().int().optional(),
+      scope: z
+        .enum(["executable", "all"])
+        .optional()
+        .describe("Scan code sections (default) or every mapped section"),
+      max_matches: z.coerce
+        .number()
+        .int()
+        .optional()
+        .describe("Matches to return per pattern; all are counted"),
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
