@@ -19,6 +19,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/drcov/                         # drcov coverage logs and baseline diffs
 │   ├── src/minidump/                      # Windows/Breakpad/Crashpad crash minidumps
 │   ├── src/logic/                         # sigrok logic captures and protocol decoding
+│   ├── src/patterns/                      # AOB signature scanning and Cheat Engine tables
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -50,6 +51,7 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **Coverage Logs**: Executed modules and basic blocks from DynamoRIO or Frida drcov logs, and differential coverage against a baseline run to isolate the code behind one action ([guide](./rea-local/docs/drcov-coverage.md)).
 - **Crash Minidumps**: Exception, faulting module+offset, threads, registers, modules with PDB/build-ID identifiers and a return-address stack scan from Windows, Breakpad and Crashpad `.dmp` files ([guide](./rea-local/docs/minidumps.md)).
 - **Logic-Analyzer Captures**: Channel edges and bit-rate estimates from sigrok `.sr` sessions, plus UART/SPI/I2C and other protocol decoding through sigrok-cli with recovered byte streams such as serial console logs ([guide](./rea-local/docs/logic-captures.md)).
+- **AOB Signatures & Cheat Engine Tables**: Signature scanning across PE/ELF/Mach-O with resolved rel32 targets, and `.CT` table inspection that re-checks a table's signatures and asserts against a new game build ([guide](./rea-local/docs/byte-patterns.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
