@@ -26,9 +26,14 @@ const runLength = (
 
 /**
  * Decode one raw LZ4 block (no frame header), as Unity stores chunk-based
- * bundle blocks. The output must be exactly `size` bytes.
+ * bundle blocks. The output must be exactly `size` bytes, or at most `size`
+ * when `exact` is false (LZ4 legacy frames do not record block sizes).
  */
-export const decodeLz4Block = (input: Buffer, size: number): Buffer => {
+export const decodeLz4Block = (
+  input: Buffer,
+  size: number,
+  exact = true,
+): Buffer => {
   const output = Buffer.alloc(size);
   let read = 0;
   let written = 0;
@@ -58,6 +63,7 @@ export const decodeLz4Block = (input: Buffer, size: number): Buffer => {
       output[written + index] = output[written - offset + index] ?? 0;
     written += length;
   }
+  if (!exact) return output.subarray(0, written);
   if (written !== size)
     fail(
       `LZ4 block decoded to ${String(written)} bytes, expected ${String(size)}.`,

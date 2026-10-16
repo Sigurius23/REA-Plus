@@ -113,6 +113,10 @@ explicit path or endpoint and do not need it.
   `inspect_gamemaker_data` lists chunks, resources, bytecode entries, strings,
   functions and variables, texture pages and audio; it reports VM or YYC and
   the minimum runtime the chunks imply. Bytecode is listed, not decompiled.
+- x64dbg database (`.dd32`/`.dd64`): `inspect_x64dbg_database` lists labels,
+  comments, bookmarks, function and loop ranges, breakpoints, xrefs and
+  watches; with `module_path` it places them in the module file and flags
+  breakpoints whose original bytes changed in a new build.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

@@ -74,6 +74,8 @@ const SOURCE_PATHS = {
   rpgMakerProvider: "dist/rpgmaker/RpgMakerInspector.js",
   gameMakerContracts: "dist/contracts/gamemaker/gameMakerToolContracts.js",
   gameMakerProvider: "dist/gamemaker/GameMakerInspector.js",
+  x64dbgContracts: "dist/contracts/x64dbg/x64dbgToolContracts.js",
+  x64dbgProvider: "dist/x64dbg/X64dbgInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",
