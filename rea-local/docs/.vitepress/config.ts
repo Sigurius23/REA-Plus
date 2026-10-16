@@ -40,6 +40,7 @@ export default defineConfig({
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },
+          { text: "Unity IL2CPP metadata", link: "/il2cpp-metadata" },
           { text: "Apple applications", link: "/apple-application-analysis" },
           { text: "Firmware", link: "/firmware-analysis" },
           {

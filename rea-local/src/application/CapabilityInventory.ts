@@ -34,6 +34,7 @@ type ProviderDescriptor = ProviderCapability;
 export type AvailabilityPolicy = {
   readonly wasmArtifactEnabled?: boolean;
   readonly jvmArtifactEnabled?: boolean;
+  readonly il2cppMetadataEnabled?: boolean;
   readonly evmInterfaceEnabled?: boolean;
   readonly processCaptureEnabled: boolean;
   readonly optionalProviderLoadFailures?: OptionalProviderLoadFailures;
@@ -338,6 +339,14 @@ const workflowAvailabilityFor = ({
           reason: "provider_missing",
           remediation:
             "Supply CFR 0.152 via absolute REA_CFR_JAR and Java via JAVA_HOME or PATH. No active binary target is required; tools are checked at execution.",
+        };
+  if (name === "inspect_il2cpp_metadata")
+    return policy.il2cppMetadataEnabled === true
+      ? { reason: "available", remediation: null }
+      : {
+          reason: "provider_missing",
+          remediation:
+            "Supply r2unity 1.2.8 or a later 1.2 release via absolute REA_R2UNITY_PATH. No active binary target is required; the tool is checked at execution.",
         };
   if (name === "inspect_pe_resources")
     return { reason: "available", remediation: null };

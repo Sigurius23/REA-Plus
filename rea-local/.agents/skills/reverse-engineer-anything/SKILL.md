@@ -73,6 +73,11 @@ explicit path or endpoint and do not need it.
 - Explicit local JAR or `.class` file: `inspect_jvm_artifact` lists classes and
   decompiles named classes with caller-supplied CFR 0.152 (`REA_CFR_JAR`);
   decompiled Java is a reconstruction, not original source.
+- Unity IL2CPP build (`global-metadata.dat` plus GameAssembly or libil2cpp):
+  `inspect_il2cpp_metadata` pages classes, string literals, interop and
+  assemblies with caller-supplied r2unity 1.2 (`REA_R2UNITY_PATH`). Select the
+  native binary too to recover method addresses, then inspect those addresses
+  with a binary provider.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

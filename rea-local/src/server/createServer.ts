@@ -1,9 +1,12 @@
 import type { WasmArtifactService } from "../application/wasm/WasmArtifactService.js";
 import type { JvmArtifactService } from "../application/jvm/JvmArtifactService.js";
+import type { Il2CppMetadataService } from "../application/il2cpp/Il2CppMetadataService.js";
 import { createWasmArtifactService } from "../composition/wasm.js";
 import { registerWasmTools } from "./registerWasmTools.js";
 import { createJvmArtifactService } from "../composition/jvm.js";
+import { createIl2CppMetadataService } from "../composition/il2cpp.js";
 import { registerJvmTools } from "./registerJvmTools.js";
+import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -120,6 +123,7 @@ export interface CreateServerOptions {
   readonly delivery?: ToolResultDelivery;
   readonly wasmArtifact?: WasmArtifactService;
   readonly jvmArtifact?: JvmArtifactService;
+  readonly il2cppMetadata?: Il2CppMetadataService;
   readonly evmInterface?: EvmInterfaceService;
   readonly logger?: Logger;
   readonly binaryLayout?: BinaryLayoutService;
@@ -164,6 +168,9 @@ const installSessionToolAvailability = (
       jvmArtifactEnabled:
         options.jvmArtifact !== undefined ||
         isAbsolute(environment.REA_CFR_JAR ?? ""),
+      il2cppMetadataEnabled:
+        options.il2cppMetadata !== undefined ||
+        isAbsolute(environment.REA_R2UNITY_PATH ?? ""),
       evmInterfaceEnabled: options.evmInterface !== undefined || linuxX64,
       webModuleResolutionEnabled:
         options.webModuleTrace !== undefined ||
@@ -271,6 +278,8 @@ export const createServer = (
     options.wasmArtifact ?? createWasmArtifactService(environment);
   const jvmArtifact =
     options.jvmArtifact ?? createJvmArtifactService(environment);
+  const il2cppMetadata =
+    options.il2cppMetadata ?? createIl2CppMetadataService(environment);
   const apktool =
     options.apktoolAnalysis ??
     createApktoolResourceAnalysisProvider(environment);
@@ -283,6 +292,7 @@ export const createServer = (
       android.close(),
       wasmArtifact.close(),
       jvmArtifact.close(),
+      il2cppMetadata.close(),
       apktool.close(),
       jeb.close(),
       adbDevice.close(),
@@ -356,6 +366,7 @@ export const createServer = (
     android,
     wasmArtifact,
     jvmArtifact,
+    il2cppMetadata,
     jeb,
     firmwareAnalysis,
   );
@@ -437,6 +448,7 @@ const registerConfiguredAnalysisTools = (
   android: AndroidAnalysisPort,
   wasmArtifact: WasmArtifactService,
   jvmArtifact: JvmArtifactService,
+  il2cppMetadata: Il2CppMetadataService,
   jeb: JebAnalysisPort,
   firmwareAnalysis: FirmwareAnalysisService,
 ): void => {
@@ -486,6 +498,13 @@ const registerConfiguredAnalysisTools = (
   registerJvmTools(
     server,
     jvmArtifact,
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerIl2CppTools(
+    server,
+    il2cppMetadata,
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

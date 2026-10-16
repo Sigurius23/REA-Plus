@@ -29,6 +29,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.evmContracts.EVM_TOOL_CONTRACTS,
         ...sources.wasmContracts.WASM_TOOL_CONTRACTS,
         ...sources.jvmContracts.JVM_TOOL_CONTRACTS,
+        ...sources.il2cppContracts.IL2CPP_TOOL_CONTRACTS,
       ],
     },
     {
@@ -198,6 +199,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.jvmProvider.CFR_PROVIDER_IDENTITY,
       contracts: sources.jvmContracts.JVM_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.il2cppProvider.R2UNITY_PROVIDER_IDENTITY,
+      contracts: sources.il2cppContracts.IL2CPP_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

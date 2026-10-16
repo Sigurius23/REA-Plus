@@ -53,6 +53,8 @@ const SOURCE_PATHS = {
   wasmProvider: "dist/wasm/WabtRelease.js",
   jvmContracts: "dist/contracts/jvm/jvmToolContracts.js",
   jvmProvider: "dist/jvm/CfrRelease.js",
+  il2cppContracts: "dist/contracts/il2cpp/il2cppToolContracts.js",
+  il2cppProvider: "dist/il2cpp/R2UnityRelease.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",
