@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createIl2CppMetadataService } from "../composition/il2cpp.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -15,7 +14,6 @@ export const registerIl2CppCommands = (
   logger: Logger,
   environment: Readonly<NodeJS.ProcessEnv>,
 ): void => {
-  const service = createIl2CppMetadataService(environment);
   cli.command(CLI_COMMANDS.inspectIl2CppMetadata, {
     description:
       "Page classes, string literals, interop or assemblies from Unity IL2CPP metadata with r2unity",
@@ -38,6 +36,10 @@ export const registerIl2CppCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createIl2CppMetadataService } =
+          await import("../composition/il2cpp.js");
+        const service = createIl2CppMetadataService(environment);
         try {
           return await logCliCommand(
             logger,

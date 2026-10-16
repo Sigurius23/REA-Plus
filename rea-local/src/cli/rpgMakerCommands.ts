@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createRpgMakerProjectService } from "../composition/rpgMaker.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -17,12 +16,13 @@ export const registerRpgMakerCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const service = createRpgMakerProjectService();
   cli.command(CLI_COMMANDS.inspectRpgMakerProject, {
     description:
       "Map an RPG Maker MV/MZ game: maps, dialogue, switches, database, plugins, encrypted assets and saves",
     args: z.object({
-      path: z.string().describe("Game or project folder (holding data/ or www/data/)"),
+      path: z
+        .string()
+        .describe("Game or project folder (holding data/ or www/data/)"),
     }),
     options: z.object({
       view: z
@@ -61,6 +61,10 @@ export const registerRpgMakerCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createRpgMakerProjectService } =
+          await import("../composition/rpgMaker.js");
+        const service = createRpgMakerProjectService();
         try {
           return await logCliCommand(
             logger,

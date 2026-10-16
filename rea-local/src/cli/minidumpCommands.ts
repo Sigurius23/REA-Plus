@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createMinidumpService } from "../composition/minidump.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -13,7 +12,6 @@ export const registerMinidumpCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const service = createMinidumpService();
   cli.command(CLI_COMMANDS.inspectMinidump, {
     description:
       "Explain a Windows, Breakpad or Crashpad minidump: exception, faulting module+offset, threads and modules",
@@ -34,6 +32,10 @@ export const registerMinidumpCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createMinidumpService } =
+          await import("../composition/minidump.js");
+        const service = createMinidumpService();
         try {
           return await logCliCommand(
             logger,

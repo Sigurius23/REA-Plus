@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createRenpyScriptService } from "../composition/renpy.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -14,7 +13,6 @@ export const registerRenpyCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const service = createRenpyScriptService();
   cli.command(CLI_COMMANDS.inspectRenpyScript, {
     description:
       "Map a compiled Ren'Py script: labels, dialogue with translation identifiers, menus, definitions and translations",
@@ -49,6 +47,10 @@ export const registerRenpyCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createRenpyScriptService } =
+          await import("../composition/renpy.js");
+        const service = createRenpyScriptService();
         try {
           return await logCliCommand(
             logger,

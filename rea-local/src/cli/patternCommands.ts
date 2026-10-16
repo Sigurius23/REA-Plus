@@ -1,9 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import {
-  createBytePatternService,
-  createCheatTableService,
-} from "../composition/patterns.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -16,8 +12,6 @@ export const registerPatternCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const patterns = createBytePatternService();
-  const tables = createCheatTableService();
   cli.command(CLI_COMMANDS.scanBytePatterns, {
     description:
       "Scan a PE, ELF, Mach-O or raw file for AOB signatures such as '48 8B 05 ?? ?? ?? ??'",
@@ -36,6 +30,10 @@ export const registerPatternCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createBytePatternService } =
+          await import("../composition/patterns.js");
+        const patterns = createBytePatternService();
         try {
           return await logCliCommand(
             logger,
@@ -72,6 +70,10 @@ export const registerPatternCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createCheatTableService } =
+          await import("../composition/patterns.js");
+        const tables = createCheatTableService();
         try {
           return await logCliCommand(
             logger,

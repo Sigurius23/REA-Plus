@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createGameArchiveService } from "../composition/gameArchives.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -13,7 +12,6 @@ export const registerGameArchiveCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const service = createGameArchiveService();
   cli.command(CLI_COMMANDS.inspectGameArchive, {
     description:
       "List a Godot .pck, Ren'Py .rpa, Valve .vpk, Doom WAD or Unreal .pak, and preview one entry",
@@ -48,6 +46,10 @@ export const registerGameArchiveCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createGameArchiveService } =
+          await import("../composition/gameArchives.js");
+        const service = createGameArchiveService();
         try {
           return await logCliCommand(
             logger,

@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createJvmArtifactService } from "../composition/jvm.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -14,7 +13,6 @@ export const registerJvmCommands = (
   logger: Logger,
   environment: Readonly<NodeJS.ProcessEnv>,
 ): void => {
-  const service = createJvmArtifactService(environment);
   cli.command(CLI_COMMANDS.inspectJvmArtifact, {
     description:
       "List a local JAR or .class file and decompile selected classes with CFR",
@@ -29,6 +27,10 @@ export const registerJvmCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createJvmArtifactService } =
+          await import("../composition/jvm.js");
+        const service = createJvmArtifactService(environment);
         try {
           return await logCliCommand(
             logger,

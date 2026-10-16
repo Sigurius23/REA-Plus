@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createLogicCaptureService } from "../composition/logic.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -14,7 +13,6 @@ export const registerLogicCommands = (
   logger: Logger,
   environment: Readonly<NodeJS.ProcessEnv>,
 ): void => {
-  const service = createLogicCaptureService(environment);
   cli.command(CLI_COMMANDS.inspectLogicCapture, {
     description:
       "Summarize a sigrok logic capture and optionally decode protocols with sigrok-cli",
@@ -40,6 +38,10 @@ export const registerLogicCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createLogicCaptureService } =
+          await import("../composition/logic.js");
+        const service = createLogicCaptureService(environment);
         try {
           return await logCliCommand(
             logger,

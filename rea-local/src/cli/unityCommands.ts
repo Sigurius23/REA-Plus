@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createUnityAssetsService } from "../composition/unity.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -14,7 +13,6 @@ export const registerUnityCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const service = createUnityAssetsService();
   cli.command(CLI_COMMANDS.inspectUnityAssets, {
     description:
       "List objects, asset paths and scripts in a Unity asset bundle or serialized file (level0, *.assets)",
@@ -47,6 +45,10 @@ export const registerUnityCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createUnityAssetsService } =
+          await import("../composition/unity.js");
+        const service = createUnityAssetsService();
         try {
           return await logCliCommand(
             logger,

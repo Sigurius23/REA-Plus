@@ -1,6 +1,5 @@
 import { z } from "incur";
 import { resolve } from "node:path";
-import { createCoverageLogService } from "../composition/coverage.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -13,7 +12,6 @@ export const registerCoverageCommands = (
   cli: CliInstance,
   logger: Logger,
 ): void => {
-  const service = createCoverageLogService();
   cli.command(CLI_COMMANDS.inspectCoverageLog, {
     description:
       "Summarize a drcov coverage log, list a module's executed blocks, or diff against a baseline run",
@@ -34,6 +32,10 @@ export const registerCoverageCommands = (
     }),
     run: ({ args, options }) =>
       withCommandCancellation(async (signal) => {
+        // Load the reader only when this command runs, keeping CLI startup light.
+        const { createCoverageLogService } =
+          await import("../composition/coverage.js");
+        const service = createCoverageLogService();
         try {
           return await logCliCommand(
             logger,
