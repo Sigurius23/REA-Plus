@@ -98,6 +98,11 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_pe_resources: evidence,
   inspect_coverage_log: evidence,
   inspect_minidump: evidence,
+  inspect_logic_capture: effects({
+    mutatesSession: true,
+    writesFilesystem: true,
+    launchesProcess: true,
+  }),
   inspect_analysis_view: evidence,
   inspect_firmware_regions: effects({
     mutatesSession: true,

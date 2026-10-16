@@ -59,6 +59,8 @@ const SOURCE_PATHS = {
   coverageProvider: "dist/drcov/CoverageLogReader.js",
   minidumpContracts: "dist/contracts/minidump/minidumpToolContracts.js",
   minidumpProvider: "dist/minidump/MinidumpInspector.js",
+  logicContracts: "dist/contracts/logic/logicToolContracts.js",
+  logicProvider: "dist/logic/LogicCaptureInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

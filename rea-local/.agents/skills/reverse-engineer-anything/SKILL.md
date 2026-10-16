@@ -86,6 +86,10 @@ explicit path or endpoint and do not need it.
   names the exception and gives the faulting module+offset, threads, registers,
   modules with symbol identifiers and a return-address stack scan; the scan is
   a heuristic, not an unwound stack.
+- Logic-analyzer capture (sigrok `.sr` from PulseView): `inspect_logic_capture`
+  reports channel edges and bit-rate estimates; add a decoder stack (uart,
+  spi, i2c, ...) with caller-supplied sigrok-cli 0.7 (`REA_SIGROK_CLI`) to get
+  annotations and byte streams such as a UART console log.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

@@ -351,7 +351,8 @@ const workflowAvailabilityFor = ({
   if (
     name === "inspect_pe_resources" ||
     name === "inspect_coverage_log" ||
-    name === "inspect_minidump"
+    name === "inspect_minidump" ||
+    name === "inspect_logic_capture"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

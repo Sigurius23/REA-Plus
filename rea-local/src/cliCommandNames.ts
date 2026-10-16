@@ -5,6 +5,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectIl2CppMetadata: "inspect-il2cpp-metadata",
   inspectCoverageLog: "inspect-coverage-log",
   inspectMinidump: "inspect-minidump",
+  inspectLogicCapture: "inspect-logic-capture",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

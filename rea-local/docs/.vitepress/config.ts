@@ -45,6 +45,7 @@ export default defineConfig({
           { text: "Unity IL2CPP metadata", link: "/il2cpp-metadata" },
           { text: "Apple applications", link: "/apple-application-analysis" },
           { text: "Firmware", link: "/firmware-analysis" },
+          { text: "Logic-analyzer captures", link: "/logic-captures" },
           {
             text: "Reconstruction readiness",
             link: "/reconstruction-readiness",
