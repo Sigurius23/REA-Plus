@@ -66,21 +66,58 @@ describe.each(["mv", "mz"] as const)("RPG Maker %s games", (engine) => {
       assets: { encrypted: 3, plain: 1, undecryptable: 1 },
       saves: 3,
     });
-    expect(report.maps.map(({ id, present, messages, transfers, common_events }) => [id, present, messages, transfers, common_events])).toEqual([
+    expect(
+      report.maps.map(({ id, present, messages, transfers, common_events }) => [
+        id,
+        present,
+        messages,
+        transfers,
+        common_events,
+      ]),
+    ).toEqual([
       [1, true, 2, [2], [1]],
       [2, true, 0, [], []],
       [3, false, 0, [], []],
     ]);
-    expect(report.maps[1]).toMatchObject({ name: "Cave", parent_id: 1, display_name: null });
+    expect(report.maps[1]).toMatchObject({
+      name: "Cave",
+      parent_id: 1,
+      display_name: null,
+    });
   });
 
   it("lists dialogue with speakers, faces and choices", async () => {
     const report = await inspect({ path: games[engine], view: "dialogue" });
-    expect(report.dialogue.map(({ source, event_name, page, index, kind, lines }) => [source, event_name, page, index, kind, lines])).toEqual([
-      ["map", "Elder", 1, 0, "message", ["Welcome, \\N[1]!", "The cave is \\C[2]north\\C[0]."]],
+    expect(
+      report.dialogue.map(
+        ({ source, event_name, page, index, kind, lines }) => [
+          source,
+          event_name,
+          page,
+          index,
+          kind,
+          lines,
+        ],
+      ),
+    ).toEqual([
+      [
+        "map",
+        "Elder",
+        1,
+        0,
+        "message",
+        ["Welcome, \\N[1]!", "The cave is \\C[2]north\\C[0]."],
+      ],
       ["map", "Elder", 1, 3, "choice", ["Go to the cave", "Stay"]],
       ["map", "Elder", 2, 0, "scrolling", ["Credits line 1", "Credits line 2"]],
-      ["map", "Elder", 2, 3, "comment", ["<quest:start>", "second comment line"]],
+      [
+        "map",
+        "Elder",
+        2,
+        3,
+        "comment",
+        ["<quest:start>", "second comment line"],
+      ],
       ["map", "Sign", 1, 1, "message", ["The boss is gone."]],
       ["common_event", null, null, 0, "message", ["You feel rested."]],
       ["troop", null, 1, 0, "message", ["The slimes wobble."]],
@@ -90,15 +127,29 @@ describe.each(["mv", "mz"] as const)("RPG Maker %s games", (engine) => {
       speaker: engine === "mz" ? "Elder" : null,
       face: "Actor1:2",
     });
-    const cave = await inspect({ path: games[engine], view: "dialogue", map: 2 });
+    const cave = await inspect({
+      path: games[engine],
+      view: "dialogue",
+      map: 2,
+    });
     expect(cave.dialogue).toEqual([]);
-    const query = await inspect({ path: games[engine], view: "dialogue", query: "SLIMES" });
+    const query = await inspect({
+      path: games[engine],
+      view: "dialogue",
+      query: "SLIMES",
+    });
     expect(query.page).toMatchObject({ total: 1, returned: 1 });
   });
 
   it("maps switch and variable reads and writes", async () => {
     const report = await inspect({ path: games[engine], view: "switches" });
-    const rows = report.switches.map(({ kind, id, name, reads, writes }) => [kind, id, name, reads, writes]);
+    const rows = report.switches.map(({ kind, id, name, reads, writes }) => [
+      kind,
+      id,
+      name,
+      reads,
+      writes,
+    ]);
     expect(rows).toEqual([
       ["switch", 1, "door_open", 1, 1],
       ["switch", 3, "boss_beaten", 2, 0],
@@ -110,13 +161,27 @@ describe.each(["mv", "mz"] as const)("RPG Maker %s games", (engine) => {
       ["variable", 5, "", 1, 0],
     ]);
     expect(report.switches[0]?.sites).toEqual([
-      expect.objectContaining({ event_name: "Elder", page: 1, index: 5, access: "write", command: 121 }),
-      expect.objectContaining({ event_name: "Elder", page: 2, access: "read", command: null }),
+      expect.objectContaining({
+        event_name: "Elder",
+        page: 1,
+        index: 5,
+        access: "write",
+        command: 121,
+      }),
+      expect.objectContaining({
+        event_name: "Elder",
+        page: 2,
+        access: "read",
+        command: null,
+      }),
     ]);
-    const cave = await inspect({ path: games[engine], view: "switches", map: 2 });
+    const cave = await inspect({
+      path: games[engine],
+      view: "switches",
+      map: 2,
+    });
     expect(cave.switches.map(({ id }) => id)).toEqual([3, 4, 5]);
   });
-
 });
 
 describe.each(["mv", "mz"] as const)("RPG Maker %s game files", (engine) => {
@@ -124,13 +189,32 @@ describe.each(["mv", "mz"] as const)("RPG Maker %s game files", (engine) => {
   const image = engine === "mv" ? ".rpgmvp" : ".png_";
 
   it("lists the database, plugins and assets", async () => {
-    const items = await inspect({ path: games[engine], view: "database", table: "items" });
+    const items = await inspect({
+      path: games[engine],
+      view: "database",
+      table: "items",
+    });
     expect(items.database).toEqual([
-      expect.objectContaining({ id: 1, name: "Potion", fields: { price: 50, iconIndex: 176 } }),
-      expect.objectContaining({ id: 2, name: "Cave Key", notetags: ["Key Item"] }),
+      expect.objectContaining({
+        id: 1,
+        name: "Potion",
+        fields: { price: 50, iconIndex: 176 },
+      }),
+      expect.objectContaining({
+        id: 2,
+        name: "Cave Key",
+        notetags: ["Key Item"],
+      }),
     ]);
-    const actors = await inspect({ path: games[engine], view: "database", query: "hero" });
-    expect(actors.database[0]).toMatchObject({ table: "actors", notetags: ["Biography", "HP Regen"] });
+    const actors = await inspect({
+      path: games[engine],
+      view: "database",
+      query: "hero",
+    });
+    expect(actors.database[0]).toMatchObject({
+      table: "actors",
+      notetags: ["Biography", "HP Regen"],
+    });
     const plugins = await inspect({ path: games[engine], view: "plugins" });
     expect(plugins.plugins).toEqual([
       {
@@ -143,16 +227,36 @@ describe.each(["mv", "mz"] as const)("RPG Maker %s game files", (engine) => {
         bytes: 17,
         sha256: createHash("sha256").update("// FixturePlugin\n").digest("hex"),
       },
-      expect.objectContaining({ name: "MissingPlugin", present: false, sha256: null }),
+      expect.objectContaining({
+        name: "MissingPlugin",
+        present: false,
+        sha256: null,
+      }),
     ]);
     const assets = await inspect({ path: games[engine], view: "assets" });
-    expect(assets.assets.map(({ path, encrypted, header, signature }) => [path, encrypted, header, signature])).toEqual([
+    expect(
+      assets.assets.map(({ path, encrypted, header, signature }) => [
+        path,
+        encrypted,
+        header,
+        signature,
+      ]),
+    ).toEqual([
       [`${prefix}img/faces/Actor1${image}`, true, "valid", "png"],
       [`${prefix}img/pictures/broken${image}`, true, "invalid", "unknown"],
       [`${prefix}img/system/Window.png`, false, null, "png"],
-      [`${prefix}audio/se/Cursor1${engine === "mv" ? ".rpgmvo" : ".ogg_"}`, true, "valid", "ogg"],
+      [
+        `${prefix}audio/se/Cursor1${engine === "mv" ? ".rpgmvo" : ".ogg_"}`,
+        true,
+        "valid",
+        "ogg",
+      ],
     ]);
-    const face = await inspect({ path: games[engine], view: "assets", asset: `${prefix}img/faces/Actor1${image}` });
+    const face = await inspect({
+      path: games[engine],
+      view: "assets",
+      asset: `${prefix}img/faces/Actor1${image}`,
+    });
     expect(face.assets).toEqual([
       expect.objectContaining({
         decrypted_path: `${prefix}img/faces/Actor1.png`,
@@ -165,7 +269,9 @@ describe.each(["mv", "mz"] as const)("RPG Maker %s game files", (engine) => {
   it("decodes saves with names from the database", async () => {
     const report = await inspect({ path: games[engine], view: "saves" });
     const save = engine === "mv" ? "rpgsave" : "rmmzsave";
-    expect(report.saves.map(({ path, kind, slot }) => [path, kind, slot])).toEqual([
+    expect(
+      report.saves.map(({ path, kind, slot }) => [path, kind, slot]),
+    ).toEqual([
       [`${prefix}save/config.${save}`, "config", null],
       [`${prefix}save/file1.${save}`, "game", 1],
       [`${prefix}save/global.${save}`, "global", null],
@@ -204,17 +310,35 @@ describe("RPG Maker refusals", () => {
       ok: false,
       error: {
         _tag: "AnalysisInputError",
-        issues: [{ message: expect.stringContaining("Not a readable RPG Maker MV/MZ game") }],
+        issues: [
+          {
+            message: expect.stringContaining(
+              "Not a readable RPG Maker MV/MZ game",
+            ),
+          },
+        ],
       },
     });
     for (const asset of ["../mz/img/faces/Actor1.png_", "/etc/passwd"])
-      expect(await service.inspect({ path: games.mz, view: "assets", asset })).toMatchObject({
+      expect(
+        await service.inspect({ path: games.mz, view: "assets", asset }),
+      ).toMatchObject({
         ok: false,
         error: { _tag: "AnalysisInputError", issues: [{ path: ["asset"] }] },
       });
-    expect(await service.inspect({ path: games.mz, view: "assets", asset: "img/none.png" })).toMatchObject({
+    expect(
+      await service.inspect({
+        path: games.mz,
+        view: "assets",
+        asset: "img/none.png",
+      }),
+    ).toMatchObject({
       ok: false,
-      error: { issues: [{ message: expect.stringContaining("No image, audio or movie file") }] },
+      error: {
+        issues: [
+          { message: expect.stringContaining("No image, audio or movie file") },
+        ],
+      },
     });
   });
 
@@ -226,12 +350,20 @@ describe("RPG Maker refusals", () => {
     );
     const report = await inspect({ path: game, view: "plugins" });
     expect(report.plugins).toEqual([]);
-    expect(report.limitations).toContain("js/plugins.js is not the editor's JSON plugin list");
+    expect(report.limitations).toContain(
+      "js/plugins.js is not the editor's JSON plugin list",
+    );
     await rm(join(game, "data", "Map002.json"));
-    await symlink(join(game, "data", "Map001.json"), join(game, "data", "Map002.json"));
+    await symlink(
+      join(game, "data", "Map001.json"),
+      join(game, "data", "Map002.json"),
+    );
     expect(await service.inspect({ path: game })).toMatchObject({
       ok: false,
-      error: { _tag: "AnalysisInputError", issues: [{ message: expect.stringContaining("symlink") }] },
+      error: {
+        _tag: "AnalysisInputError",
+        issues: [{ message: expect.stringContaining("symlink") }],
+      },
     });
   });
 });

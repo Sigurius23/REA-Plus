@@ -28,7 +28,10 @@ export interface ProjectIndex {
   readonly eventCount: number;
 }
 
-const mapRow = (map: MapEntry, index: EventIndex): { row: MapRow; events: number } => {
+const mapRow = (
+  map: MapEntry,
+  index: EventIndex,
+): { row: MapRow; events: number } => {
   const counts: ListCounts = emptyCounts();
   const data = map.data;
   const events = entriesOf(data?.["events"]);
@@ -94,7 +97,11 @@ export const indexProject = (project: LoadedProject): ProjectIndex => {
     };
     events.walk(common["list"], at, emptyCounts());
     if (common["trigger"] === 1 || common["trigger"] === 2)
-      events.site("switch", idOf(common["switchId"]), "read", { ...at, index: 0, command: null });
+      events.site("switch", idOf(common["switchId"]), "read", {
+        ...at,
+        index: 0,
+        command: null,
+      });
   }
   for (const troop of project.tables.troops)
     arrayOf(troop["pages"]).forEach((value, page) => {
@@ -123,17 +130,25 @@ export const switchRows = (
   map: number | undefined,
 ): SwitchRow[] => {
   const rows: SwitchRow[] = [];
-  for (const kind of ["switch", "variable"] as const satisfies readonly SiteKind[]) {
-    const names = namesOf(project.system[kind === "switch" ? "switches" : "variables"]);
+  for (const kind of [
+    "switch",
+    "variable",
+  ] as const satisfies readonly SiteKind[]) {
+    const names = namesOf(
+      project.system[kind === "switch" ? "switches" : "variables"],
+    );
     const ids = new Set<number>();
     names.forEach((name, id) => {
       if (id > 0 && name.length > 0) ids.add(id);
     });
     for (const key of index.sites.keys())
-      if (key.startsWith(`${kind}:`)) ids.add(Number(key.slice(kind.length + 1)));
+      if (key.startsWith(`${kind}:`))
+        ids.add(Number(key.slice(kind.length + 1)));
     for (const id of [...ids].sort((a, b) => a - b)) {
       const sites = (index.sites.get(`${kind}:${String(id)}`) ?? []).filter(
-        (site) => map === undefined || (site.source === "map" && site.source_id === map),
+        (site) =>
+          map === undefined ||
+          (site.source === "map" && site.source_id === map),
       );
       if (map !== undefined && sites.length === 0) continue;
       rows.push({

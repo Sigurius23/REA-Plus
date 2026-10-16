@@ -7,7 +7,12 @@ import type {
 import { relativeName } from "./RpgMakerFiles.js";
 import { arrayOf, idOf, stringOf } from "./RpgMakerJson.js";
 import type { LoadedProject } from "./RpgMakerProject.js";
-import { decodeSave, SAVE_NAME, summariseSave, type SaveNames } from "./RpgMakerSaves.js";
+import {
+  decodeSave,
+  SAVE_NAME,
+  summariseSave,
+  type SaveNames,
+} from "./RpgMakerSaves.js";
 
 type Save = RpgMakerProjectReport["saves"][number];
 const MAX_SAVE_BYTES = 32 * 1024 * 1024;
@@ -21,8 +26,12 @@ interface SaveFile {
 }
 
 /** Save files in the folder the engine writes to: save/ beside index.html. */
-export const listSaves = async (project: LoadedProject): Promise<SaveFile[]> => {
-  const { files } = await project.reader.walk(join(project.location.base, "save"));
+export const listSaves = async (
+  project: LoadedProject,
+): Promise<SaveFile[]> => {
+  const { files } = await project.reader.walk(
+    join(project.location.base, "save"),
+  );
   return files.flatMap(({ path }) => {
     const name = basename(path);
     const match = SAVE_NAME.exec(name);
@@ -51,9 +60,15 @@ const namesOf = (project: LoadedProject): SaveNames => {
   return {
     switches: arrayOf(project.system["switches"]),
     variables: arrayOf(project.system["variables"]),
-    maps: new Map(project.maps.map((map) => [map.id, stringOf(map.info["name"])])),
+    maps: new Map(
+      project.maps.map((map) => [map.id, stringOf(map.info["name"])]),
+    ),
     actors: names("actors"),
-    items: { item: names("items"), weapon: names("weapons"), armor: names("armors") },
+    items: {
+      item: names("items"),
+      weapon: names("weapons"),
+      armor: names("armors"),
+    },
   };
 };
 

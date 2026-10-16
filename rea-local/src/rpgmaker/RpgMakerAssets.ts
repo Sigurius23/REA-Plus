@@ -46,7 +46,10 @@ const describe = async (
   };
   if (plain === null) {
     const head = await reader.head(file.path, 16);
-    return { asset: { ...base, header: null, signature: signatureOf(head) }, head: null };
+    return {
+      asset: { ...base, header: null, signature: signatureOf(head) },
+      head: null,
+    };
   }
   const head = await reader.head(file.path, 32);
   const valid = hasEncryptionHeader(head);
@@ -77,7 +80,11 @@ export const scanAssets = async (
     for (const file of walked.files) {
       const { asset, head } = await describe(reader, file, kind, key);
       assets.push(asset);
-      if (recoveredKey === null && head !== null && asset.decrypted_path?.toLowerCase().endsWith(".png"))
+      if (
+        recoveredKey === null &&
+        head !== null &&
+        asset.decrypted_path?.toLowerCase().endsWith(".png")
+      )
         recoveredKey = recoverKeyFromPng(head);
     }
   }

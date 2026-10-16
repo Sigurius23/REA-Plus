@@ -53,10 +53,7 @@ const inflateMz = (text: string): string => {
 };
 
 /** Decode one save file into plain JSON data. */
-export const decodeSave = (
-  file: ReadFile,
-  format: Save["format"],
-): unknown => {
+export const decodeSave = (file: ReadFile, format: Save["format"]): unknown => {
   const text = file.bytes.toString("utf8");
   let json: string;
   try {
@@ -78,7 +75,9 @@ export interface SaveNames {
   readonly variables: readonly unknown[];
   readonly maps: ReadonlyMap<number, string | null>;
   readonly actors: ReadonlyMap<number, string>;
-  readonly items: Readonly<Record<"item" | "weapon" | "armor", ReadonlyMap<number, string>>>;
+  readonly items: Readonly<
+    Record<"item" | "weapon" | "armor", ReadonlyMap<number, string>>
+  >;
 }
 
 const nameAt = (names: readonly unknown[], id: number): string | null => {
@@ -137,7 +136,10 @@ const itemsOf = (party: JsonRecord | null, names: SaveNames): Save["items"] =>
     }),
   );
 
-const savedAt = (global: readonly unknown[] | null, slot: number | null): string | null => {
+const savedAt = (
+  global: readonly unknown[] | null,
+  slot: number | null,
+): string | null => {
   if (global === null || slot === null) return null;
   const timestamp = numberOf(recordOf(global[slot])?.["timestamp"]);
   if (timestamp === null) return null;
@@ -200,7 +202,8 @@ export const summariseSave = (
         ? []
         : [{ id, name: nameAt(names.variables, id), value: scalarOf(item) }],
     ),
-    self_switches_on: Object.values(recordOf(dataOf(save["selfSwitches"])) ?? {})
-      .filter((on) => on === true).length,
+    self_switches_on: Object.values(
+      recordOf(dataOf(save["selfSwitches"])) ?? {},
+    ).filter((on) => on === true).length,
   };
 };

@@ -307,7 +307,9 @@ export const rpgMakerProjectSchema = z.strictObject({
     choices: count,
     switches: count.describe("Named switches."),
     variables: count.describe("Named variables."),
-    database: z.array(z.strictObject({ table: z.enum(RPG_MAKER_TABLES), count })),
+    database: z.array(
+      z.strictObject({ table: z.enum(RPG_MAKER_TABLES), count }),
+    ),
     plugins: z.strictObject({ total: count, enabled: count, missing: count }),
     assets: z.strictObject({
       encrypted: count,

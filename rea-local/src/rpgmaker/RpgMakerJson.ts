@@ -34,5 +34,6 @@ export const entriesOf = (value: unknown): JsonRecord[] =>
   arrayOf(value)
     .map(recordOf)
     .filter(
-      (entry): entry is JsonRecord => entry !== null && idOf(entry["id"]) !== null,
+      (entry): entry is JsonRecord =>
+        entry !== null && idOf(entry["id"]) !== null,
     );

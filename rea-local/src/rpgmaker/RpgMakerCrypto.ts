@@ -4,7 +4,10 @@
  * the original file with only its first 16 bytes XORed with the System.json key.
  */
 
-export const RPGMV_HEADER = Buffer.from("5250474d560000000003010000000000", "hex");
+export const RPGMV_HEADER = Buffer.from(
+  "5250474d560000000003010000000000",
+  "hex",
+);
 
 /** The first 16 bytes of every PNG: signature, IHDR length and type. */
 const PNG_HEAD = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");

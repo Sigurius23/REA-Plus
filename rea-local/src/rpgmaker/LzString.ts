@@ -75,7 +75,8 @@ export const decompressFromBase64 = (
   const output: string[] = [first];
   let length = first.length;
   for (;;) {
-    if (reader.exhausted) throw new LzStringError("Compressed data ended early");
+    if (reader.exhausted)
+      throw new LzStringError("Compressed data ended early");
     let code = reader.bits(width);
     if (code === 2) return output.join("");
     const added = literal(reader, code);

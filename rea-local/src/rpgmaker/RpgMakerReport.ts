@@ -9,7 +9,11 @@ import {
 import { inspectAsset, scanAssets, type AssetScan } from "./RpgMakerAssets.js";
 import { keyBytes } from "./RpgMakerCrypto.js";
 import { RpgMakerFormatError, relativeName } from "./RpgMakerFiles.js";
-import { indexProject, switchRows, type ProjectIndex } from "./RpgMakerIndex.js";
+import {
+  indexProject,
+  switchRows,
+  type ProjectIndex,
+} from "./RpgMakerIndex.js";
 import {
   arrayOf,
   idOf,
@@ -29,10 +33,14 @@ const EMPTY_PASSPHRASE = createHash("md5").update("").digest("hex");
 const NOTETAG = /<([^<>:\s][^<>:]*?)(?::[^<>]*)?>/gu;
 const SKIPPED_FIELDS = new Set(["id", "name", "description", "note"]);
 
-const includes = (query: string | undefined, ...values: (string | null)[]): boolean =>
+const includes = (
+  query: string | undefined,
+  ...values: (string | null)[]
+): boolean =>
   query === undefined ||
   values.some(
-    (value) => value !== null && value.toLowerCase().includes(query.toLowerCase()),
+    (value) =>
+      value !== null && value.toLowerCase().includes(query.toLowerCase()),
   );
 
 const entryRow = (table: Entry["table"], entry: JsonRecord): Entry => {
@@ -43,21 +51,35 @@ const entryRow = (table: Entry["table"], entry: JsonRecord): Entry => {
     name: stringOf(entry["name"]) ?? "",
     description: textOf(entry["description"]),
     note,
-    notetags: [...new Set([...(note ?? "").matchAll(NOTETAG)].map((match) => match[1] ?? ""))],
+    notetags: [
+      ...new Set(
+        [...(note ?? "").matchAll(NOTETAG)].map((match) => match[1] ?? ""),
+      ),
+    ],
     fields: Object.fromEntries(
       Object.entries(entry).filter(
         ([key, value]) =>
           !SKIPPED_FIELDS.has(key) &&
-          (value === null || ["string", "number", "boolean"].includes(typeof value)),
+          (value === null ||
+            ["string", "number", "boolean"].includes(typeof value)),
       ),
     ) as Entry["fields"],
   };
 };
 
-const databaseRows = (project: LoadedProject, input: InspectRpgMakerProjectInput): Entry[] =>
-  RPG_MAKER_TABLES.filter((table) => input.table === undefined || input.table === table)
-    .flatMap((table) => project.tables[table].map((entry) => entryRow(table, entry)))
-    .filter((row) => includes(input.query, row.name, row.description, row.note));
+const databaseRows = (
+  project: LoadedProject,
+  input: InspectRpgMakerProjectInput,
+): Entry[] =>
+  RPG_MAKER_TABLES.filter(
+    (table) => input.table === undefined || input.table === table,
+  )
+    .flatMap((table) =>
+      project.tables[table].map((entry) => entryRow(table, entry)),
+    )
+    .filter((row) =>
+      includes(input.query, row.name, row.description, row.note),
+    );
 
 const pluginRows = async (
   project: LoadedProject,
@@ -75,7 +97,12 @@ const pluginRows = async (
   const { start, end } = page(matching.length);
   const rows: Report["plugins"] = [];
   for (const plugin of matching.slice(start, end)) {
-    const path = join(project.location.base, "js", "plugins", `${plugin.name}.js`);
+    const path = join(
+      project.location.base,
+      "js",
+      "plugins",
+      `${plugin.name}.js`,
+    );
     const present = await project.reader.exists(path);
     const file = present ? await project.reader.readData(path) : null;
     rows.push({
@@ -93,12 +120,19 @@ const pluginRows = async (
 const missingPlugins = async (project: LoadedProject): Promise<number> => {
   let missing = 0;
   for (const plugin of project.plugins)
-    if (!(await project.reader.exists(join(project.location.base, "js", "plugins", `${plugin.name}.js`))))
+    if (
+      !(await project.reader.exists(
+        join(project.location.base, "js", "plugins", `${plugin.name}.js`),
+      ))
+    )
       missing += 1;
   return missing;
 };
 
-const encryptionOf = (project: LoadedProject, scan: AssetScan): Report["encryption"] => {
+const encryptionOf = (
+  project: LoadedProject,
+  scan: AssetScan,
+): Report["encryption"] => {
   const key = textOf(project.system["encryptionKey"]);
   return {
     images: project.system["hasEncryptedImages"] === true,
@@ -117,7 +151,11 @@ const startOf = (system: JsonRecord): Report["project"]["start"] => {
   const map = idOf(system["startMapId"]);
   return map === null || map === 0
     ? null
-    : { map_id: map, x: intOf(system["startX"]) ?? 0, y: intOf(system["startY"]) ?? 0 };
+    : {
+        map_id: map,
+        x: intOf(system["startX"]) ?? 0,
+        y: intOf(system["startY"]) ?? 0,
+      };
 };
 
 const projectOf = (project: LoadedProject): Report["project"] => ({
@@ -127,7 +165,10 @@ const projectOf = (project: LoadedProject): Report["project"] => ({
   core_version: project.coreVersion,
   data_sha256: dataDigest(project.dataFiles),
   data_files: project.dataFiles.length,
-  data_bytes: project.dataFiles.reduce((sum, file) => sum + file.bytes.length, 0),
+  data_bytes: project.dataFiles.reduce(
+    (sum, file) => sum + file.bytes.length,
+    0,
+  ),
   title: stringOf(project.system["gameTitle"]),
   locale: textOf(project.system["locale"]),
   version_id: intOf(project.system["versionId"]),
@@ -135,8 +176,9 @@ const projectOf = (project: LoadedProject): Report["project"] => ({
 });
 
 const namedCount = (value: unknown): number =>
-  arrayOf(value).filter((name, id) => id > 0 && typeof name === "string" && name.length > 0)
-    .length;
+  arrayOf(value).filter(
+    (name, id) => id > 0 && typeof name === "string" && name.length > 0,
+  ).length;
 
 const summaryOf = async (
   project: LoadedProject,
@@ -148,12 +190,18 @@ const summaryOf = async (
   events: index.eventCount,
   common_events: project.tables.common_events.length,
   troops: project.tables.troops.length,
-  messages: index.maps.reduce((sum, map) => sum + map.messages, 0) +
-    index.events.dialogue.filter((row) => row.source !== "map" && row.kind === "message").length,
+  messages:
+    index.maps.reduce((sum, map) => sum + map.messages, 0) +
+    index.events.dialogue.filter(
+      (row) => row.source !== "map" && row.kind === "message",
+    ).length,
   choices: index.events.dialogue.filter((row) => row.kind === "choice").length,
   switches: namedCount(project.system["switches"]),
   variables: namedCount(project.system["variables"]),
-  database: RPG_MAKER_TABLES.map((table) => ({ table, count: project.tables[table].length })),
+  database: RPG_MAKER_TABLES.map((table) => ({
+    table,
+    count: project.tables[table].length,
+  })),
   plugins: {
     total: project.plugins.length,
     enabled: project.plugins.filter(({ status }) => status).length,
@@ -170,7 +218,8 @@ const summaryOf = async (
   saves,
 });
 
-const normalAsset = (path: string): string => path.replaceAll("\\", "/").replace(/^\.\//u, "");
+const normalAsset = (path: string): string =>
+  path.replaceAll("\\", "/").replace(/^\.\//u, "");
 
 type Rows = Pick<
   Report,
@@ -200,16 +249,28 @@ const filteredRows = (context: ViewContext, view: View): readonly unknown[] => {
   switch (view) {
     case "maps":
       return index.maps.filter(
-        (row) => (map === undefined || row.id === map) && includes(query, row.name, row.display_name),
+        (row) =>
+          (map === undefined || row.id === map) &&
+          includes(query, row.name, row.display_name),
       );
     case "dialogue":
       return index.events.dialogue.filter(
         (row) =>
-          (map === undefined || (row.source === "map" && row.source_id === map)) &&
-          includes(query, row.lines.join("\n"), row.speaker, row.face, row.source_name, row.event_name),
+          (map === undefined ||
+            (row.source === "map" && row.source_id === map)) &&
+          includes(
+            query,
+            row.lines.join("\n"),
+            row.speaker,
+            row.face,
+            row.source_name,
+            row.event_name,
+          ),
       );
     case "switches":
-      return switchRows(project, index.events, map).filter((row) => includes(query, row.name));
+      return switchRows(project, index.events, map).filter((row) =>
+        includes(query, row.name),
+      );
     case "database":
       return databaseRows(project, input);
     case "assets":
@@ -219,7 +280,9 @@ const filteredRows = (context: ViewContext, view: View): readonly unknown[] => {
   }
 };
 
-const selectedAsset = async (context: ViewContext): Promise<Report["assets"]> => {
+const selectedAsset = async (
+  context: ViewContext,
+): Promise<Report["assets"]> => {
   const wanted = normalAsset(context.input.asset ?? "");
   const asset = context.scan.assets.find(({ path }) => path === wanted);
   if (asset === undefined)
@@ -254,7 +317,10 @@ const viewRows = async (
   }
   const matching = filteredRows(context, view);
   const { start, end } = page(matching.length);
-  return { rows: { ...rows, [view]: matching.slice(start, end) }, total: matching.length };
+  return {
+    rows: { ...rows, [view]: matching.slice(start, end) },
+    total: matching.length,
+  };
 };
 
 /** Build the summary and one paged view of a loaded MV/MZ project. */
@@ -272,7 +338,10 @@ export const buildRpgMakerReport = async (
     return { start, end: Math.min(rows, start + input.limit) };
   };
   const { rows, total } = await viewRows({ project, index, scan, input }, page);
-  const returned = Object.values(rows).reduce((sum, list) => sum + list.length, 0);
+  const returned = Object.values(rows).reduce(
+    (sum, list) => sum + list.length,
+    0,
+  );
   return {
     project: projectOf(project),
     encryption: encryptionOf(project, scan),
@@ -292,11 +361,14 @@ export const buildRpgMakerReport = async (
     limitations: [
       ...limitations,
       ...project.limitations,
-      ...(scan.truncated ? ["Asset folders hold more than 200,000 files; the list is truncated."] : []),
+      ...(scan.truncated
+        ? ["Asset folders hold more than 200,000 files; the list is truncated."]
+        : []),
       ...(project.reader.skippedLinks > 0
-        ? [`${String(project.reader.skippedLinks)} symlinks in asset or save folders were skipped, not followed.`]
+        ? [
+            `${String(project.reader.skippedLinks)} symlinks in asset or save folders were skipped, not followed.`,
+          ]
         : []),
     ],
   };
 };
-

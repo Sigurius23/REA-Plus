@@ -1,6 +1,4 @@
-import type {
-  RpgMakerProjectReport,
-} from "../domain/rpgmaker/rpgMakerProject.js";
+import type { RpgMakerProjectReport } from "../domain/rpgmaker/rpgMakerProject.js";
 import {
   arrayOf,
   idOf,
@@ -58,7 +56,10 @@ export const emptyCounts = (): ListCounts => ({
 type Access = Site["access"];
 export type SiteKind = "switch" | "variable";
 /** A command (or page condition, command null) inside one list. */
-type At = ListSource & { readonly index: number; readonly command: number | null };
+type At = ListSource & {
+  readonly index: number;
+  readonly command: number | null;
+};
 
 /** Collects dialogue, flow and switch/variable sites from command lists. */
 export class EventIndex {
@@ -126,7 +127,11 @@ export class EventIndex {
     return next;
   }
 
-  private flow(command: Command, where: ListSource & { index: number }, counts: ListCounts): void {
+  private flow(
+    command: Command,
+    where: ListSource & { index: number },
+    counts: ListCounts,
+  ): void {
     const p = command.parameters;
     const at: At = { ...where, command: command.code };
     switch (command.code) {

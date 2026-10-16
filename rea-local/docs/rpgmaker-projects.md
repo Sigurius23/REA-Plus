@@ -99,6 +99,7 @@ deploy step's scheme, plus one damaged file. Its saves are in each
 generation's format. The MV saves use the same LZString 1.3 base64 that MV
 bundles: re-compressing a save written by a real MV engine gives identical
 text. The test also checks refusals:
+
 - a folder that is not a game;
 - asset paths that escape the game folder;
 - a symlinked map file;
@@ -109,6 +110,7 @@ text. The test also checks refusals:
 Point `REA_VERIFY_RPGMAKER_GAMES` at a folder of deployed games and
 `REA_VERIFY_CHROMIUM` at a Chromium binary. Each game is served on
 loopback, and its own engine runs in headless Chromium. The test compares:
+
 - engine name, encryption key and map list with REA+;
 - up to six encrypted assets decrypted by the engine
   (`Decrypter.decryptArrayBuffer` or `Utils.decryptArrayBuffer`), by digest
