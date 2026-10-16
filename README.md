@@ -21,6 +21,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/logic/                         # sigrok logic captures and protocol decoding
 │   ├── src/patterns/                      # AOB signature scanning and Cheat Engine tables
 │   ├── src/unity/                         # Unity asset bundles and player serialized files
+│   ├── src/gamearchives/                  # Godot PCK, Ren'Py RPA, Valve VPK and Doom WAD archives
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -54,6 +55,7 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **Logic-Analyzer Captures**: Channel edges and bit-rate estimates from sigrok `.sr` sessions, plus UART/SPI/I2C and other protocol decoding through sigrok-cli with recovered byte streams such as serial console logs ([guide](./rea-local/docs/logic-captures.md)).
 - **AOB Signatures & Cheat Engine Tables**: Signature scanning across PE/ELF/Mach-O with resolved rel32 targets, and `.CT` table inspection that re-checks a table's signatures and asserts against a new game build ([guide](./rea-local/docs/byte-patterns.md)).
 - **Unity Asset Bundles**: UnityFS bundles (LZ4/LZMA decoded natively) and player data files (`level0`, `*.assets`, `globalgamemanagers`), with objects, names, owning GameObjects, MonoBehaviour scripts, bundle asset paths and `Resources.Load` paths, with or without type trees ([guide](./rea-local/docs/unity-assets.md)).
+- **Game Engine Archives**: Godot `.pck` packs (including packs embedded in exported executables), Ren'Py `.rpa` archives (index pickles decoded without running code), Valve `.vpk` directories and Doom WADs, with verified checksums and single-entry previews ([guide](./rea-local/docs/game-archives.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
