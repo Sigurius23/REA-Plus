@@ -68,6 +68,8 @@ const SOURCE_PATHS = {
   unityProvider: "dist/unity/UnityAssetsInspector.js",
   gameArchiveContracts: "dist/contracts/gamearchives/gameArchiveToolContracts.js",
   gameArchiveProvider: "dist/gamearchives/GameArchiveInspector.js",
+  renpyContracts: "dist/contracts/renpy/renpyToolContracts.js",
+  renpyProvider: "dist/renpy/RenpyScriptInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

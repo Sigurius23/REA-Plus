@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { GameArchiveError } from "./GameArchiveTypes.js";
-import { decodeSafePickle } from "./SafePickle.js";
+import { decodeSafePickle, PickleObject } from "./SafePickle.js";
 
 /**
  * Python 3.13 pickle.dumps of an RPA-3.0-style index at protocols 2 and 5:
@@ -61,5 +61,51 @@ describe("decodeSafePickle", () => {
       GameArchiveError,
     );
     expect(() => decodeSafePickle(Buffer.from(hex, "hex"))).toThrow(message);
+  });
+});
+
+/**
+ * Python 3.13 pickles of ({"version": 5003000}, [Say, PyExpr]) where Say is a
+ * slotted renpy.ast class (state (None, slots)) and PyExpr a str subclass
+ * rebuilt through NEWOBJ, as Ren'Py's compiled scripts store them.
+ */
+const OBJECTS_2 =
+  "80027d7100580700000076657273696f6e71014af8564c00735d7102286372656e70792e6173740a5361790a7103298171044e7d710528580300000077686f710658010000006571075804000000776861747108580500000048656c6c6f71097586710a626372656e70792e6173740a5079457870720a710b5804000000666c6167710c580f00000067616d652f7363726970742e727079710d4b0487710e81710f7d711028580800000066696c656e616d657111680d58040000006c696e6571124b047562658671132e";
+const OBJECTS_5 =
+  "80059598000000000000007d948c0776657273696f6e944af8564c00735d94288c0972656e70792e617374948c035361799493942981944e7d94288c0377686f948c0165948c0477686174948c0548656c6c6f947586946268038c065079457870729493948c04666c6167948c0f67616d652f7363726970742e727079944b04879481947d94288c0866696c656e616d659468108c046c696e65944b0475626586942e";
+
+describe("decodeSafePickle with objects", () => {
+  const renpy = (module: string) => module.startsWith("renpy.");
+
+  it.each([
+    ["protocol 2", OBJECTS_2],
+    ["protocol 5", OBJECTS_5],
+  ])("records %s instances as inert objects", (_name, hex) => {
+    const value = decodeSafePickle(Buffer.from(hex, "hex"), { objects: renpy });
+    expect(Array.isArray(value)).toBe(true);
+    const [meta, nodes] = value as unknown[];
+    expect(meta).toEqual(new Map([["version", 5003000n]]));
+    const [say, expression] = nodes as PickleObject[];
+    expect(say).toBeInstanceOf(PickleObject);
+    expect(say?.type.qualifiedName).toBe("renpy.ast.Say");
+    expect(Object.fromEntries(say?.fields ?? [])).toEqual({
+      who: "e",
+      what: "Hello",
+    });
+    expect(expression?.type.qualifiedName).toBe("renpy.ast.PyExpr");
+    expect(expression?.args).toEqual(["flag", "game/script.rpy", 4n]);
+    expect(Object.fromEntries(expression?.fields ?? [])).toEqual({
+      filename: "game/script.rpy",
+      line: 4n,
+    });
+  });
+
+  it("refuses classes outside the allowed namespaces", () => {
+    expect(() => decodeSafePickle(Buffer.from(OBJECTS_5, "hex"))).toThrow(
+      /refusing global renpy\.ast\.Say/u,
+    );
+    expect(() =>
+      decodeSafePickle(Buffer.from(SYSTEM_CALL_4, "hex"), { objects: renpy }),
+    ).toThrow(/refusing global posix\.system/u);
   });
 });

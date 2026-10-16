@@ -356,7 +356,8 @@ const workflowAvailabilityFor = ({
     name === "scan_byte_patterns" ||
     name === "inspect_cheat_table" ||
     name === "inspect_unity_assets" ||
-    name === "inspect_game_archive"
+    name === "inspect_game_archive" ||
+    name === "inspect_renpy_script"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

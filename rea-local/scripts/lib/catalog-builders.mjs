@@ -36,6 +36,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.patternContracts.PATTERN_TOOL_CONTRACTS,
         ...sources.unityContracts.UNITY_TOOL_CONTRACTS,
         ...sources.gameArchiveContracts.GAME_ARCHIVE_TOOL_CONTRACTS,
+        ...sources.renpyContracts.RENPY_TOOL_CONTRACTS,
       ],
     },
     {
@@ -241,6 +242,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.gameArchiveProvider.GAME_ARCHIVE_PROVIDER_IDENTITY,
       contracts: sources.gameArchiveContracts.GAME_ARCHIVE_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.renpyProvider.RENPY_SCRIPT_PROVIDER_IDENTITY,
+      contracts: sources.renpyContracts.RENPY_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

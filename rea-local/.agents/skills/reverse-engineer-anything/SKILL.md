@@ -103,6 +103,9 @@ explicit path or endpoint and do not need it.
   Doom WAD or Unreal `.pak`: `inspect_game_archive` lists entries with flags and verified
   checksums and previews one entry (a `.gd` or `.rpy` script, a map lump).
   Ren'Py indexes are decoded without unpickling code.
+- Compiled Ren'Py script (`.rpyc`): `inspect_renpy_script` maps labels and
+  jumps, dialogue with translation identifiers, menus, definitions and
+  translations; the pickled AST is read as inert data, never executed.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

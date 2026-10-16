@@ -42,6 +42,7 @@ export default defineConfig({
           { text: "AOB signatures and CE tables", link: "/byte-patterns" },
           { text: "Unity asset bundles", link: "/unity-assets" },
           { text: "Game engine archives", link: "/game-archives" },
+          { text: "Compiled Ren'Py scripts", link: "/renpy-scripts" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },
