@@ -8,6 +8,7 @@ import { PATTERN_TOOL_CONTRACTS } from "./patterns/patternToolContracts.js";
 import { UNITY_TOOL_CONTRACTS } from "./unity/unityToolContracts.js";
 import { GAME_ARCHIVE_TOOL_CONTRACTS } from "./gamearchives/gameArchiveToolContracts.js";
 import { RENPY_TOOL_CONTRACTS } from "./renpy/renpyToolContracts.js";
+import { RPG_MAKER_TOOL_CONTRACTS } from "./rpgmaker/rpgMakerToolContracts.js";
 import { EVM_TOOL_CONTRACTS } from "./evm/evmToolContracts.js";
 import { ANALYSIS_VIEW_TOOL_CONTRACTS } from "./analysisViewToolContracts.js";
 import { BINARY_DIAGNOSTICS_TOOL_CONTRACTS } from "./native/binaryDiagnosticsToolContracts.js";
@@ -53,6 +54,7 @@ export const TOOL_CONTRACTS = [
   ...UNITY_TOOL_CONTRACTS,
   ...GAME_ARCHIVE_TOOL_CONTRACTS,
   ...RENPY_TOOL_CONTRACTS,
+  ...RPG_MAKER_TOOL_CONTRACTS,
   ...MANAGED_TOOL_CONTRACTS,
   ...ANDROID_TOOL_CONTRACTS,
   ...APKTOOL_TOOL_CONTRACTS,

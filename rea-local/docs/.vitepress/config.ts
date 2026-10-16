@@ -43,6 +43,7 @@ export default defineConfig({
           { text: "Unity asset bundles", link: "/unity-assets" },
           { text: "Game engine archives", link: "/game-archives" },
           { text: "Compiled Ren'Py scripts", link: "/renpy-scripts" },
+          { text: "RPG Maker MV/MZ games", link: "/rpgmaker-projects" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },

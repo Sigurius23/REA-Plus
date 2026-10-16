@@ -70,6 +70,8 @@ const SOURCE_PATHS = {
   gameArchiveProvider: "dist/gamearchives/GameArchiveInspector.js",
   renpyContracts: "dist/contracts/renpy/renpyToolContracts.js",
   renpyProvider: "dist/renpy/RenpyScriptInspector.js",
+  rpgMakerContracts: "dist/contracts/rpgmaker/rpgMakerToolContracts.js",
+  rpgMakerProvider: "dist/rpgmaker/RpgMakerInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

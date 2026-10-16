@@ -106,6 +106,9 @@ explicit path or endpoint and do not need it.
 - Compiled Ren'Py script (`.rpyc`): `inspect_renpy_script` maps labels and
   jumps, dialogue with translation identifiers, menus, definitions and
   translations; the pickled AST is read as inert data, never executed.
+- RPG Maker MV/MZ game folder: `inspect_rpgmaker_project` maps maps, dialogue,
+  switch and variable sites, the database and plugins; it verifies the asset
+  key against an encrypted PNG, decrypts one selected asset, and decodes saves.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

@@ -103,6 +103,7 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_unity_assets: evidence,
   inspect_game_archive: evidence,
   inspect_renpy_script: evidence,
+  inspect_rpgmaker_project: evidence,
   inspect_logic_capture: effects({
     mutatesSession: true,
     writesFilesystem: true,

@@ -11,6 +11,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectUnityAssets: "inspect-unity-assets",
   inspectGameArchive: "inspect-game-archive",
   inspectRenpyScript: "inspect-renpy-script",
+  inspectRpgMakerProject: "inspect-rpgmaker-project",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",
