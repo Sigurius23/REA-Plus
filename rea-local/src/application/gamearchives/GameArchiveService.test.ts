@@ -11,6 +11,8 @@ const row = (path: string): GameArchive["entries"][number] => ({
   size: 4,
   offset: 64,
   stored_in: null,
+  stored_size: 4,
+  compression: null,
   inline_bytes: 0,
   encrypted: false,
   removed: false,

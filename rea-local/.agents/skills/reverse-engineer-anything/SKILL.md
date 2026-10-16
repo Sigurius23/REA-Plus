@@ -99,8 +99,8 @@ explicit path or endpoint and do not need it.
   objects with names, owning GameObjects and MonoBehaviour scripts, bundle
   asset paths and `Resources.Load` paths, and MonoScripts. Pair it with
   `inspect_il2cpp_metadata` or a .NET provider for the scripts' code.
-- Godot `.pck` (or a Godot game executable), Ren'Py `.rpa`, Valve `.vpk` or
-  Doom WAD: `inspect_game_archive` lists entries with flags and verified
+- Godot `.pck` (or a Godot game executable), Ren'Py `.rpa`, Valve `.vpk`,
+  Doom WAD or Unreal `.pak`: `inspect_game_archive` lists entries with flags and verified
   checksums and previews one entry (a `.gd` or `.rpy` script, a map lump).
   Ren'Py indexes are decoded without unpickling code.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42

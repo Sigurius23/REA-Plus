@@ -35,9 +35,9 @@ export const GAME_ARCHIVE_PROVIDER_IDENTITY = {
 } as const;
 
 const LIMITATIONS = [
-  "Reads Godot packs (formats 1-3, standalone or appended to an exported executable), Ren'Py RPA-2.0/3.0/3.2/4.0 archives, Valve VPK 1/2 directories and Doom IWAD/PWAD files; other engines' archives are refused.",
+  "Reads Godot packs (formats 1-3, standalone or appended to an exported executable), Ren'Py RPA-2.0/3.0/3.2/4.0 archives, Valve VPK 1/2 directories, Doom IWAD/PWAD files and Unreal Engine paks (versions 1-11); Unreal IoStore (.utoc/.ucas) and other engines' archives are refused.",
   "Ren'Py indexes are Python pickles; REA+ decodes only containers, strings, bytes and integers and refuses anything that would import or call code.",
-  "Encrypted Godot directories and files are reported but not decrypted; VPK data in sibling _NNN.vpk chunks is not read, so those entries have no preview or checksum check.",
+  "Encrypted Godot directories, encrypted pak indexes and encrypted entries are reported but not decrypted; Oodle-compressed pak entries and VPK data in sibling _NNN.vpk chunks are listed without preview or checksum check.",
   "Nothing is extracted, mounted or executed; previews return at most 64 KiB of one entry.",
 ];
 

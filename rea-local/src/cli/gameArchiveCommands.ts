@@ -16,7 +16,7 @@ export const registerGameArchiveCommands = (
   const service = createGameArchiveService();
   cli.command(CLI_COMMANDS.inspectGameArchive, {
     description:
-      "List a Godot .pck, Ren'Py .rpa, Valve .vpk or Doom WAD, and preview one entry",
+      "List a Godot .pck, Ren'Py .rpa, Valve .vpk, Doom WAD or Unreal .pak, and preview one entry",
     args: z.object({
       path: z.string().describe("Local archive or game executable"),
     }),

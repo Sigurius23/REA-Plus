@@ -12,6 +12,7 @@ import {
   createDoomWad,
   createGodotPack,
   createRenpyArchive,
+  createUnrealPak,
   createValveVpk,
   DOOM_LUMPS,
   embedInExecutable,
@@ -347,6 +348,119 @@ describe("Doom WADs", () => {
   });
 });
 
+describe("Unreal paks", () => {
+  const big = Buffer.alloc(150_000);
+  for (let index = 0; index < big.length; index += 1)
+    big[index] = (index * 31 + (index >> 7)) & 0xff;
+  const files = [
+    {
+      path: "Game/Content/Big.uasset",
+      data: big,
+      compression: "Zlib" as const,
+      blockSize: 65_536,
+    },
+    {
+      path: "Game/Config/DefaultGame.ini",
+      data: Buffer.from("[/Script/Engine]\nName=REA\n"),
+    },
+    {
+      path: "Game/Content/Small.uexp",
+      data: Buffer.from("tiny payload"),
+      compression: "Zlib" as const,
+    },
+    { path: "Game/Content/Ünïcödé.txt", data: Buffer.from("unicode\n") },
+  ];
+
+  it.each([3, 5, 6, "8B", 11] as const)(
+    "reads pak %s with multi-block zlib entries",
+    async (version) => {
+      const path = await save(
+        `pak${String(version)}.pak`,
+        createUnrealPak({
+          version,
+          files: files.map((entry, index) => ({
+            ...entry,
+            unencoded: version === 11 && index === 1,
+          })),
+          utf16Names: version === 11,
+        }),
+      );
+      const report = await inspect({ path });
+      expect(report.archive).toMatchObject({
+        format: "unreal_pak",
+        version: String(version),
+        notes: expect.arrayContaining(["Mount point ../../../"]),
+      });
+      // Pak 10+ lists entries directory by directory, as the directory index stores them.
+      expect(
+        report.entries
+          .map(({ path: entry, size, compression, checksum }) => [
+            entry,
+            size,
+            compression,
+            checksum?.algorithm,
+            checksum?.verified,
+          ])
+          .sort(),
+      ).toEqual(
+        files
+          .map((entry) => [
+            entry.path,
+            entry.data.length,
+            entry.compression ?? null,
+            "sha1",
+            true,
+          ])
+          .sort(),
+      );
+      for (const entry of files) {
+        const one = await inspect({ path, entry: entry.path, limit: 1 });
+        expect(one.entry).toMatchObject({
+          available: true,
+          sha256: sha256(entry.data),
+          checksum_verified: true,
+        });
+      }
+    },
+  );
+
+  it("reports deleted records, Oodle entries and encrypted indexes", async () => {
+    const path = await save(
+      "patch_6.pak",
+      createUnrealPak({
+        version: 6,
+        files: [
+          { path: "Game/Old.uasset", data: Buffer.alloc(0), deleted: true },
+          {
+            path: "Game/Oodle.uasset",
+            data: Buffer.from("oodle data"),
+            compression: "Oodle",
+          },
+        ],
+      }),
+    );
+    const report = await inspect({ path, entry: "Game/Oodle.uasset" });
+    expect(report.entries).toMatchObject([
+      { path: "Game/Old.uasset", removed: true, offset: null },
+      { path: "Game/Oodle.uasset", compression: "Oodle" },
+    ]);
+    expect(report.entry).toMatchObject({
+      available: false,
+      reason: "Oodle compression is not decoded by REA+.",
+    });
+    const sealed = await inspect({
+      path: await save(
+        "sealed.pak",
+        createUnrealPak({ version: 11, files, encryptedIndex: true }),
+      ),
+    });
+    expect(sealed.archive).toMatchObject({
+      flags: ["index_encrypted"],
+      entries: 0,
+    });
+  });
+});
+
 describe("rejections", () => {
   it("rejects files that are not game archives", async () => {
     const path = await save(
@@ -526,4 +640,54 @@ describe.skipIf(FREEDOOM === undefined)("real Freedoom WADs", () => {
       expect(flats.page.total).toBe(240);
     },
   );
+});
+
+/** trumank/repak 0.2.x, the pak tool Unreal modders use, to write real paks. */
+const REPAK = process.env["REA_VERIFY_REPAK_BIN"];
+
+describe.skipIf(REPAK === undefined)("real repak paks", () => {
+  it("matches repak's own listing for every version and codec", async () => {
+    const run = promisify(execFile);
+    const sources = join(root, "repak", "Game");
+    for (const { path, data } of GAME_FILES)
+      await save(join("repak", "Game", "Content", path), data);
+    const cases = [
+      ...["V1", "V3", "V5", "V7", "V8A", "V8B", "V9", "V10", "V11"].map(
+        (version) => [version, null] as const,
+      ),
+      ...["Zlib", "Gzip", "Zstd"].map((codec) => ["V11", codec] as const),
+    ];
+    for (const [version, codec] of cases) {
+      const pak = join(root, "repak", `${version}-${codec ?? "none"}.pak`);
+      await run(
+        REPAK ?? "",
+        [
+          "pack",
+          "-q",
+          "--version",
+          version,
+          ...(codec === null ? [] : ["--compression", codec]),
+          sources,
+          pak,
+        ],
+        { timeout: 60_000 },
+      );
+      const { stdout } = await run(REPAK ?? "", ["hash-list", pak], {
+        timeout: 60_000,
+      });
+      const expected = stdout
+        .trim()
+        .split("\n")
+        .map((line) => [line.slice(65), line.slice(0, 64)])
+        .sort();
+      const report = await inspect({ path: pak });
+      const actual: string[][] = [];
+      for (const entry of report.entries) {
+        expect(entry.checksum?.verified).toBe(true);
+        const one = await inspect({ path: pak, entry: entry.path, limit: 1 });
+        actual.push([entry.path, one.entry?.sha256 ?? ""]);
+      }
+      expect(actual.sort()).toEqual(expected);
+    }
+  });
 });

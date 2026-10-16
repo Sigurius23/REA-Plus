@@ -353,3 +353,233 @@ export const DOOM_LUMPS = [
   lump("DEHACKED", 15, 0x41),
   lump("DEHACKED", 15, 0x42),
 ] as const;
+
+export interface PakFile {
+  readonly path: string;
+  readonly data: Buffer;
+  /** Footer method name (pak 8+) or Zlib/Oodle flags (pak 3-7); omitted for stored files. */
+  readonly compression?: "Zlib" | "Oodle";
+  readonly blockSize?: number;
+  readonly deleted?: boolean;
+  /** Pak 10+: keep the entry out of the encoded blob, as Unreal does for odd entries. */
+  readonly unencoded?: boolean;
+}
+
+type PakVersion = 3 | 5 | 6 | "8B" | 11;
+
+const fstring = (text: string, utf16 = false): Buffer => {
+  if (utf16) {
+    const body = Buffer.from(`${text}\0`, "utf16le");
+    const length = Buffer.alloc(4);
+    length.writeInt32LE(-(body.length / 2));
+    return Buffer.concat([length, body]);
+  }
+  const body = Buffer.from(`${text}\0`, "utf8");
+  return Buffer.concat([u32(body.length), body]);
+};
+
+const sha1 = (data: Buffer) => createHash("sha1").update(data).digest();
+
+interface PlacedPakFile {
+  readonly file: PakFile;
+  readonly offset: number;
+  readonly stored: number;
+  readonly blocks: readonly { start: number; end: number }[];
+  readonly hash: Buffer;
+  readonly method: number;
+}
+
+/** FPakEntry: in the legacy index (`offset` set) or before the data (offset 0). */
+const pakEntry = (
+  version: PakVersion,
+  placed: PlacedPakFile,
+  offset: number,
+): Buffer => {
+  const parts = [
+    u64(offset),
+    u64(placed.stored),
+    u64(placed.file.data.length),
+    u32(placed.method),
+    placed.hash,
+  ];
+  if (placed.method !== 0) {
+    parts.push(u32(placed.blocks.length));
+    for (const block of placed.blocks)
+      parts.push(u64(block.start), u64(block.end));
+  }
+  parts.push(Buffer.from([placed.file.deleted === true ? 2 : 0]));
+  parts.push(u32(placed.method === 0 ? 0 : (placed.file.blockSize ?? 65_536)));
+  return Buffer.concat(parts);
+};
+
+/** Bit-packed pak 10+ entry. */
+const encodedEntry = (placed: PlacedPakFile): Buffer => {
+  const blockSize = placed.file.blockSize ?? 65_536;
+  const blockCount = placed.method === 0 ? 0 : placed.blocks.length;
+  const sizeBits =
+    (blockSize >> 11) << 11 === blockSize ? blockSize >> 11 : 0x3f;
+  const bits =
+    (sizeBits |
+      (blockCount << 6) |
+      (placed.method << 23) |
+      (1 << 29) |
+      (1 << 30) |
+      (1 << 31)) >>>
+    0;
+  const parts = [u32(bits)];
+  if (sizeBits === 0x3f) parts.push(u32(blockSize));
+  parts.push(u32(placed.offset), u32(placed.file.data.length));
+  if (placed.method !== 0) {
+    parts.push(u32(placed.stored));
+    if (blockCount > 1)
+      for (const block of placed.blocks)
+        parts.push(u32(block.end - block.start));
+  }
+  return Buffer.concat(parts);
+};
+
+/** An Unreal pak written the way UnrealPak lays files out, in source. */
+export const createUnrealPak = (options: {
+  readonly version: PakVersion;
+  readonly files: readonly PakFile[];
+  readonly mountPoint?: string;
+  readonly encryptedIndex?: boolean;
+  readonly utf16Names?: boolean;
+}): Buffer => {
+  const { version } = options;
+  const major = version === "8B" ? 8 : version;
+  const methods = ["Zlib", "Oodle"];
+  const chunks: Buffer[] = [];
+  let at = 0;
+  const placed: PlacedPakFile[] = options.files.map((file) => {
+    const method =
+      file.compression === undefined
+        ? 0
+        : major >= 8
+          ? methods.indexOf(file.compression) + 1
+          : file.compression === "Zlib"
+            ? 1
+            : 4;
+    const size = file.blockSize ?? 65_536;
+    const pieces: Buffer[] = [];
+    if (method === 0) pieces.push(file.data);
+    else
+      for (let start = 0; start < Math.max(1, file.data.length); start += size)
+        pieces.push(
+          file.compression === "Zlib"
+            ? deflateSync(file.data.subarray(start, start + size))
+            : Buffer.concat([
+                Buffer.from("OODL"),
+                file.data.subarray(start, start + size),
+              ]),
+        );
+    const stored = pieces.reduce((sum, piece) => sum + piece.length, 0);
+    const draft: PlacedPakFile = {
+      file,
+      offset: at,
+      stored,
+      blocks: pieces.map(() => ({ start: 0, end: 0 })),
+      hash: sha1(Buffer.concat(pieces)),
+      method,
+    };
+    const headerSize = pakEntry(version, draft, 0).length;
+    let cursor = (major >= 5 ? 0 : at) + headerSize;
+    const blocks = pieces.map((piece) => {
+      const block = { start: cursor, end: cursor + piece.length };
+      cursor += piece.length;
+      return block;
+    });
+    const final = { ...draft, blocks };
+    const header = pakEntry(version, final, 0);
+    chunks.push(header, ...pieces);
+    at += header.length + stored;
+    return final;
+  });
+  const index: Buffer[] = [
+    fstring(options.mountPoint ?? "../../../"),
+    u32(placed.length),
+  ];
+  if (major < 10)
+    for (const entry of placed)
+      index.push(
+        fstring(entry.file.path, options.utf16Names),
+        pakEntry(version, entry, entry.offset),
+      );
+  else {
+    const encoded: Buffer[] = [];
+    let encodedSize = 0;
+    const plain = placed.filter(({ file }) => file.unencoded === true);
+    const locations = new Map<PlacedPakFile, number>();
+    for (const entry of placed) {
+      if (entry.file.unencoded === true) {
+        locations.set(entry, -(plain.indexOf(entry) + 1));
+        continue;
+      }
+      locations.set(entry, encodedSize);
+      const bytes = encodedEntry(entry);
+      encoded.push(bytes);
+      encodedSize += bytes.length;
+    }
+    const directories = new Map<string, PlacedPakFile[]>();
+    for (const entry of placed) {
+      const slash = entry.file.path.lastIndexOf("/");
+      const directory = `/${entry.file.path.slice(0, slash + 1)}`;
+      directories.set(directory, [
+        ...(directories.get(directory) ?? []),
+        entry,
+      ]);
+    }
+    const fdi: Buffer[] = [u32(directories.size)];
+    for (const [directory, entries] of directories) {
+      fdi.push(fstring(directory), u32(entries.length));
+      for (const entry of entries) {
+        const location = Buffer.alloc(4);
+        location.writeInt32LE(locations.get(entry) ?? 0);
+        fdi.push(
+          fstring(
+            entry.file.path.slice(entry.file.path.lastIndexOf("/") + 1),
+            options.utf16Names,
+          ),
+          location,
+        );
+      }
+    }
+    const fdiBytes = Buffer.concat(fdi);
+    const fdiOffset = at;
+    chunks.push(fdiBytes);
+    at += fdiBytes.length;
+    index.push(
+      u64(0),
+      u32(0),
+      u32(1),
+      u64(fdiOffset),
+      u64(fdiBytes.length),
+      sha1(fdiBytes),
+    );
+    index.push(u32(encodedSize), ...encoded, u32(plain.length));
+    for (const entry of plain)
+      index.push(pakEntry(version, entry, entry.offset));
+  }
+  const indexBytes = Buffer.concat(index);
+  const indexOffset = at;
+  const footer: Buffer[] = [];
+  if (major >= 7) footer.push(Buffer.alloc(16));
+  if (major >= 4)
+    footer.push(Buffer.from([options.encryptedIndex === true ? 1 : 0]));
+  footer.push(
+    u32(0x5a6f12e1),
+    u32(major),
+    u64(indexOffset),
+    u64(indexBytes.length),
+    sha1(indexBytes),
+  );
+  if (major >= 8)
+    footer.push(
+      ...Array.from({ length: 5 }, (_, slot) => {
+        const name = Buffer.alloc(32);
+        name.write(methods[slot] ?? "", "latin1");
+        return name;
+      }),
+    );
+  return Buffer.concat([...chunks, indexBytes, ...footer]);
+};

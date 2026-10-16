@@ -25,8 +25,16 @@ export interface ArchiveEntry {
   /** WAD namespace or map; null for formats with real directories. */
   readonly group: string | null;
   readonly checksum: {
-    readonly algorithm: "md5" | "crc32";
+    readonly algorithm: "md5" | "crc32" | "sha1";
     readonly value: string;
+  } | null;
+  /** Compressed entries: the method and the absolute ranges of each block. */
+  readonly compression?: {
+    readonly method: string;
+    readonly blocks: readonly {
+      readonly offset: number;
+      readonly length: number;
+    }[];
   } | null;
 }
 
@@ -34,7 +42,8 @@ export type GameArchiveFormat =
   | "godot_pck"
   | "renpy_rpa"
   | "valve_vpk"
-  | "doom_wad";
+  | "doom_wad"
+  | "unreal_pak";
 
 export interface ArchiveListing {
   readonly format: GameArchiveFormat;

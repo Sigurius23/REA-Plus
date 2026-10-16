@@ -8,6 +8,7 @@ export const GAME_ARCHIVE_FORMATS = [
   "renpy_rpa",
   "valve_vpk",
   "doom_wad",
+  "unreal_pak",
 ] as const;
 
 export const GAME_ARCHIVE_PAGE_LIMIT = 1000;
@@ -18,7 +19,7 @@ export const inspectGameArchiveInputSchema = z.strictObject({
     .string()
     .min(1)
     .describe(
-      "Absolute Godot .pck (or an executable with an embedded pack), Ren'Py .rpa, Valve _dir.vpk/.vpk, or Doom IWAD/PWAD path",
+      "Absolute Godot .pck (or an executable with an embedded pack), Ren'Py .rpa, Valve _dir.vpk/.vpk, Doom IWAD/PWAD, or Unreal Engine .pak path",
     ),
   query: z
     .string()
@@ -68,6 +69,13 @@ export const gameArchiveEntrySchema = z.strictObject({
     .describe(
       "Sibling archive holding the data (VPK chunks); null when local.",
     ),
+  stored_size: count.describe(
+    "Bytes the entry occupies in the archive (compressed or padded).",
+  ),
+  compression: z
+    .string()
+    .nullable()
+    .describe("Unreal pak compression method, such as Zlib, Zstd or Oodle."),
   inline_bytes: count.describe(
     "Bytes stored inside the index itself (RPA prefixes, VPK preload data).",
   ),
@@ -79,8 +87,8 @@ export const gameArchiveEntrySchema = z.strictObject({
     .describe("WAD map or namespace (sprites, flats, patches, ...)."),
   checksum: z
     .strictObject({
-      algorithm: z.enum(["md5", "crc32"]),
-      value: z.string().regex(/^[0-9a-f]{8,32}$/u),
+      algorithm: z.enum(["md5", "crc32", "sha1"]),
+      value: z.string().regex(/^[0-9a-f]{8,40}$/u),
       verified: z
         .boolean()
         .nullable()

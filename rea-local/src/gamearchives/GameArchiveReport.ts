@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { crc32 } from "node:zlib";
+import { crc32, gunzipSync, inflateSync, zstdDecompressSync } from "node:zlib";
 
 import type {
   GameArchive,
@@ -14,6 +14,7 @@ import {
 } from "./GameArchiveTypes.js";
 import { locateGodotPack, readGodotPack } from "./GodotPck.js";
 import { isRenpyArchive, readRenpyArchive } from "./RenpyRpa.js";
+import { isUnrealPak, readUnrealPak } from "./UnrealPak.js";
 import { isValveVpk, readValveVpk } from "./ValveVpk.js";
 
 /** The selected `entry` is not in the archive. */
@@ -33,9 +34,10 @@ export const readArchiveListing = (
   if (isValveVpk(bytes)) return readValveVpk(bytes, basename(path));
   if (isRenpyArchive(bytes)) return readRenpyArchive(bytes);
   if (isDoomWad(bytes)) return readDoomWad(bytes);
+  if (isUnrealPak(bytes)) return readUnrealPak(bytes);
   if (locateGodotPack(bytes) !== null) return readGodotPack(bytes);
   return archiveFail(
-    "Not a Godot pack, Ren'Py archive, Valve VPK or Doom WAD.",
+    "Not a Godot pack, Ren'Py archive, Valve VPK, Doom WAD or Unreal pak.",
   );
 };
 
@@ -45,11 +47,10 @@ const extensionOf = (path: string): string => {
   return dot <= 0 ? "" : name.slice(dot + 1).toLowerCase();
 };
 
-/** The entry's bytes when they are all in the selected file, or why not. */
-const entryBytes = (
-  bytes: Buffer,
-  entry: ArchiveEntry,
-): { data: Buffer } | { reason: string } => {
+type Read = { readonly data: Buffer } | { readonly reason: string };
+
+/** The entry's stored bytes when they are all in the selected file, or why not. */
+const storedBytes = (bytes: Buffer, entry: ArchiveEntry): Read => {
   if (entry.removed)
     return { reason: "The entry deletes the path; it has no data." };
   if (entry.encrypted) return { reason: "The entry is encrypted." };
@@ -69,13 +70,64 @@ const entryBytes = (
   };
 };
 
-const checksumMatches = (entry: ArchiveEntry, data: Buffer): boolean | null => {
+const DECODERS: Readonly<
+  Record<string, (input: Buffer, limit: number) => Buffer>
+> = {
+  zlib: (input, limit) => inflateSync(input, { maxOutputLength: limit }),
+  gzip: (input, limit) => gunzipSync(input, { maxOutputLength: limit }),
+  zstd: (input, limit) => zstdDecompressSync(input, { maxOutputLength: limit }),
+};
+
+/** Stored bytes, decompressed block by block for compressed pak entries. */
+const entryBytes = (bytes: Buffer, entry: ArchiveEntry): Read => {
+  const stored = storedBytes(bytes, entry);
+  if (!("data" in stored) || entry.compression == null) return stored;
+  const { method, blocks } = entry.compression;
+  const decode = DECODERS[method.toLowerCase()];
+  if (decode === undefined)
+    return { reason: `${method} compression is not decoded by REA+.` };
+  try {
+    const data = Buffer.concat(
+      blocks.map(({ offset, length }) =>
+        decode(
+          bytes.subarray(offset, offset + length),
+          Math.max(1, entry.size),
+        ),
+      ),
+    );
+    return data.length === entry.size
+      ? { data }
+      : {
+          reason: `${method} blocks decode to ${String(data.length)} bytes, not ${String(entry.size)}.`,
+        };
+  } catch (cause: unknown) {
+    return {
+      reason: `${method} blocks do not decode: ${cause instanceof Error ? cause.message : String(cause)}`,
+    };
+  }
+};
+
+const digest = (algorithm: "md5" | "sha1", data: Buffer) =>
+  createHash(algorithm).update(data).digest("hex");
+
+/**
+ * Compare a stored checksum. Pak SHA-1s cover the stored bytes in Unreal's
+ * own tools and the uncompressed bytes in some modding tools; either counts.
+ */
+const checksumMatches = (
+  bytes: Buffer,
+  entry: ArchiveEntry,
+  data: Buffer,
+): boolean | null => {
   if (entry.checksum === null) return null;
-  const actual =
-    entry.checksum.algorithm === "md5"
-      ? createHash("md5").update(data).digest("hex")
-      : crc32(data).toString(16).padStart(8, "0");
-  return actual === entry.checksum.value;
+  const { algorithm, value } = entry.checksum;
+  if (algorithm === "crc32")
+    return crc32(data).toString(16).padStart(8, "0") === value;
+  if (digest(algorithm, data) === value) return true;
+  const stored = storedBytes(bytes, entry);
+  return algorithm === "sha1" && "data" in stored
+    ? digest("sha1", stored.data) === value
+    : false;
 };
 
 const entryRow = (
@@ -94,7 +146,7 @@ const entryRow = (
     const read = entryBytes(bytes, entry);
     if ("data" in read) {
       budget.left -= entry.size;
-      verified = checksumMatches(entry, read.data);
+      verified = checksumMatches(bytes, entry, read.data);
     }
   }
   return {
@@ -102,6 +154,12 @@ const entryRow = (
     size: entry.size,
     offset: local?.kind === "file" ? local.offset : null,
     stored_in: external?.kind === "external" ? external.file : null,
+    stored_size: entry.parts.reduce(
+      (sum, part) =>
+        sum + (part.kind === "inline" ? part.bytes.length : part.length),
+      0,
+    ),
+    compression: entry.compression?.method ?? null,
     inline_bytes: entry.parts.reduce(
       (sum, part) => sum + (part.kind === "inline" ? part.bytes.length : 0),
       0,
@@ -171,7 +229,7 @@ const selectedEntry = (
     available: true,
     reason: null,
     sha256: createHash("sha256").update(read.data).digest("hex"),
-    checksum_verified: checksumMatches(entry, read.data),
+    checksum_verified: checksumMatches(bytes, entry, read.data),
     ...shown,
     truncated: read.data.length > input.preview_bytes,
   };
