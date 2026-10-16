@@ -13,7 +13,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 ├── rea-local/                             # Core REA+ MCP server & CLI engine
 │   ├── src/application/mobileRuntime/     # Mobile runtime instrumentation (Frida / Android)
 │   ├── src/binaryNinja/                   # Binary Ninja provider integration
-│   ├── src/radare2/                       # radare2 deep-analysis provider
+│   ├── src/radare2/                       # radare2 and Rizin deep-analysis provider
 │   ├── src/jvm/                           # CFR-based JAR/.class decompilation
 │   ├── src/il2cpp/                        # Unity IL2CPP metadata via r2unity
 │   ├── src/drcov/                         # drcov coverage logs and baseline diffs
@@ -55,7 +55,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 
 ### 1. [REA+ Core Engine (`rea-local/`)](./rea-local)
 A Model Context Protocol (MCP) server and CLI tool designed for AI agents to investigate compiled binaries, applications, and runtime behavior:
-- **Expanded Provider Ecosystem**: Integrated support for Ghidra, IDA Pro, Binary Ninja, Hopper, and radare2 ([guide](./rea-local/docs/radare2-provider.md)).
+- **Expanded Provider Ecosystem**: Integrated support for Ghidra, IDA Pro, Binary Ninja, Hopper, and radare2 or its fork Rizin ([guide](./rea-local/docs/radare2-provider.md)).
 - **Mobile Runtime Instrumentation**: Dynamic tracing, Frida integration, and Android app evidence collection.
 - **Network & Protocol Analysis**: Offline HAR, Burp Suite XML, mitmproxy and PCAP/PCAPNG inspection (Charles and Proxyman through their HAR export) with link/IP/TCP/UDP decoding, HTTP/1.x heads, TLS hello SNI/ALPN and DNS messages ([guide](./rea-local/docs/web-network-captures.md)). Captures are read from files; REA+ does not capture live traffic.
 - **JVM Decompilation**: Class inventories and CFR-decompiled Java for selected classes in JARs and `.class` files ([guide](./rea-local/docs/jvm-decompilation.md)).

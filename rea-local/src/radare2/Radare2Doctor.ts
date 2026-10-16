@@ -5,7 +5,7 @@ import { AnalysisCapabilityUnavailableError } from "../domain/analysisErrorCore.
 import { probeRadare2Engine, RADARE2_REQUIREMENT } from "./Radare2Version.js";
 
 /**
- * Check the configured radare2 executable for `rea doctor`. Only `-v` runs;
+ * Check the configured radare2 or Rizin executable for `rea doctor`. Only `-v` runs;
  * no target is copied or analyzed.
  */
 export const inspectRadare2Executable = async (
@@ -37,7 +37,7 @@ export const inspectRadare2Executable = async (
           : probed.error.message,
       classification: "missing_analysis_engine",
     });
-  const { version, commit, executable } = probed.value;
+  const { dialect, version, commit, executable } = probed.value;
   return {
     id: "radare2",
     configured: true,
@@ -49,7 +49,7 @@ export const inspectRadare2Executable = async (
         name: "engine",
         ok: true,
         code: null,
-        detail: `radare2 ${version}${commit === null ? "" : ` (${commit.slice(0, 12)})`} at ${executable}. Its pipe session and analysis start when a target is opened.`,
+        detail: `${dialect.engine} ${version}${commit === null ? "" : ` (${commit.slice(0, 12)})`} at ${executable}. Its pipe session and analysis start when a target is opened.`,
         remediation: null,
         classification: "missing_analysis_engine",
       },

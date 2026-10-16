@@ -71,7 +71,7 @@ export default defineConfig({
         items: [
           { text: "IDA adapters", link: "/ida-provider" },
           { text: "Binary Ninja", link: "/binary-ninja-provider" },
-          { text: "radare2", link: "/radare2-provider" },
+          { text: "radare2 and Rizin", link: "/radare2-provider" },
           { text: "Ghidra on Windows", link: "/windows-ghidra-p0" },
           { text: "Ghidra DOS analysis", link: "/ghidra-dos" },
           { text: "Ghidra NativeAOT", link: "/ghidra-nativeaot" },

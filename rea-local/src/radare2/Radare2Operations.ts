@@ -1,10 +1,14 @@
 import { searchAddressedItems } from "../contracts/analysisSearchContract.js";
 import {
+  AnalysisCapabilityUnavailableError,
   AnalysisInputError,
   AnalysisOutputError,
 } from "../domain/analysisErrorCore.js";
 import type { JsonValue } from "../domain/jsonValue.js";
-import type { Radare2Operation } from "./Radare2Identity.js";
+import {
+  RADARE2_PROVIDER_IDENTITY,
+  type Radare2Operation,
+} from "./Radare2Identity.js";
 import {
   entryAddress,
   functionBody,
@@ -21,8 +25,6 @@ import {
   formatRadare2Address,
   parseRadare2Permissions,
   radare2FlagsAtSchema,
-  radare2ReferencesFromSchema,
-  radare2ReferencesToSchema,
   radare2Reply,
   RADARE2_INVALID_ADDRESS,
 } from "./Radare2Values.js";
@@ -161,8 +163,17 @@ export class Radare2OperationRunner {
     procedure: JsonValue | undefined,
     signal?: AbortSignal,
   ): Promise<Outcome> {
+    const command =
+      operation === "procedure_assembly"
+        ? "pdf"
+        : this.#inventory.binding.dialect.pseudoCodeCommand;
+    if (command === null)
+      throw new AnalysisCapabilityUnavailableError(
+        RADARE2_PROVIDER_IDENTITY.id,
+        operation,
+        "Rizin has no built-in pseudo-code command (radare2's pdc); use procedure_assembly.",
+      );
     const fn = await this.#inventory.procedure(operation, procedure, signal);
-    const command = operation === "procedure_assembly" ? "pdf" : "pdc";
     const text = await this.#inventory.command(
       `${command} @ ${entryAddress(fn)}`,
       signal,
@@ -187,11 +198,10 @@ export class Radare2OperationRunner {
     const at = entryAddress(fn);
     const related = new Set<bigint>();
     if (operation === "procedure_callers") {
-      const references = radare2Reply(
+      const references = await inventory.referencesToWithFunctions(
         operation,
-        "axtj",
-        await inventory.command(`axtj @ ${at}`, signal),
-        radare2ReferencesToSchema,
+        fn.addr,
+        signal,
       );
       for (const { fcn_addr: caller, type } of references) {
         if (caller === undefined) continue;
@@ -203,12 +213,7 @@ export class Radare2OperationRunner {
       const entries = new Set(
         (await inventory.functions(operation, signal)).map(({ addr }) => addr),
       );
-      const references = radare2Reply(
-        operation,
-        "axffj",
-        await inventory.command(`axffj @ ${at}`, signal),
-        radare2ReferencesFromSchema,
-      );
+      const references = await inventory.referencesFrom(operation, fn, signal);
       for (const { ref: callee, type } of references) {
         if (!entries.has(callee)) continue;
         if (type === "CALL" || (type === "CODE" && callee !== fn.addr))
@@ -376,14 +381,12 @@ export class Radare2OperationRunner {
     value: JsonValue | undefined,
     signal?: AbortSignal,
   ): Promise<Outcome> {
-    const at = formatRadare2Address(requiredAddress(operation, value));
+    const address = requiredAddress(operation, value);
+    const at = formatRadare2Address(address);
     const sources = new Set(
-      radare2Reply(
-        operation,
-        "axtj",
-        await this.#inventory.command(`axtj @ ${at}`, signal),
-        radare2ReferencesToSchema,
-      ).map(({ from }) => from),
+      (await this.#inventory.referencesTo(operation, address, signal)).map(
+        ({ from }) => from,
+      ),
     );
     return {
       result: [...sources]

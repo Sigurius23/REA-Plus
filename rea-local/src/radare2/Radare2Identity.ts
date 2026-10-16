@@ -9,10 +9,6 @@ export const RADARE2_PROVIDER_IDENTITY = Object.freeze({
   version: "1",
 } as const satisfies ProviderIdentity);
 
-/** Accepted radare2 release line; 6.2.4 is the verified engine. */
-export const RADARE2_SUPPORTED_RANGE = ">=6.0.0 <7.0.0";
-export const RADARE2_VERIFIED_VERSION = "6.2.4";
-
 /** Operations normalized from radare2 commands; everything else is unavailable. */
 export const RADARE2_OPERATIONS = Object.freeze([
   "address_name",
@@ -45,4 +41,20 @@ export const RADARE2_LIMITATIONS = Object.freeze([
   "list_strings and search_strings cover radare2's data-section string inventory (izj); an empty result does not prove the text is absent from the artifact bytes.",
   "Procedure names keep radare2 flag prefixes such as sym., sym.imp., fcn. and entry0. Procedure arguments also accept an exact symbol name or a 0x-prefixed address.",
   "Cancelling or timing out an in-flight radare2 command stops its process. The next operation starts a fresh process and repeats the analysis.",
+]);
+
+/** Results observed through Rizin, the radare2 fork, carry these instead. */
+export const RIZIN_LIMITATIONS = Object.freeze([
+  "REA+ runs the caller-supplied Rizin executable (REA_RADARE2_PATH) in its -q0 pipe mode over a SHA-256-verified private copy of the admitted target, with user rc files disabled (-N). Rizin has no command sandbox (radare2's cfg.sandbox does not exist in Rizin), so nothing inside Rizin refuses shell or file commands; REA+ sends only fixed commands and never forwards caller text into them.",
+  "Functions, names, strings, references and call edges are observations of Rizin's selected analysis level (aa, aaa or aaaa), not original source. Rizin names functions by its own heuristics, such as main for the first call of an entry point. Indirect calls and references Rizin did not resolve are absent rather than proven nonexistent.",
+  "Rizin has no built-in pseudo-code command, so procedure_pseudo_code is unavailable and analyze_function reports empty pseudocode. Use procedure_assembly.",
+  "list_strings and search_strings cover Rizin's data-section string inventory (izj); an empty result does not prove the text is absent from the artifact bytes.",
+  "Procedure names keep Rizin flag prefixes such as sym., sym.imp. and fcn. Procedure arguments also accept an exact symbol or flag name or a 0x-prefixed address.",
+  "Cancelling or timing out an in-flight Rizin command stops its process. The next operation starts a fresh process and repeats the analysis.",
+]);
+
+/** Advertised before any engine is probed: the configured executable may be either engine. */
+export const RADARE2_CAPABILITY_LIMITATIONS = Object.freeze([
+  ...RADARE2_LIMITATIONS,
+  "REA_RADARE2_PATH may instead name Rizin 0.9.x. Rizin has no command sandbox and no pdc pseudo-code; results then carry Rizin's limitations.",
 ]);

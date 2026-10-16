@@ -5,12 +5,11 @@ import {
   type Radare2Inventory,
 } from "./Radare2Inventory.js";
 import { procedureLocals } from "./Radare2Locals.js";
+import type { Radare2Dialect } from "./Radare2Dialect.js";
 import {
   compareRadare2Addresses,
   formatRadare2Address,
   radare2DisassemblySchema,
-  radare2ReferencesFromSchema,
-  radare2ReferencesToSchema,
   radare2Reply,
   type Radare2Function,
 } from "./Radare2Values.js";
@@ -22,6 +21,25 @@ const DOSSIER_LIMITATIONS = [
   "Incoming references cover references to the function's basic-block starts from outside its body.",
   "radare2 analysis comments, native API boundaries and value flow are not reported.",
 ];
+
+const RIZIN_DOSSIER_LIMITATIONS = [
+  "Rizin has no built-in pseudo-code, so pseudocode is empty; assembly is pdfj disassembly, not original source.",
+  "Reference kinds keep only Rizin's coarse reference type (CALL, CODE, DATA, STRING); operand index, read/write access and flow details are unavailable.",
+  "Outgoing references come from afij (callrefs and datarefs) and are limited to targets inside loaded sections, because Rizin also records numeric immediates as DATA references.",
+  "Incoming references cover references to the function's basic-block starts from outside its body. Rizin's axtj does not name the function containing each source, so REA+ resolves it from afij and afbj.",
+  "Rizin analysis comments, native API boundaries and value flow are not reported.",
+];
+
+/** Pseudo-code text, or empty where the engine has no built-in command. */
+const pseudoCode = async (
+  inventory: Radare2Inventory,
+  dialect: Radare2Dialect,
+  at: string,
+  signal?: AbortSignal,
+): Promise<string> =>
+  dialect.pseudoCodeCommand === null
+    ? ""
+    : inventory.command(`${dialect.pseudoCodeCommand} @ ${at}`, signal);
 
 /** Call types radare2 can leave without a resolved target. */
 const CALL_TYPES = new Set(["call", "ucall", "rcall", "icall", "ircall"]);
@@ -85,12 +103,20 @@ class DossierContext {
     };
   }
 
+  /** One pipe answers one command at a time, so identities resolve in turn. */
   async sortedIdentities(values: Iterable<Radare2Function>) {
-    return Promise.all(
-      [...values]
-        .sort((left, right) => compareRadare2Addresses(left.addr, right.addr))
-        .map((value) => this.identity(value)),
-    );
+    const identities: ProcedureIdentity[] = [];
+    for (const value of [...values].sort((left, right) =>
+      compareRadare2Addresses(left.addr, right.addr),
+    ))
+      identities.push(await this.identity(value));
+    return identities;
+  }
+
+  async edges(references: readonly Reference[]) {
+    const edges = [];
+    for (const reference of references) edges.push(await this.edge(reference));
+    return edges;
   }
 
   async edge(reference: Reference) {
@@ -123,6 +149,7 @@ export const analyzeRadare2Function = async (
 ): Promise<JsonValue> => {
   const fn = await inventory.procedure(operation, procedure, signal);
   const at = entryAddress(fn);
+  const { dialect } = inventory.binding;
   const functions = await inventory.functions(operation, signal);
   const context = new DossierContext({
     inventory,
@@ -147,7 +174,7 @@ export const analyzeRadare2Function = async (
       signature: fn.signature ?? null,
       locals: await procedureLocals(inventory, operation, fn, signal),
     },
-    pseudocode: await inventory.command(`pdc @ ${at}`, signal),
+    pseudocode: await pseudoCode(inventory, dialect, at, signal),
     assembly: ops.map(
       ({ addr, disasm, type }) =>
         `${formatRadare2Address(addr)}: ${disasm ?? `(${type})`}`,
@@ -155,12 +182,8 @@ export const analyzeRadare2Function = async (
     comments: [],
     callers: await context.sortedIdentities(callers(incoming)),
     callees: await context.sortedIdentities(callees(context, outgoing)),
-    incoming_references: await Promise.all(
-      incoming.map((reference) => context.edge(reference)),
-    ),
-    outgoing_references: await Promise.all(
-      outgoing.map((reference) => context.edge(reference)),
-    ),
+    incoming_references: await context.edges(incoming),
+    outgoing_references: await context.edges(outgoing),
     unresolved_calls: ops
       .filter(({ type, jump }) => CALL_TYPES.has(type) && jump === undefined)
       .map(({ addr, type }) => ({
@@ -171,7 +194,10 @@ export const analyzeRadare2Function = async (
     basic_blocks: basicBlocks(blocks),
     native_api: null,
     native_value_flow: null,
-    limitations: DOSSIER_LIMITATIONS,
+    limitations:
+      dialect.engine === "rizin"
+        ? RIZIN_DOSSIER_LIMITATIONS
+        : DOSSIER_LIMITATIONS,
   };
 };
 
@@ -186,11 +212,10 @@ const incomingReferences = async (
   );
   const references: Reference[] = [];
   for (const start of starts) {
-    const replies = radare2Reply(
+    const replies = await inventory.referencesToWithFunctions(
       operation,
-      "axtj",
-      await inventory.command(`axtj @ ${formatRadare2Address(start)}`, signal),
-      radare2ReferencesToSchema,
+      start,
+      signal,
     );
     for (const { from, type, fcn_addr: caller } of replies)
       if (!context.inBody(from))
@@ -212,12 +237,7 @@ const outgoingReferences = async (
 ): Promise<Reference[]> => {
   const { inventory, operation, signal, fn, byEntry } = context.scope;
   const regions = await inventory.regions(operation, signal);
-  const replies = radare2Reply(
-    operation,
-    "axffj",
-    await inventory.command(`axffj @ ${entryAddress(fn)}`, signal),
-    radare2ReferencesFromSchema,
-  );
+  const replies = await inventory.referencesFrom(operation, fn, signal);
   return replies
     .filter(({ ref }) =>
       regions.some(({ start, end }) => ref >= start && ref < end),

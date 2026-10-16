@@ -44,7 +44,9 @@ describe("radare2 doctor inspection", () => {
       checks: [
         {
           code: "executable_missing",
-          detail: expect.stringContaining("did not print a radare2 version"),
+          detail: expect.stringContaining(
+            "did not print a radare2 or Rizin version",
+          ),
         },
       ],
     });

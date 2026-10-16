@@ -26,12 +26,9 @@ import type { BinaryTarget } from "../domain/binaryTargetTypes.js";
 import { ConfigurationError } from "../domain/configurationErrors.js";
 import { err, ok, type Result } from "../domain/result.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
+import { Radare2AnalysisClient } from "./Radare2AnalysisClient.js";
 import {
-  RADARE2_PROCESS_ARGUMENTS,
-  Radare2AnalysisClient,
-} from "./Radare2AnalysisClient.js";
-import {
-  RADARE2_LIMITATIONS,
+  RADARE2_CAPABILITY_LIMITATIONS,
   RADARE2_OPERATIONS,
   RADARE2_PROVIDER_IDENTITY,
 } from "./Radare2Identity.js";
@@ -48,7 +45,7 @@ export interface Radare2ProviderSeams {
   readonly runtimeParent?: string;
 }
 
-/** Caller-supplied radare2 deep provider; discovery starts no process. */
+/** Caller-supplied radare2 (or Rizin) deep provider; discovery starts no process. */
 export class Radare2Provider implements AnalysisProviderCandidate {
   private readonly environment: NodeJS.ProcessEnv;
   readonly #resolved = new Map<string, Radare2Engine>();
@@ -89,7 +86,7 @@ export class Radare2Provider implements AnalysisProviderCandidate {
             reason: availability.reason,
             availabilityCode: availability.code,
           }),
-      limitations: RADARE2_LIMITATIONS,
+      limitations: RADARE2_CAPABILITY_LIMITATIONS,
     }));
   }
 
@@ -204,13 +201,14 @@ export class Radare2Provider implements AnalysisProviderCandidate {
         : { launcher: this.seams.launcher }),
     });
     if (!probed.ok) return probed;
-    const { version, commit } = probed.value;
+    const { dialect, version, commit } = probed.value;
     const profile = createAnalysisProfile(RADARE2_PROVIDER_IDENTITY, {
       version_scope: "rea-radare2-pipe-adapter",
+      engine: dialect.engine,
       engine_version: version,
       engine_commit: commit,
       analysis_level: this.#analysisLevel(),
-      process_arguments: [...RADARE2_PROCESS_ARGUMENTS],
+      process_arguments: [...dialect.processArguments],
       cache_policy: "snapshot",
     });
     this.#resolved.set(profile.digest, probed.value);
@@ -240,6 +238,7 @@ export class Radare2Provider implements AnalysisProviderCandidate {
       target,
       {
         executable: resolved.executable,
+        dialect: resolved.dialect,
         engineVersion: resolved.version,
         analysisLevel: this.#analysisLevel(),
         analysisTimeoutMs:

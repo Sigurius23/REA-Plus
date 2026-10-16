@@ -3,6 +3,7 @@ import {
   AnalysisOutputError,
 } from "../domain/analysisErrorCore.js";
 import type { JsonValue } from "../domain/jsonValue.js";
+import type { Radare2Dialect } from "./Radare2Dialect.js";
 import {
   compareRadare2Addresses,
   formatRadare2Address,
@@ -11,11 +12,14 @@ import {
   radare2BlocksSchema,
   radare2FunctionsSchema,
   radare2MapsSchema,
+  radare2ReferencesFromSchema,
+  radare2ReferencesToSchema,
   radare2Reply,
   radare2SectionsSchema,
   radare2StringsSchema,
   radare2SymbolsSchema,
   RADARE2_INVALID_ADDRESS,
+  rizinFunctionReferencesSchema,
   type Radare2Function,
   type Radare2Map,
 } from "./Radare2Values.js";
@@ -33,6 +37,8 @@ export interface Radare2Binding {
   readonly sourcePath: string;
   /** Private SHA-256-verified copy radare2 actually opened. */
   readonly snapshotPath: string;
+  /** Command dialect of the running engine (radare2 or Rizin). */
+  readonly dialect: Radare2Dialect;
   /** radare2 IO descriptor of that copy, from `ij`. */
   readonly fileDescriptor: number;
   /** Load base reported by radare2, from `ij`. */
@@ -47,6 +53,11 @@ export interface Radare2LoadedRegion {
   readonly end: bigint;
   readonly perm: string;
 }
+
+/** One reference to an address; `fcn_addr` is the function containing its source. */
+export type Radare2ReferenceTo = ReturnType<
+  typeof radare2ReferencesToSchema.parse
+>[number];
 
 /** A function together with its merged inclusive basic-block ranges. */
 export interface Radare2FunctionBody {
@@ -132,15 +143,101 @@ export class Radare2Inventory {
     return this.#strings;
   }
 
-  /** IO maps, top-most first as radare2 lists them. */
+  /** IO maps, top-most first with inclusive ends as radare2 lists them. */
   async maps(operation: string, signal?: AbortSignal): Promise<Radare2Map[]> {
-    this.#maps ??= radare2Reply(
+    if (this.#maps !== undefined) return this.#maps;
+    const command = this.binding.dialect.mapsCommand;
+    const maps = radare2Reply(
       operation,
-      "omj",
-      await this.command("omj", signal),
+      command,
+      await this.command(command, signal),
       radare2MapsSchema,
     );
+    // Rizin's omlj lists maps bottom-most first and ends them exclusively.
+    this.#maps =
+      command === "omlj"
+        ? maps
+            .filter(({ from, to }) => to > from)
+            .map((map) => ({ ...map, to: map.to - 1n }))
+            .reverse()
+        : maps;
     return this.#maps;
+  }
+
+  /** References to one address (`axtj`). */
+  async referencesTo(
+    operation: string,
+    address: bigint,
+    signal?: AbortSignal,
+  ): Promise<Radare2ReferenceTo[]> {
+    return radare2Reply(
+      operation,
+      "axtj",
+      await this.command(`axtj @ ${formatRadare2Address(address)}`, signal),
+      radare2ReferencesToSchema,
+    );
+  }
+
+  /**
+   * References to one address with the function containing each source.
+   * Rizin's axtj does not name it, so each source is resolved as
+   * resolve_containing_procedure would.
+   */
+  async referencesToWithFunctions(
+    operation: string,
+    address: bigint,
+    signal?: AbortSignal,
+  ): Promise<Radare2ReferenceTo[]> {
+    const references = await this.referencesTo(operation, address, signal);
+    if (this.binding.dialect.referencesNameFunctions) return references;
+    const named: Radare2ReferenceTo[] = [];
+    for (const reference of references) {
+      const containing = await this.functionContaining(
+        operation,
+        reference.from,
+        signal,
+      );
+      named.push(
+        containing === undefined
+          ? reference
+          : { ...reference, fcn_addr: containing.fn.addr },
+      );
+    }
+    return named;
+  }
+
+  /** References made from a function body, in source address order. */
+  async referencesFrom(
+    operation: string,
+    fn: Radare2Function,
+    signal?: AbortSignal,
+  ): Promise<ReturnType<typeof radare2ReferencesFromSchema.parse>> {
+    const at = entryAddress(fn);
+    if (this.binding.dialect.referencesFromCommand === "axffj")
+      return radare2Reply(
+        operation,
+        "axffj",
+        await this.command(`axffj @ ${at}`, signal),
+        radare2ReferencesFromSchema,
+      );
+    const info = radare2Reply(
+      operation,
+      "afij",
+      await this.command(`afij @ ${at}`, signal),
+      rizinFunctionReferencesSchema,
+    ).find(({ addr }) => addr === fn.addr);
+    if (info === undefined)
+      throw new AnalysisOutputError(
+        operation,
+        `Rizin afij did not describe the function at ${at}`,
+      );
+    return [...(info.callrefs ?? []), ...(info.datarefs ?? [])]
+      .map(({ from, to, type }) => ({ type, at: from, ref: to }))
+      .sort(
+        (left, right) =>
+          compareRadare2Addresses(left.at, right.at) ||
+          compareRadare2Addresses(left.ref, right.ref),
+      );
   }
 
   /** Loaded sections, or segments for formats without section headers. */
@@ -174,8 +271,8 @@ export class Radare2Inventory {
 
   /**
    * Resolve a procedure argument without forwarding it to radare2: an exact
-   * function name, then an exact symbol name at a function entry, then an
-   * explicit address at or inside a function.
+   * function name, then an exact symbol or flag name at a function entry,
+   * then an explicit address at or inside a function.
    */
   async procedure(
     operation: string,
@@ -192,7 +289,8 @@ export class Radare2Inventory {
         const entries = new Set(
           (await this.symbols(operation, signal))
             .filter(
-              ({ name, realname }) => name === value || realname === value,
+              ({ name, realname, flagname }) =>
+                name === value || realname === value || flagname === value,
             )
             .map(({ vaddr }) => vaddr),
         );

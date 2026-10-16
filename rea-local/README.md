@@ -201,7 +201,7 @@ Native formats and host support vary by provider. See
 [Hopper and Ghidra setup](docs/installation.md#hopper), the
 [IDA adapter guide](docs/ida-provider.md), the
 [Binary Ninja guide](docs/binary-ninja-provider.md), the
-[radare2 guide](docs/radare2-provider.md), and
+[radare2 and Rizin guide](docs/radare2-provider.md), and
 [experimental Windows Ghidra support](docs/windows-ghidra-p0.md).
 Ghidra also supports [16-bit DOS analysis](docs/ghidra-dos.md).
 For large binaries, raise its startup deadline with

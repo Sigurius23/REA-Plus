@@ -2,6 +2,7 @@ import { isInteger, parse } from "lossless-json";
 import { z } from "zod";
 
 import { AnalysisOutputError } from "../domain/analysisErrorCore.js";
+import type { Radare2Dialect } from "./Radare2Dialect.js";
 
 /** radare2 marks absent 64-bit coordinates with UT64_MAX. */
 export const RADARE2_INVALID_ADDRESS = 0xffff_ffff_ffff_ffffn;
@@ -41,7 +42,7 @@ export const radare2Reply = <Schema extends z.ZodType>(
   if (!parsed.success)
     throw new AnalysisOutputError(
       operation,
-      `radare2 ${command} reply does not match the supported 6.x shape: ${parsed.error.issues
+      `radare2 ${command} reply does not match the supported shape: ${parsed.error.issues
         .slice(0, 3)
         .map((issue) => `${issue.path.join(".") || "$"}: ${issue.message}`)
         .join("; ")}`,
@@ -56,6 +57,19 @@ const count = z
   .min(0n)
   .max(BigInt(Number.MAX_SAFE_INTEGER))
   .transform(Number);
+
+/** Rizin names a row's address `offset` where radare2 says `addr`. */
+const addressed = <Schema extends z.ZodType>(schema: Schema) =>
+  z.preprocess(
+    (row) =>
+      typeof row === "object" &&
+      row !== null &&
+      !("addr" in row) &&
+      "offset" in row
+        ? { ...row, addr: row.offset }
+        : row,
+    schema,
+  );
 
 /** `ij`: identity of the file radare2 actually opened. */
 export const radare2InfoSchema = z.object({
@@ -75,13 +89,15 @@ export const radare2InfoSchema = z.object({
 export type Radare2Info = z.output<typeof radare2InfoSchema>;
 
 /** `aflj` and `afij` rows. */
-export const radare2FunctionSchema = z.object({
-  addr: u64,
-  name: z.string().min(1),
-  size: count,
-  nbbs: count,
-  signature: z.string().optional(),
-});
+export const radare2FunctionSchema = addressed(
+  z.object({
+    addr: u64,
+    name: z.string().min(1),
+    size: count,
+    nbbs: count,
+    signature: z.string().optional(),
+  }),
+);
 export const radare2FunctionsSchema = z.array(radare2FunctionSchema);
 export type Radare2Function = z.output<typeof radare2FunctionSchema>;
 
@@ -98,12 +114,14 @@ export const radare2BlocksSchema = z.array(
 /** `pdfj`: one function's instructions with resolved branch targets. */
 export const radare2DisassemblySchema = z.object({
   ops: z.array(
-    z.object({
-      addr: u64,
-      type: z.string(),
-      disasm: z.string().optional(),
-      jump: u64.optional(),
-    }),
+    addressed(
+      z.object({
+        addr: u64,
+        type: z.string(),
+        disasm: z.string().optional(),
+        jump: u64.optional(),
+      }),
+    ),
   ),
 });
 
@@ -123,6 +141,23 @@ export const radare2VariablesSchema = z.object({
   bp: z.array(variableSchema),
 });
 
+/** Rizin `afvlj`: variables grouped by storage kind (reg, stack and others). */
+export const rizinVariablesSchema = z.record(
+  z.string(),
+  z.array(
+    z.object({
+      name: z.string(),
+      arg: z.boolean(),
+      type: z.string(),
+      storage: z.object({
+        type: z.string(),
+        reg: z.string().optional(),
+        stack: z.bigint().optional(),
+      }),
+    }),
+  ),
+);
+
 /** `izj` data-section strings. */
 export const radare2StringsSchema = z.array(
   z.object({
@@ -135,13 +170,14 @@ export const radare2StringsSchema = z.array(
   }),
 );
 
-/** `isj` symbols. */
+/** `isj` symbols; Rizin omits `vaddr` for imports it has not placed. */
 export const radare2SymbolsSchema = z.array(
   z.object({
     name: z.string(),
     realname: z.string().optional(),
+    flagname: z.string().optional(),
     type: z.string(),
-    vaddr: u64,
+    vaddr: u64.default(RADARE2_INVALID_ADDRESS),
     is_imported: z.boolean(),
   }),
 );
@@ -181,6 +217,18 @@ export const radare2ReferencesToSchema = z.array(
 /** `axffj` references made from one function body. */
 export const radare2ReferencesFromSchema = z.array(
   z.object({ type: z.string(), at: u64, ref: u64 }),
+);
+
+const rizinReferenceSchema = z.object({ from: u64, to: u64, type: z.string() });
+/** Rizin `afij` references made from a body: callrefs (CALL, CODE) and datarefs (DATA, STRING). */
+export const rizinFunctionReferencesSchema = z.array(
+  addressed(
+    z.object({
+      addr: u64,
+      callrefs: z.array(rizinReferenceSchema).optional(),
+      datarefs: z.array(rizinReferenceSchema).optional(),
+    }),
+  ),
 );
 
 /** `fd.j` flags at exactly one address. */
@@ -229,12 +277,31 @@ export const parseRadare2Permissions = (
   executable: perm.includes("x"),
 });
 
-/** Parse the first line of `r2 -v` / `?V` into a semantic version. */
+/** Parse the first line of `r2 -v`, `?V` or `rizin -v` into an engine and semantic version. */
 export const parseRadare2VersionBanner = (
   banner: string,
-): { readonly version: string; readonly commit: string | null } | null => {
-  const first = /^radare2 (\d+\.\d+\.\d+)(?:[ -].*)?$/mu.exec(banner);
-  if (first?.[1] === undefined) return null;
+): {
+  readonly engine: Radare2Dialect["engine"];
+  readonly version: string;
+  readonly commit: string | null;
+} | null => {
+  const first = /^(radare2|rizin) (\d+\.\d+\.\d+)(?:[ -].*)?$/mu.exec(banner);
+  if (first?.[1] === undefined || first[2] === undefined) return null;
   const commit = /^commit: ([0-9a-f]{7,64})$/mu.exec(banner)?.[1] ?? null;
-  return { version: first[1], commit };
+  return {
+    engine: first[1] === "rizin" ? "rizin" : "radare2",
+    version: first[2],
+    commit,
+  };
+};
+
+/** The version a running session reports: radare2's `?V` banner, or Rizin's `ver` (its banner without the engine name). */
+export const parseSessionVersion = (
+  dialect: Radare2Dialect,
+  reply: string,
+): string | undefined => {
+  if (dialect.engine === "rizin")
+    return /^(\d+\.\d+\.\d+) @ /mu.exec(reply)?.[1];
+  const banner = parseRadare2VersionBanner(reply);
+  return banner?.engine === "radare2" ? banner.version : undefined;
 };

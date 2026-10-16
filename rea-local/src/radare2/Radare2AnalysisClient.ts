@@ -27,10 +27,12 @@ import { err, ok, type Result } from "../domain/result.js";
 import { ProviderStartupDeadline } from "../process/ProviderDeadline.js";
 import { createProviderTargetSnapshot } from "../process/ProviderTargetSnapshot.js";
 import { PrivateRuntimeRoot } from "../process/PrivateRuntimeRoot.js";
+import type { Radare2Dialect } from "./Radare2Dialect.js";
 import {
   RADARE2_LIMITATIONS,
   RADARE2_OPERATIONS,
   RADARE2_PROVIDER_IDENTITY,
+  RIZIN_LIMITATIONS,
   type Radare2Operation,
 } from "./Radare2Identity.js";
 import type { Radare2AnalysisLevel } from "../config/radare2Settings.js";
@@ -42,37 +44,17 @@ import {
   type Radare2Launcher,
 } from "./Radare2Pipe.js";
 import {
-  parseRadare2VersionBanner,
+  parseSessionVersion,
   radare2InfoSchema,
   radare2Reply,
 } from "./Radare2Values.js";
 
-/**
- * Fixed process arguments: no user rc (-N), NUL-framed pipe replies (-q0),
- * deterministic plain-text output and a sandbox that refuses shell, network
- * and absolute-path file access from radare2 commands.
- */
-export const RADARE2_PROCESS_ARGUMENTS = Object.freeze([
-  "-N",
-  "-q0",
-  "-e",
-  "scr.color=0",
-  "-e",
-  "scr.utf8=false",
-  "-e",
-  "scr.interactive=false",
-  "-e",
-  "cfg.json.num=none",
-  "-e",
-  "cfg.sandbox.grain=all",
-  "-e",
-  "cfg.sandbox=true",
-]);
-
 /** Session settings resolved by the provider before any process starts. */
 export interface Radare2ClientOptions {
-  /** Resolved real path of the caller-supplied radare2 executable. */
+  /** Resolved real path of the caller-supplied radare2 or Rizin executable. */
   readonly executable: string;
+  /** Command dialect of that executable, from its `-v` banner. */
+  readonly dialect: Radare2Dialect;
   /** Engine version committed by the analysis profile. */
   readonly engineVersion: string;
   readonly analysisLevel: Radare2AnalysisLevel;
@@ -158,11 +140,15 @@ export class Radare2AnalysisClient implements AnalysisClient {
       return ok(
         createAnalysisExecution(outcome.result, RADARE2_PROVIDER_IDENTITY, {
           rawResult: {
+            engine: this.options.dialect.engine,
             engine_version: this.options.engineVersion,
             analysis_level: this.options.analysisLevel,
             commands: [...outcome.commands],
           },
-          limitations: RADARE2_LIMITATIONS,
+          limitations:
+            this.options.dialect.engine === "rizin"
+              ? RIZIN_LIMITATIONS
+              : RADARE2_LIMITATIONS,
           locations: [
             { kind: "artifact-path", path: this.target.path },
             ...(outcome.address === undefined
@@ -211,10 +197,11 @@ export class Radare2AnalysisClient implements AnalysisClient {
         { providerName: "radare2", signal: deadline.signal },
       );
       const fileName = basename(snapshot.path);
+      const { dialect } = this.options;
       pipe = await Radare2Pipe.start(
         {
           executable: this.options.executable,
-          arguments: [...RADARE2_PROCESS_ARGUMENTS, fileName],
+          arguments: [...dialect.processArguments, fileName],
           cwd: root.path,
           runId: randomUUID(),
           hostEnvironment: { ...this.options.environment },
@@ -224,12 +211,13 @@ export class Radare2AnalysisClient implements AnalysisClient {
         },
         deadline.signal,
       );
-      const banner = parseRadare2VersionBanner(
-        await pipe.command("?V", deadline.signal),
+      const version = parseSessionVersion(
+        dialect,
+        await pipe.command(dialect.versionCommand, deadline.signal),
       );
-      if (banner?.version !== this.options.engineVersion)
+      if (version !== this.options.engineVersion)
         throw new AnalysisProtocolError(
-          `The radare2 executable reported ${banner?.version ?? "an unrecognized version"} but the analysis profile committed ${this.options.engineVersion}; reopen the target to resolve a new profile.`,
+          `The ${dialect.engine} executable reported ${version ?? "an unrecognized version"} but the analysis profile committed ${this.options.engineVersion}; reopen the target to resolve a new profile.`,
         );
       const info = radare2Reply(
         operation,
@@ -257,6 +245,7 @@ export class Radare2AnalysisClient implements AnalysisClient {
             documentName: basename(this.target.path),
             sourcePath: this.target.path,
             snapshotPath: snapshot.path,
+            dialect,
             fileDescriptor: info.core.fd,
             baseAddress: info.bin.baddr,
           },

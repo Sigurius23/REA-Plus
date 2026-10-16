@@ -6,6 +6,8 @@ REA+ includes a normalized deep-analysis provider for a caller-supplied
 [external MCP bridge](external-mcp-bridge.md) remains available for
 `radare2-mcp` tools this provider does not normalize.
 
+The same provider also drives [Rizin](#rizin), a fork of radare2.
+
 ## Configure radare2
 
 Install radare2 6.x yourself (REA+ is verified with 6.2.4) and point REA+ at
@@ -42,9 +44,11 @@ For each opened target, REA+:
 2. Starts radare2 there in its documented `-q0` pipe mode with `-N` (no user
    rc files or scripts), plain-text output, `cfg.sandbox.grain=all` and
    `cfg.sandbox=true`, which block command execution, sockets and file
-   access outside the private directory.
-3. Checks that `?V` still reports the profile's engine version and that `ij`
-   reports the private copy and its size, then runs the selected analysis.
+   access outside the private directory. Rizin has no sandbox; see
+   [Rizin](#rizin).
+3. Checks that `?V` (Rizin: `ver`) still reports the profile's engine version
+   and that `ij` reports the private copy and its size, then runs the
+   selected analysis.
 
 REA+ never forwards caller text into a radare2 command. Procedure names are
 resolved against parsed inventories, and only REA+-formatted `0x` addresses
@@ -101,6 +105,45 @@ Semantics to keep in mind:
   immediates as `DATA` references. Comments, native API boundaries and value
   flow are not reported.
 
+## Rizin
+
+Point `REA_RADARE2_PATH` at a [Rizin](https://github.com/rizinorg/rizin)
+0.9.x executable (verified with 0.9.1) to analyze with Rizin instead. The
+`-v` banner selects Rizin's dialect, and the analysis profile commits
+`engine: rizin` with its version, commit and process arguments. Releases
+outside `>=0.9.0 <0.10.0` are rejected.
+
+Rizin spells some commands differently. REA+ translates them:
+
+| radare2 6.x                                    | Rizin 0.9.x                                                                                  |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `?V` version banner                            | `ver`                                                                                        |
+| `omj`: top-most map first, inclusive ends      | `omlj`: bottom-most map first, exclusive ends. REA+ reorders the maps and converts the ends. |
+| `afvj`: variables by base register             | `afvlj`: variables by storage. Stack displacements count from the stack pointer at entry.    |
+| `axffj`: references from a body                | `afij`: `callrefs` and `datarefs`                                                            |
+| `axtj` with the source's function (`fcn_addr`) | `axtj` without it. REA+ finds each source's function with `afij` and `afbj`.                 |
+| Rows name an address `addr`                    | Rows name it `offset`                                                                        |
+| `pdc` pseudo-code                              | None. `procedure_pseudo_code` is unavailable and dossiers report empty pseudocode.           |
+
+Differences to keep in mind:
+
+- **Rizin has no command sandbox.** `cfg.sandbox` does not exist in Rizin,
+  whose `-e` silently creates unknown settings, so REA+ does not pass it. With
+  Rizin 0.9.1, `!echo` and `cat /etc/hostname` ran in a session. REA+ still
+  sends only fixed commands, never caller text, and Rizin opens only the
+  private copy. Prefer radare2 when a target might attack the analyzer.
+- Rizin names functions by its own heuristics. In the test fixture,
+  `check_key` is `main` because `_start` calls it first; the flag name
+  `sym.check_key` and the symbol name `check_key` still select it.
+- Rizin records no references for conditional jumps; they appear only as
+  basic-block successors. Outgoing references, and callers or callees
+  reached through a conditional jump, are therefore fewer than radare2's.
+- Rizin's `izj` also lists `.dynstr` strings, and its `isj` leaves imports it
+  has not placed without an address.
+- Assembly text differs, such as `lea   eax, qword [rdi+rdi*2+0x01]` where
+  radare2 prints `lea eax, [rdi + rdi*2 + 1]`.
+- Procedure names keep Rizin's flag prefixes (`sym.`, `sym.imp.`, `fcn.`).
+
 ## Supported targets
 
 ELF (including MIPS), PE, Mach-O and DOS MZ executables are admitted. These
@@ -124,6 +167,25 @@ lifecycle (cancellation, deadline, crash recovery, version drift) is covered
 by a fake radare2 that replays recorded 6.2.4 replies and rejects unmodeled
 commands.
 
-Other radare2 6.x releases, other hosts (macOS, Windows), other formats and
-architectures, and radare2 decompiler plugins (r2ghidra, r2dec) are not
-verified by these lanes.
+With `REA_VERIFY_RIZIN_PATH` set, the same lane runs against Rizin, with
+Rizin's names and listings. It passed with the official Rizin 0.9.1 static
+release for Linux x86-64. A fake Rizin replaying recorded 0.9.1 replies covers
+dialect selection, version drift, the rejected 0.8 line and the translations
+above in every test run, and recorded replies cover overlapping maps, stack
+variables and `afij` references.
+
+On a gcc-compiled position-independent executable (imports, a loop, a stack
+buffer), both engines gave the same:
+
+- procedure addresses, callers and callees;
+- segments, cross-references, reads and file offsets;
+- names and call graphs;
+- dossier callers, callees, strings, names and blocks.
+
+The differences were those listed under [Rizin](#rizin): local variable
+naming and bases, conditional-jump references, `.dynstr` strings and one
+function's name.
+
+Other radare2 6.x and Rizin 0.9.x releases, other hosts (macOS, Windows),
+other formats and architectures, and decompiler plugins (r2ghidra, r2dec,
+rz-ghidra, jsdec) are not verified by these lanes.
