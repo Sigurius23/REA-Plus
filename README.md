@@ -24,6 +24,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/gamearchives/                  # Godot PCK, Ren'Py RPA, Valve VPK, Doom WAD and Unreal pak archives
 │   ├── src/renpy/                         # Compiled Ren'Py scripts (.rpyc) read as inert data
 │   ├── src/rpgmaker/                      # RPG Maker MV/MZ games: data, assets and saves
+│   ├── src/gamemaker/                     # GameMaker data.win / game.droid files
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -60,6 +61,7 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **Game Engine Archives**: Godot `.pck` packs (including packs embedded in exported executables), Ren'Py `.rpa` archives (index pickles decoded without running code), Valve `.vpk` directories, Doom WADs and Unreal Engine `.pak` files (versions 1-11, Zlib/Gzip/Zstd decoded), with verified checksums and single-entry previews ([guide](./rea-local/docs/game-archives.md)).
 - **Ren'Py Scripts**: Compiled `.rpyc` visual-novel scripts mapped into labels and branches, dialogue with speakers and translation identifiers, menus, definitions and translations, with the pickled AST read as inert data instead of being unpickled ([guide](./rea-local/docs/renpy-scripts.md)).
 - **RPG Maker MV/MZ Games**: Maps, dialogue, switch and variable read/write sites, the database with notetags, and `plugins.js` (parsed, never run). The asset key is checked against one recovered from an encrypted PNG, one selected asset can be decrypted, and MV/MZ saves are decoded into party, gold, items, switches and variables. Checked against each game's own engine running in Chromium ([guide](./rea-local/docs/rpgmaker-projects.md)).
+- **GameMaker Data Files**: `data.win`, `game.unx`, `game.droid` and audio-group files mapped into chunks, resources (sprites, objects with their sprites, rooms with instances and creation code, scripts, sounds), GML bytecode entries, the string table, functions and variables, texture pages (PNG/QOI) and embedded audio, with VM/YYC and the minimum runtime the chunk set implies ([guide](./rea-local/docs/gamemaker-data.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
