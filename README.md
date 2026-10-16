@@ -27,7 +27,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/gamemaker/                     # GameMaker data.win / game.droid files
 │   ├── src/x64dbg/                        # x64dbg .dd32/.dd64 session databases
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
-│   ├── src/browser/history/               # Offline HAR, mitmproxy and PCAP/PCAPNG decoding
+│   ├── src/browser/history/               # Offline HAR, Burp, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
 ├── agentic-reverse-engineering/           # AERE (Agentic Reverse Engineering) Workbench
 │   ├── src/                               # Python analysis engine & pipeline
@@ -51,7 +51,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 A Model Context Protocol (MCP) server and CLI tool designed for AI agents to investigate compiled binaries, applications, and runtime behavior:
 - **Expanded Provider Ecosystem**: Integrated support for Ghidra, IDA Pro, Binary Ninja, Hopper, and radare2 ([guide](./rea-local/docs/radare2-provider.md)).
 - **Mobile Runtime Instrumentation**: Dynamic tracing, Frida integration, and Android app evidence collection.
-- **Network & Protocol Analysis**: Offline HAR, mitmproxy and PCAP/PCAPNG inspection with link/IP/TCP/UDP decoding, HTTP/1.x heads, TLS hello SNI/ALPN and DNS messages ([guide](./rea-local/docs/web-network-captures.md)). Captures are read from files; REA+ does not capture live traffic.
+- **Network & Protocol Analysis**: Offline HAR, Burp Suite XML, mitmproxy and PCAP/PCAPNG inspection (Charles and Proxyman through their HAR export) with link/IP/TCP/UDP decoding, HTTP/1.x heads, TLS hello SNI/ALPN and DNS messages ([guide](./rea-local/docs/web-network-captures.md)). Captures are read from files; REA+ does not capture live traffic.
 - **JVM Decompilation**: Class inventories and CFR-decompiled Java for selected classes in JARs and `.class` files ([guide](./rea-local/docs/jvm-decompilation.md)).
 - **Unity IL2CPP Metadata**: Classes, members, string literals, interop and assemblies from `global-metadata.dat`, with native method addresses recovered from GameAssembly/libil2cpp through r2unity ([guide](./rea-local/docs/il2cpp-metadata.md)).
 - **Coverage Logs**: Executed modules and basic blocks from DynamoRIO or Frida drcov logs, and differential coverage against a baseline run to isolate the code behind one action ([guide](./rea-local/docs/drcov-coverage.md)).
