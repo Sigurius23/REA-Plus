@@ -287,7 +287,7 @@ const expectedCaptureLimit = (
       return { maximum_capture_nesting: limit.maximum };
     return { maximum_interfaces_per_section: limit.maximum };
   }
-  if (format === "har")
+  if (format === "har" || format === "burp")
     return { maximum_capture_nesting: WEB_NETWORK_CAPTURE_LIMITS.depth };
   return { maximum_capture_bytes: WEB_NETWORK_CAPTURE_LIMITS.inputBytes };
 };
@@ -306,7 +306,11 @@ const decoderMemoryLimitation = (
   const processLimit = pcap
     ? PCAP_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES
     : HAR_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES;
-  const label = pcap ? "PCAP/PCAPNG" : "HAR";
+  const label = pcap
+    ? "PCAP/PCAPNG"
+    : format === "burp"
+      ? "Burp XML (via HAR)"
+      : "HAR";
   if (enforced)
     return `${label} uses a ${String(heap.oldGenerationMiB)} MiB Node old-generation heap.`;
   return processLimit === null

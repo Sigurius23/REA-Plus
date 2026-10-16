@@ -1,5 +1,6 @@
 import { WebNetworkCaptureService } from "../application/WebNetworkCaptureService.js";
 import { HistoricalCaptureDecoder } from "../browser/history/HistoricalCaptureDecoder.js";
+import { BurpCaptureAdapter } from "../browser/history/BurpCaptureAdapter.js";
 import { HarCaptureAdapter } from "../browser/history/HarCaptureAdapter.js";
 import { MitmproxyCaptureAdapter } from "../browser/history/MitmproxyCaptureAdapter.js";
 import { PcapCaptureAdapter } from "../browser/history/PcapCaptureAdapter.js";
@@ -15,6 +16,7 @@ export const createWebNetworkCaptureService = (
         new MitmproxyCaptureAdapter(environment),
         new PcapCaptureAdapter("pcap"),
         new PcapCaptureAdapter("pcapng"),
+        new BurpCaptureAdapter(),
       ],
       environment,
     ),

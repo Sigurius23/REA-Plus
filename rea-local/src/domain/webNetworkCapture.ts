@@ -15,9 +15,9 @@ export const inspectWebNetworkCaptureInputSchema = z.strictObject({
     .string()
     .min(1)
     .describe(
-      "Absolute local HAR, mitmproxy, classic PCAP or PCAPNG capture path.",
+      "Absolute local HAR (also Charles and Proxyman HAR exports), mitmproxy, classic PCAP, PCAPNG or Burp Suite XML export path.",
     ),
-  format: z.enum(["har", "mitmproxy", "pcap", "pcapng"]),
+  format: z.enum(["har", "mitmproxy", "pcap", "pcapng", "burp"]),
   record_ordinals: z
     .array(z.number().int().nonnegative())
     .min(1)
@@ -116,7 +116,7 @@ export const webNetworkCaptureSchema = z.strictObject({
       ),
     bytes: z.number().int().nonnegative(),
   }),
-  format: z.enum(["har", "mitmproxy", "pcap", "pcapng"]),
+  format: z.enum(["har", "mitmproxy", "pcap", "pcapng", "burp"]),
   decoder: z.strictObject({
     id: z.string().min(1),
     name: z.string().min(1),
