@@ -80,6 +80,8 @@ const SOURCE_PATHS = {
   wasmModuleProvider: "dist/wasmmodule/WasmModuleInspector.js",
   mobsfContracts: "dist/contracts/mobsf/mobsfToolContracts.js",
   mobsfProvider: "dist/mobsf/MobsfInspector.js",
+  luaContracts: "dist/contracts/lua/luaToolContracts.js",
+  luaProvider: "dist/lua/LuaInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

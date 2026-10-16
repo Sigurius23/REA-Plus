@@ -362,7 +362,8 @@ const workflowAvailabilityFor = ({
     name === "inspect_gamemaker_data" ||
     name === "inspect_x64dbg_database" ||
     name === "inspect_wasm_module" ||
-    name === "inspect_mobsf_report"
+    name === "inspect_mobsf_report" ||
+    name === "inspect_lua_bytecode"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

@@ -47,6 +47,7 @@ export default defineConfig({
           { text: "GameMaker data files", link: "/gamemaker-data" },
           { text: "x64dbg databases", link: "/x64dbg-databases" },
           { text: "WebAssembly modules", link: "/wasm-modules" },
+          { text: "Lua bytecode", link: "/lua-bytecode" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "MobSF reports", link: "/mobsf-reports" },

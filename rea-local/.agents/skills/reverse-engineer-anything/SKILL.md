@@ -127,6 +127,11 @@ explicit path or endpoint and do not need it.
   deep links, native library hardening, endpoints, secrets, trackers and
   APKiD protections into Evidence. With `app_path` it checks the report names
   the same APK/IPA. The findings are MobSF's, not a new analysis.
+- Compiled Lua (luac 5.1-5.4 chunk, LuaJIT dump, or chunks inside game data):
+  `inspect_lua_bytecode` lists the function tree with name hints and
+  luac/luajit-style instruction listings, constants, locals and upvalues; the
+  chunks view finds embedded chunks for `chunk_offset`. It disassembles; it
+  does not decompile, and shuffled-opcode VMs decode with wrong names.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

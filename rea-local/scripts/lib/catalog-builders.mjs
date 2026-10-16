@@ -42,6 +42,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.x64dbgContracts.X64DBG_TOOL_CONTRACTS,
         ...sources.wasmModuleContracts.WASM_MODULE_TOOL_CONTRACTS,
         ...sources.mobsfContracts.MOBSF_TOOL_CONTRACTS,
+        ...sources.luaContracts.LUA_TOOL_CONTRACTS,
       ],
     },
     {
@@ -271,6 +272,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.mobsfProvider.MOBSF_PROVIDER_IDENTITY,
       contracts: sources.mobsfContracts.MOBSF_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.luaProvider.LUA_PROVIDER_IDENTITY,
+      contracts: sources.luaContracts.LUA_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

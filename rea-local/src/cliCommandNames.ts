@@ -16,6 +16,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectX64dbgDatabase: "inspect-x64dbg-database",
   inspectWasmModule: "inspect-wasm-module",
   inspectMobsfReport: "inspect-mobsf-report",
+  inspectLuaBytecode: "inspect-lua-bytecode",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",
