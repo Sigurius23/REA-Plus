@@ -33,6 +33,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.coverageContracts.COVERAGE_TOOL_CONTRACTS,
         ...sources.minidumpContracts.MINIDUMP_TOOL_CONTRACTS,
         ...sources.logicContracts.LOGIC_TOOL_CONTRACTS,
+        ...sources.patternContracts.PATTERN_TOOL_CONTRACTS,
       ],
     },
     {
@@ -218,6 +219,18 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.logicProvider.LOGIC_CAPTURE_PROVIDER_IDENTITY,
       contracts: sources.logicContracts.LOGIC_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.patternProvider.BYTE_PATTERN_PROVIDER_IDENTITY,
+      contracts: sources.patternContracts.PATTERN_TOOL_CONTRACTS.filter(
+        ({ name }) => name === "scan_byte_patterns",
+      ),
+    },
+    {
+      identity: sources.cheatTableProvider.CHEAT_TABLE_PROVIDER_IDENTITY,
+      contracts: sources.patternContracts.PATTERN_TOOL_CONTRACTS.filter(
+        ({ name }) => name === "inspect_cheat_table",
+      ),
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

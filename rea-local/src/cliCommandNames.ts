@@ -6,6 +6,8 @@ export const CLI_COMMANDS = Object.freeze({
   inspectCoverageLog: "inspect-coverage-log",
   inspectMinidump: "inspect-minidump",
   inspectLogicCapture: "inspect-logic-capture",
+  scanBytePatterns: "scan-byte-patterns",
+  inspectCheatTable: "inspect-cheat-table",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

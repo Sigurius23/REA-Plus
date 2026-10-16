@@ -8,11 +8,16 @@ import { createIl2CppMetadataService } from "../composition/il2cpp.js";
 import { createCoverageLogService } from "../composition/coverage.js";
 import { createMinidumpService } from "../composition/minidump.js";
 import { createLogicCaptureService } from "../composition/logic.js";
+import {
+  createBytePatternService,
+  createCheatTableService,
+} from "../composition/patterns.js";
 import { registerJvmTools } from "./registerJvmTools.js";
 import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { registerCoverageTools } from "./registerCoverageTools.js";
 import { registerMinidumpTools } from "./registerMinidumpTools.js";
 import { registerLogicTools } from "./registerLogicTools.js";
+import { registerPatternTools } from "./registerPatternTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -532,6 +537,16 @@ const registerConfiguredAnalysisTools = (
   registerLogicTools(
     server,
     createLogicCaptureService(environment),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerPatternTools(
+    server,
+    {
+      patterns: createBytePatternService(),
+      tables: createCheatTableService(),
+    },
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

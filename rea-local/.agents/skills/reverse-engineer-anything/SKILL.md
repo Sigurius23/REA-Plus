@@ -90,6 +90,10 @@ explicit path or endpoint and do not need it.
   reports channel edges and bit-rate estimates; add a decoder stack (uart,
   spi, i2c, ...) with caller-supplied sigrok-cli 0.7 (`REA_SIGROK_CLI`) to get
   annotations and byte streams such as a UART console log.
+- AOB signatures or a Cheat Engine table: `scan_byte_patterns` finds
+  signatures in a PE/ELF/Mach-O and resolves rel32 targets (static pointers,
+  call targets); `inspect_cheat_table` reads a `.CT` and, with `binary_path`,
+  re-checks its signatures and asserts against a new build. Neither runs code.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path
