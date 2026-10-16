@@ -55,6 +55,8 @@ const SOURCE_PATHS = {
   jvmProvider: "dist/jvm/CfrRelease.js",
   il2cppContracts: "dist/contracts/il2cpp/il2cppToolContracts.js",
   il2cppProvider: "dist/il2cpp/R2UnityRelease.js",
+  coverageContracts: "dist/contracts/drcov/coverageToolContracts.js",
+  coverageProvider: "dist/drcov/CoverageLogReader.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

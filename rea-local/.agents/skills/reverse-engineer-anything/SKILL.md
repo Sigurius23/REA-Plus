@@ -78,6 +78,10 @@ explicit path or endpoint and do not need it.
   assemblies with caller-supplied r2unity 1.2 (`REA_R2UNITY_PATH`). Select the
   native binary too to recover method addresses, then inspect those addresses
   with a binary provider.
+- Recorded drcov coverage (DynamoRIO `drrun -t drcov` or a Frida tracer):
+  `inspect_coverage_log` summarizes executed modules and pages a module's
+  blocks; pass a baseline log of a run without the action to keep only the
+  blocks that action added, then inspect their static addresses.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

@@ -3,6 +3,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectWasmArtifact: "inspect-wasm-artifact",
   inspectJvmArtifact: "inspect-jvm-artifact",
   inspectIl2CppMetadata: "inspect-il2cpp-metadata",
+  inspectCoverageLog: "inspect-coverage-log",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

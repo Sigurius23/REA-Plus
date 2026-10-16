@@ -1,6 +1,7 @@
 import { registerWasmCommands } from "./cli/wasmCommands.js";
 import { registerJvmCommands } from "./cli/jvmCommands.js";
 import { registerIl2CppCommands } from "./cli/il2cppCommands.js";
+import { registerCoverageCommands } from "./cli/coverageCommands.js";
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { createDirectAnalysis } from "./composition/directAnalysis.js";
 import { registerEvmCommands } from "./cli/evmCommands.js";
@@ -78,6 +79,7 @@ export const createCli = (
   registerWasmCommands(cli, logger, environment);
   registerJvmCommands(cli, logger, environment);
   registerIl2CppCommands(cli, logger, environment);
+  registerCoverageCommands(cli, logger);
   registerEvmCommands(cli, logger, environment);
   registerArtifactCommands(cli, logger, analysis.runProviderAnalysis);
   registerManagedCommands(cli, logger, analysis.runProviderAnalysis);

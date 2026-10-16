@@ -37,6 +37,7 @@ export default defineConfig({
           { text: "Browser observation", link: "/browser-observation" },
           { text: "Electron observation", link: "/electron-observation" },
           { text: "Process capture", link: "/process-capture" },
+          { text: "Coverage logs", link: "/drcov-coverage" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },

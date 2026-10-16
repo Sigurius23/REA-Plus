@@ -348,7 +348,7 @@ const workflowAvailabilityFor = ({
           remediation:
             "Supply r2unity 1.2.8 or a later 1.2 release via absolute REA_R2UNITY_PATH. No active binary target is required; the tool is checked at execution.",
         };
-  if (name === "inspect_pe_resources")
+  if (name === "inspect_pe_resources" || name === "inspect_coverage_log")
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")
     return policy.evmInterfaceEnabled === true
