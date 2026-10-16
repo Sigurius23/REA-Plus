@@ -86,6 +86,8 @@ const SOURCE_PATHS = {
   dataBlobProvider: "dist/blob/BlobInspector.js",
   godotContracts: "dist/contracts/godot/godotToolContracts.js",
   godotProvider: "dist/godot/GodotInspector.js",
+  protocolContracts: "dist/contracts/protocol/protocolToolContracts.js",
+  protocolProvider: "dist/protocol/ProtocolFieldsInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

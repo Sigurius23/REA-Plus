@@ -46,6 +46,8 @@ interface PacketDecode {
   readonly application: UnknownObject | null;
   /** Pointers whose transport credentials the decoder removed. */
   readonly credentialPointers: readonly string[];
+  /** Captured transport payload within the frame, when its header decoded. */
+  readonly payload?: { readonly offset: number; readonly length: number };
   readonly status: string;
 }
 

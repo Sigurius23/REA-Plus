@@ -16,6 +16,7 @@ import { MOBSF_TOOL_CONTRACTS } from "./mobsf/mobsfToolContracts.js";
 import { LUA_TOOL_CONTRACTS } from "./lua/luaToolContracts.js";
 import { DATA_BLOB_TOOL_CONTRACTS } from "./blob/dataBlobToolContracts.js";
 import { GODOT_TOOL_CONTRACTS } from "./godot/godotToolContracts.js";
+import { PROTOCOL_TOOL_CONTRACTS } from "./protocol/protocolToolContracts.js";
 import { EVM_TOOL_CONTRACTS } from "./evm/evmToolContracts.js";
 import { ANALYSIS_VIEW_TOOL_CONTRACTS } from "./analysisViewToolContracts.js";
 import { BINARY_DIAGNOSTICS_TOOL_CONTRACTS } from "./native/binaryDiagnosticsToolContracts.js";
@@ -69,6 +70,7 @@ export const TOOL_CONTRACTS = [
   ...LUA_TOOL_CONTRACTS,
   ...DATA_BLOB_TOOL_CONTRACTS,
   ...GODOT_TOOL_CONTRACTS,
+  ...PROTOCOL_TOOL_CONTRACTS,
   ...MANAGED_TOOL_CONTRACTS,
   ...ANDROID_TOOL_CONTRACTS,
   ...APKTOOL_TOOL_CONTRACTS,

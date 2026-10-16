@@ -145,6 +145,12 @@ explicit path or endpoint and do not need it.
   (comments are not stored). Entries named by their original `.gd`/`.tscn`
   path follow `.remap`. Encrypted saves need `key_env` or `password_env`;
   the key itself is never passed.
+- Undocumented network protocol (a game's netcode, a device's control
+  channel) in a PCAP/PCAPNG capture or as hex lines: `infer_protocol_fields`
+  frames TCP streams, groups messages into formats and proposes each
+  format's fields (type, length, counter, checksum with its coverage,
+  timestamp, constants, floats, text). Every field is a hypothesis; confirm
+  it by editing a replayed message.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

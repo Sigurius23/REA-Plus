@@ -111,6 +111,7 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_lua_bytecode: evidence,
   inspect_data_blob: evidence,
   inspect_godot_file: evidence,
+  infer_protocol_fields: evidence,
   inspect_logic_capture: effects({
     mutatesSession: true,
     writesFilesystem: true,

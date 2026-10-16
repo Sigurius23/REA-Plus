@@ -237,6 +237,7 @@ const completeNetworkDecode = (
     application: application?.reported ?? null,
     credentialPointers: application?.credentialPointers ?? [],
     status: network.status ?? transport?.status ?? "decoded-network-layer",
+    ...(transport?.payload === undefined ? {} : { payload: transport.payload }),
   };
 };
 

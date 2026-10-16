@@ -23,6 +23,7 @@ import { createMobsfReportService } from "../composition/mobsf.js";
 import { createLuaBytecodeService } from "../composition/lua.js";
 import { createDataBlobService } from "../composition/blob.js";
 import { createGodotFileService } from "../composition/godot.js";
+import { createProtocolFieldsService } from "../composition/protocol.js";
 import { registerJvmTools } from "./registerJvmTools.js";
 import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { registerCoverageTools } from "./registerCoverageTools.js";
@@ -40,6 +41,7 @@ import { registerMobsfTools } from "./registerMobsfTools.js";
 import { registerLuaTools } from "./registerLuaTools.js";
 import { registerDataBlobTools } from "./registerDataBlobTools.js";
 import { registerGodotTools } from "./registerGodotTools.js";
+import { registerProtocolTools } from "./registerProtocolTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -646,6 +648,13 @@ const registerConfiguredAnalysisTools = (
   registerGodotTools(
     server,
     createGodotFileService(environment),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerProtocolTools(
+    server,
+    createProtocolFieldsService(),
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

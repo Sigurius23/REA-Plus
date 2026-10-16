@@ -45,6 +45,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.luaContracts.LUA_TOOL_CONTRACTS,
         ...sources.dataBlobContracts.DATA_BLOB_TOOL_CONTRACTS,
         ...sources.godotContracts.GODOT_TOOL_CONTRACTS,
+        ...sources.protocolContracts.PROTOCOL_TOOL_CONTRACTS,
       ],
     },
     {
@@ -286,6 +287,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.godotProvider.GODOT_FILE_PROVIDER_IDENTITY,
       contracts: sources.godotContracts.GODOT_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.protocolProvider.PROTOCOL_FIELDS_PROVIDER_IDENTITY,
+      contracts: sources.protocolContracts.PROTOCOL_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,
