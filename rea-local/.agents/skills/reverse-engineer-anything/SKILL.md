@@ -138,6 +138,13 @@ explicit path or endpoint and do not need it.
   MessagePack, CBOR, BSON, Java/Bedrock NBT, JSON and Minecraft region
   chunks into a tree with byte offsets; check `candidates`, since a short
   payload can decode as more than one format.
+- Godot game files (a `.pck` or executable with `entry`, or loose
+  `.res`/`.scn`/`.gdc`/`.gde`, saves, `project.binary`): `inspect_godot_file`
+  lists scene trees with connections and every stored resource property, and
+  rebuilds GDScript from compiled tokens on the original line numbers
+  (comments are not stored). Entries named by their original `.gd`/`.tscn`
+  path follow `.remap`. Encrypted saves need `key_env` or `password_env`;
+  the key itself is never passed.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

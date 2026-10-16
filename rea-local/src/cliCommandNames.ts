@@ -18,6 +18,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectMobsfReport: "inspect-mobsf-report",
   inspectLuaBytecode: "inspect-lua-bytecode",
   inspectDataBlob: "inspect-data-blob",
+  inspectGodotFile: "inspect-godot-file",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

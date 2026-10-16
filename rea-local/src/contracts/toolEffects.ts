@@ -110,6 +110,7 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_mobsf_report: evidence,
   inspect_lua_bytecode: evidence,
   inspect_data_blob: evidence,
+  inspect_godot_file: evidence,
   inspect_logic_capture: effects({
     mutatesSession: true,
     writesFilesystem: true,

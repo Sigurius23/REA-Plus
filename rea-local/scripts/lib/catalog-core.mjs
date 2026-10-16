@@ -84,6 +84,8 @@ const SOURCE_PATHS = {
   luaProvider: "dist/lua/LuaInspector.js",
   dataBlobContracts: "dist/contracts/blob/dataBlobToolContracts.js",
   dataBlobProvider: "dist/blob/BlobInspector.js",
+  godotContracts: "dist/contracts/godot/godotToolContracts.js",
+  godotProvider: "dist/godot/GodotInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

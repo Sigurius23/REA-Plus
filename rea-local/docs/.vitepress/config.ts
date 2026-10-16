@@ -49,6 +49,7 @@ export default defineConfig({
           { text: "WebAssembly modules", link: "/wasm-modules" },
           { text: "Lua bytecode", link: "/lua-bytecode" },
           { text: "Save and packet blobs", link: "/data-blobs" },
+          { text: "Godot resources and scripts", link: "/godot-files" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "MobSF reports", link: "/mobsf-reports" },

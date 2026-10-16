@@ -364,7 +364,8 @@ const workflowAvailabilityFor = ({
     name === "inspect_wasm_module" ||
     name === "inspect_mobsf_report" ||
     name === "inspect_lua_bytecode" ||
-    name === "inspect_data_blob"
+    name === "inspect_data_blob" ||
+    name === "inspect_godot_file"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")
