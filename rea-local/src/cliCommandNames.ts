@@ -15,6 +15,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectGameMakerData: "inspect-gamemaker-data",
   inspectX64dbgDatabase: "inspect-x64dbg-database",
   inspectWasmModule: "inspect-wasm-module",
+  inspectMobsfReport: "inspect-mobsf-report",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

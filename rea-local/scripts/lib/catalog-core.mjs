@@ -78,6 +78,8 @@ const SOURCE_PATHS = {
   x64dbgProvider: "dist/x64dbg/X64dbgInspector.js",
   wasmModuleContracts: "dist/contracts/wasmmodule/wasmModuleToolContracts.js",
   wasmModuleProvider: "dist/wasmmodule/WasmModuleInspector.js",
+  mobsfContracts: "dist/contracts/mobsf/mobsfToolContracts.js",
+  mobsfProvider: "dist/mobsf/MobsfInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

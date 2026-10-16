@@ -122,6 +122,11 @@ explicit path or endpoint and do not need it.
   (Emscripten, Unity/IL2CPP, Godot, Rust), debug information kept, functions
   with call counts, callers and callees of one function, imports, exports and
   data strings. Indirect call targets are counted, not resolved.
+- MobSF static-analysis JSON report: `inspect_mobsf_report` turns MobSF's
+  findings (with CWE/MASVS and file locations), permissions, components and
+  deep links, native library hardening, endpoints, secrets, trackers and
+  APKiD protections into Evidence. With `app_path` it checks the report names
+  the same APK/IPA. The findings are MobSF's, not a new analysis.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

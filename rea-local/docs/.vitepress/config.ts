@@ -49,6 +49,7 @@ export default defineConfig({
           { text: "WebAssembly modules", link: "/wasm-modules" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
+          { text: "MobSF reports", link: "/mobsf-reports" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },
           { text: "Unity IL2CPP metadata", link: "/il2cpp-metadata" },
           { text: "Apple applications", link: "/apple-application-analysis" },

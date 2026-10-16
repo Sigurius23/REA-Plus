@@ -12,6 +12,7 @@ import { RPG_MAKER_TOOL_CONTRACTS } from "./rpgmaker/rpgMakerToolContracts.js";
 import { GAMEMAKER_TOOL_CONTRACTS } from "./gamemaker/gameMakerToolContracts.js";
 import { X64DBG_TOOL_CONTRACTS } from "./x64dbg/x64dbgToolContracts.js";
 import { WASM_MODULE_TOOL_CONTRACTS } from "./wasmmodule/wasmModuleToolContracts.js";
+import { MOBSF_TOOL_CONTRACTS } from "./mobsf/mobsfToolContracts.js";
 import { EVM_TOOL_CONTRACTS } from "./evm/evmToolContracts.js";
 import { ANALYSIS_VIEW_TOOL_CONTRACTS } from "./analysisViewToolContracts.js";
 import { BINARY_DIAGNOSTICS_TOOL_CONTRACTS } from "./native/binaryDiagnosticsToolContracts.js";
@@ -61,6 +62,7 @@ export const TOOL_CONTRACTS = [
   ...GAMEMAKER_TOOL_CONTRACTS,
   ...X64DBG_TOOL_CONTRACTS,
   ...WASM_MODULE_TOOL_CONTRACTS,
+  ...MOBSF_TOOL_CONTRACTS,
   ...MANAGED_TOOL_CONTRACTS,
   ...ANDROID_TOOL_CONTRACTS,
   ...APKTOOL_TOOL_CONTRACTS,

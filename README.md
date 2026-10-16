@@ -27,6 +27,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/gamemaker/                     # GameMaker data.win / game.droid files
 │   ├── src/x64dbg/                        # x64dbg .dd32/.dd64 session databases
 │   ├── src/wasmmodule/                    # WebAssembly modules decoded without WABT
+│   ├── src/mobsf/                         # MobSF static-analysis report import
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, Burp, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -66,6 +67,7 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **GameMaker Data Files**: `data.win`, `game.unx`, `game.droid` and audio-group files mapped into chunks, resources (sprites, objects with their sprites, rooms with instances and creation code, scripts, sounds), GML bytecode entries, the string table, functions and variables, texture pages (PNG/QOI) and embedded audio, with VM/YYC and the minimum runtime the chunk set implies ([guide](./rea-local/docs/gamemaker-data.md)).
 - **x64dbg Databases**: `.dd32`/`.dd64` session databases (plain or LZ4-compressed) mapped into labels, comments, bookmarks, function and loop ranges, breakpoints with conditions and log/command text, xrefs and watches; given the game executable, entries are placed at file offsets and software breakpoints are re-checked against its bytes ([guide](./rea-local/docs/x64dbg-databases.md)).
 - **WebAssembly Modules**: Web game builds (`.wasm`, or gzip/Brotli `.wasm.gz`, `.wasm.br`, `.unityweb`) decoded without WABT into the toolchain they betray (Emscripten, Unity WebGL/IL2CPP, Godot, Rust/Bevy), the debug information kept, functions with signatures and call counts, the callers and callees of one function, imports, exports and data strings. Checked against V8 on ten itch.io HTML5 games ([guide](./rea-local/docs/wasm-modules.md)).
+- **MobSF Reports**: MobSF static-analysis JSON for Android and iOS apps (MobSF 3.1 to 4.x) imported as Evidence: app identity and signing certificate, findings with CWE/OWASP/MASVS and file and line locations, permissions, components with exported state and deep links, native library and Mach-O hardening, endpoints, domains, secrets, trackers and APKiD protections, optionally checked against the APK/IPA's hash. Checked against the scorecards MobSF wrote into nine real reports ([guide](./rea-local/docs/mobsf-reports.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
