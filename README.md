@@ -15,6 +15,8 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/binaryNinja/                   # Binary Ninja provider integration
 │   ├── src/radare2/                       # radare2 deep-analysis provider
 │   ├── src/jvm/                           # CFR-based JAR/.class decompilation
+│   ├── src/il2cpp/                        # Unity IL2CPP metadata via r2unity
+│   ├── src/drcov/                         # drcov coverage logs and baseline diffs
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -42,6 +44,8 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **Mobile Runtime Instrumentation**: Dynamic tracing, Frida integration, and Android app evidence collection.
 - **Network & Protocol Analysis**: Offline HAR, mitmproxy and PCAP/PCAPNG inspection with link/IP/TCP/UDP decoding, HTTP/1.x heads, TLS hello SNI/ALPN and DNS messages ([guide](./rea-local/docs/web-network-captures.md)). Captures are read from files; REA+ does not capture live traffic.
 - **JVM Decompilation**: Class inventories and CFR-decompiled Java for selected classes in JARs and `.class` files ([guide](./rea-local/docs/jvm-decompilation.md)).
+- **Unity IL2CPP Metadata**: Classes, members, string literals, interop and assemblies from `global-metadata.dat`, with native method addresses recovered from GameAssembly/libil2cpp through r2unity ([guide](./rea-local/docs/il2cpp-metadata.md)).
+- **Coverage Logs**: Executed modules and basic blocks from DynamoRIO or Frida drcov logs, and differential coverage against a baseline run to isolate the code behind one action ([guide](./rea-local/docs/drcov-coverage.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)
