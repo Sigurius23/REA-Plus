@@ -13,6 +13,7 @@ import {
   createCheatTableService,
 } from "../composition/patterns.js";
 import { createUnityAssetsService } from "../composition/unity.js";
+import { createGameArchiveService } from "../composition/gameArchives.js";
 import { registerJvmTools } from "./registerJvmTools.js";
 import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { registerCoverageTools } from "./registerCoverageTools.js";
@@ -20,6 +21,7 @@ import { registerMinidumpTools } from "./registerMinidumpTools.js";
 import { registerLogicTools } from "./registerLogicTools.js";
 import { registerPatternTools } from "./registerPatternTools.js";
 import { registerUnityTools } from "./registerUnityTools.js";
+import { registerGameArchiveTools } from "./registerGameArchiveTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -556,6 +558,13 @@ const registerConfiguredAnalysisTools = (
   registerUnityTools(
     server,
     createUnityAssetsService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerGameArchiveTools(
+    server,
+    createGameArchiveService(),
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

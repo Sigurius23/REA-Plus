@@ -9,6 +9,7 @@ export const CLI_COMMANDS = Object.freeze({
   scanBytePatterns: "scan-byte-patterns",
   inspectCheatTable: "inspect-cheat-table",
   inspectUnityAssets: "inspect-unity-assets",
+  inspectGameArchive: "inspect-game-archive",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

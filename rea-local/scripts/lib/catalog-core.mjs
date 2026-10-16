@@ -66,6 +66,8 @@ const SOURCE_PATHS = {
   cheatTableProvider: "dist/patterns/CheatTableInspector.js",
   unityContracts: "dist/contracts/unity/unityToolContracts.js",
   unityProvider: "dist/unity/UnityAssetsInspector.js",
+  gameArchiveContracts: "dist/contracts/gamearchives/gameArchiveToolContracts.js",
+  gameArchiveProvider: "dist/gamearchives/GameArchiveInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

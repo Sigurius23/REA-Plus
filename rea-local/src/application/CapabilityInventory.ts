@@ -355,7 +355,8 @@ const workflowAvailabilityFor = ({
     name === "inspect_logic_capture" ||
     name === "scan_byte_patterns" ||
     name === "inspect_cheat_table" ||
-    name === "inspect_unity_assets"
+    name === "inspect_unity_assets" ||
+    name === "inspect_game_archive"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

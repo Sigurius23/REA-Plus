@@ -35,6 +35,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.logicContracts.LOGIC_TOOL_CONTRACTS,
         ...sources.patternContracts.PATTERN_TOOL_CONTRACTS,
         ...sources.unityContracts.UNITY_TOOL_CONTRACTS,
+        ...sources.gameArchiveContracts.GAME_ARCHIVE_TOOL_CONTRACTS,
       ],
     },
     {
@@ -236,6 +237,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.unityProvider.UNITY_ASSETS_PROVIDER_IDENTITY,
       contracts: sources.unityContracts.UNITY_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.gameArchiveProvider.GAME_ARCHIVE_PROVIDER_IDENTITY,
+      contracts: sources.gameArchiveContracts.GAME_ARCHIVE_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

@@ -41,6 +41,7 @@ export default defineConfig({
           { text: "Crash minidumps", link: "/minidumps" },
           { text: "AOB signatures and CE tables", link: "/byte-patterns" },
           { text: "Unity asset bundles", link: "/unity-assets" },
+          { text: "Game engine archives", link: "/game-archives" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },
