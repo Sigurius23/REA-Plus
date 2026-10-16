@@ -9,6 +9,7 @@ import { registerUnityCommands } from "./cli/unityCommands.js";
 import { registerGameArchiveCommands } from "./cli/gameArchiveCommands.js";
 import { registerRenpyCommands } from "./cli/renpyCommands.js";
 import { registerRpgMakerCommands } from "./cli/rpgMakerCommands.js";
+import { registerGameMakerCommands } from "./cli/gameMakerCommands.js";
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { createDirectAnalysis } from "./composition/directAnalysis.js";
 import { registerEvmCommands } from "./cli/evmCommands.js";
@@ -94,6 +95,7 @@ export const createCli = (
   registerGameArchiveCommands(cli, logger);
   registerRenpyCommands(cli, logger);
   registerRpgMakerCommands(cli, logger);
+  registerGameMakerCommands(cli, logger);
   registerEvmCommands(cli, logger, environment);
   registerArtifactCommands(cli, logger, analysis.runProviderAnalysis);
   registerManagedCommands(cli, logger, analysis.runProviderAnalysis);

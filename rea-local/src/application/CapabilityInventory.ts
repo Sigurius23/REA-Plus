@@ -358,7 +358,8 @@ const workflowAvailabilityFor = ({
     name === "inspect_unity_assets" ||
     name === "inspect_game_archive" ||
     name === "inspect_renpy_script" ||
-    name === "inspect_rpgmaker_project"
+    name === "inspect_rpgmaker_project" ||
+    name === "inspect_gamemaker_data"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

@@ -109,6 +109,10 @@ explicit path or endpoint and do not need it.
 - RPG Maker MV/MZ game folder: `inspect_rpgmaker_project` maps maps, dialogue,
   switch and variable sites, the database and plugins; it verifies the asset
   key against an encrypted PNG, decrypts one selected asset, and decodes saves.
+- GameMaker `data.win`, `game.unx`, `game.droid` or `audiogroupN.dat`:
+  `inspect_gamemaker_data` lists chunks, resources, bytecode entries, strings,
+  functions and variables, texture pages and audio; it reports VM or YYC and
+  the minimum runtime the chunks imply. Bytecode is listed, not decompiled.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path
