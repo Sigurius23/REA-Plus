@@ -5,6 +5,7 @@ import { COVERAGE_TOOL_CONTRACTS } from "./drcov/coverageToolContracts.js";
 import { MINIDUMP_TOOL_CONTRACTS } from "./minidump/minidumpToolContracts.js";
 import { LOGIC_TOOL_CONTRACTS } from "./logic/logicToolContracts.js";
 import { PATTERN_TOOL_CONTRACTS } from "./patterns/patternToolContracts.js";
+import { UNITY_TOOL_CONTRACTS } from "./unity/unityToolContracts.js";
 import { EVM_TOOL_CONTRACTS } from "./evm/evmToolContracts.js";
 import { ANALYSIS_VIEW_TOOL_CONTRACTS } from "./analysisViewToolContracts.js";
 import { BINARY_DIAGNOSTICS_TOOL_CONTRACTS } from "./native/binaryDiagnosticsToolContracts.js";
@@ -47,6 +48,7 @@ export const TOOL_CONTRACTS = [
   ...MINIDUMP_TOOL_CONTRACTS,
   ...LOGIC_TOOL_CONTRACTS,
   ...PATTERN_TOOL_CONTRACTS,
+  ...UNITY_TOOL_CONTRACTS,
   ...MANAGED_TOOL_CONTRACTS,
   ...ANDROID_TOOL_CONTRACTS,
   ...APKTOOL_TOOL_CONTRACTS,

@@ -64,6 +64,8 @@ const SOURCE_PATHS = {
   patternContracts: "dist/contracts/patterns/patternToolContracts.js",
   patternProvider: "dist/patterns/PatternScanProvider.js",
   cheatTableProvider: "dist/patterns/CheatTableInspector.js",
+  unityContracts: "dist/contracts/unity/unityToolContracts.js",
+  unityProvider: "dist/unity/UnityAssetsInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

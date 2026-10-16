@@ -100,6 +100,7 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_minidump: evidence,
   scan_byte_patterns: evidence,
   inspect_cheat_table: evidence,
+  inspect_unity_assets: evidence,
   inspect_logic_capture: effects({
     mutatesSession: true,
     writesFilesystem: true,

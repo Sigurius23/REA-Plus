@@ -34,6 +34,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.minidumpContracts.MINIDUMP_TOOL_CONTRACTS,
         ...sources.logicContracts.LOGIC_TOOL_CONTRACTS,
         ...sources.patternContracts.PATTERN_TOOL_CONTRACTS,
+        ...sources.unityContracts.UNITY_TOOL_CONTRACTS,
       ],
     },
     {
@@ -231,6 +232,10 @@ export const providerCatalog = (sources) => {
       contracts: sources.patternContracts.PATTERN_TOOL_CONTRACTS.filter(
         ({ name }) => name === "inspect_cheat_table",
       ),
+    },
+    {
+      identity: sources.unityProvider.UNITY_ASSETS_PROVIDER_IDENTITY,
+      contracts: sources.unityContracts.UNITY_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

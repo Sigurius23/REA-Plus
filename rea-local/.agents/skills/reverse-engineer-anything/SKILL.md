@@ -94,6 +94,11 @@ explicit path or endpoint and do not need it.
   signatures in a PE/ELF/Mach-O and resolves rel32 targets (static pointers,
   call targets); `inspect_cheat_table` reads a `.CT` and, with `binary_path`,
   re-checks its signatures and asserts against a new build. Neither runs code.
+- Unity asset bundle or player data file (`.bundle`, `level0`,
+  `sharedassets0.assets`, `globalgamemanagers`): `inspect_unity_assets` lists
+  objects with names, owning GameObjects and MonoBehaviour scripts, bundle
+  asset paths and `Resources.Load` paths, and MonoScripts. Pair it with
+  `inspect_il2cpp_metadata` or a .NET provider for the scripts' code.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

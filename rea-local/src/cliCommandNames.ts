@@ -8,6 +8,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectLogicCapture: "inspect-logic-capture",
   scanBytePatterns: "scan-byte-patterns",
   inspectCheatTable: "inspect-cheat-table",
+  inspectUnityAssets: "inspect-unity-assets",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

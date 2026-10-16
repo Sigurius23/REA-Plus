@@ -5,6 +5,7 @@ import { registerCoverageCommands } from "./cli/coverageCommands.js";
 import { registerMinidumpCommands } from "./cli/minidumpCommands.js";
 import { registerLogicCommands } from "./cli/logicCommands.js";
 import { registerPatternCommands } from "./cli/patternCommands.js";
+import { registerUnityCommands } from "./cli/unityCommands.js";
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { createDirectAnalysis } from "./composition/directAnalysis.js";
 import { registerEvmCommands } from "./cli/evmCommands.js";
@@ -86,6 +87,7 @@ export const createCli = (
   registerMinidumpCommands(cli, logger);
   registerLogicCommands(cli, logger, environment);
   registerPatternCommands(cli, logger);
+  registerUnityCommands(cli, logger);
   registerEvmCommands(cli, logger, environment);
   registerArtifactCommands(cli, logger, analysis.runProviderAnalysis);
   registerManagedCommands(cli, logger, analysis.runProviderAnalysis);
