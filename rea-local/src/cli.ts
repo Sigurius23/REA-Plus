@@ -14,6 +14,7 @@ import { registerX64dbgCommands } from "./cli/x64dbgCommands.js";
 import { registerWasmModuleCommands } from "./cli/wasmModuleCommands.js";
 import { registerMobsfCommands } from "./cli/mobsfCommands.js";
 import { registerLuaCommands } from "./cli/luaCommands.js";
+import { registerDataBlobCommands } from "./cli/dataBlobCommands.js";
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { createDirectAnalysis } from "./composition/directAnalysis.js";
 import { registerEvmCommands } from "./cli/evmCommands.js";
@@ -104,6 +105,7 @@ export const createCli = (
   registerWasmModuleCommands(cli, logger);
   registerMobsfCommands(cli, logger);
   registerLuaCommands(cli, logger);
+  registerDataBlobCommands(cli, logger);
   registerEvmCommands(cli, logger, environment);
   registerArtifactCommands(cli, logger, analysis.runProviderAnalysis);
   registerManagedCommands(cli, logger, analysis.runProviderAnalysis);

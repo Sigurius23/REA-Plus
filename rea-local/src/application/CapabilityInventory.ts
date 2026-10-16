@@ -363,7 +363,8 @@ const workflowAvailabilityFor = ({
     name === "inspect_x64dbg_database" ||
     name === "inspect_wasm_module" ||
     name === "inspect_mobsf_report" ||
-    name === "inspect_lua_bytecode"
+    name === "inspect_lua_bytecode" ||
+    name === "inspect_data_blob"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

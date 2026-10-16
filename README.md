@@ -29,6 +29,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/wasmmodule/                    # WebAssembly modules decoded without WABT
 │   ├── src/mobsf/                         # MobSF static-analysis report import
 │   ├── src/lua/                           # Lua 5.1-5.4 and LuaJIT bytecode disassembly
+│   ├── src/blob/                          # Schema-less save and packet blob decoding
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, Burp, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -70,6 +71,7 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **WebAssembly Modules**: Web game builds (`.wasm`, or gzip/Brotli `.wasm.gz`, `.wasm.br`, `.unityweb`) decoded without WABT into the toolchain they betray (Emscripten, Unity WebGL/IL2CPP, Godot, Rust/Bevy), the debug information kept, functions with signatures and call counts, the callers and callees of one function, imports, exports and data strings. Checked against V8 on ten itch.io HTML5 games ([guide](./rea-local/docs/wasm-modules.md)).
 - **MobSF Reports**: MobSF static-analysis JSON for Android and iOS apps (MobSF 3.1 to 4.x) imported as Evidence: app identity and signing certificate, findings with CWE/OWASP/MASVS and file and line locations, permissions, components with exported state and deep links, native library and Mach-O hardening, endpoints, domains, secrets, trackers and APKiD protections, optionally checked against the APK/IPA's hash. Checked against the scorecards MobSF wrote into nine real reports ([guide](./rea-local/docs/mobsf-reports.md)).
 - **Lua Bytecode**: Compiled game and mod scripts (luac 5.1-5.4 chunks, LuaJIT 2.0/2.1 dumps, or chunks embedded in game data) disassembled without running them: the function tree with name hints recovered from where each function is stored, instruction listings in luac/luajit form, constants, locals and upvalues. Checked against the real compilers' own listings on 3,836 chunks built from 389 Lua files, including Factorio's game data ([guide](./rea-local/docs/lua-bytecode.md)).
+- **Save and Packet Blobs**: Save games, caches, settings blobs and packet payloads decoded without a schema: base64, hex, gzip, zlib, zstd and LZ4 layers removed (raw deflate and Brotli on request), then protobuf read as `protoc --decode_raw` reads it with every field's other readings, MessagePack, CBOR, BSON, Java and Bedrock NBT, JSON, and Minecraft region files chunk by chunk, as a tree with byte offsets or as its strings. Checked against protoc, the Python msgpack, cbor2 and bson libraries, the lz4 and zstd tools, and two NBT libraries' test files ([guide](./rea-local/docs/data-blobs.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)

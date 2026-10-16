@@ -132,6 +132,12 @@ explicit path or endpoint and do not need it.
   luac/luajit-style instruction listings, constants, locals and upvalues; the
   chunks view finds embedded chunks for `chunk_offset`. It disassembles; it
   does not decompile, and shuffled-opcode VMs decode with wrong names.
+- Save file, cache, settings blob or packet payload with no schema:
+  `inspect_data_blob` peels base64/hex/gzip/zlib/zstd/LZ4 (name deflate or
+  brotli in `layers`) and decodes protobuf (as `protoc --decode_raw`),
+  MessagePack, CBOR, BSON, Java/Bedrock NBT, JSON and Minecraft region
+  chunks into a tree with byte offsets; check `candidates`, since a short
+  payload can decode as more than one format.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

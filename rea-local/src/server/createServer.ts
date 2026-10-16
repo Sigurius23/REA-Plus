@@ -21,6 +21,7 @@ import { createX64dbgDatabaseService } from "../composition/x64dbg.js";
 import { createWasmModuleService } from "../composition/wasmModule.js";
 import { createMobsfReportService } from "../composition/mobsf.js";
 import { createLuaBytecodeService } from "../composition/lua.js";
+import { createDataBlobService } from "../composition/blob.js";
 import { registerJvmTools } from "./registerJvmTools.js";
 import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { registerCoverageTools } from "./registerCoverageTools.js";
@@ -36,6 +37,7 @@ import { registerX64dbgTools } from "./registerX64dbgTools.js";
 import { registerWasmModuleTools } from "./registerWasmModuleTools.js";
 import { registerMobsfTools } from "./registerMobsfTools.js";
 import { registerLuaTools } from "./registerLuaTools.js";
+import { registerDataBlobTools } from "./registerDataBlobTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -628,6 +630,13 @@ const registerConfiguredAnalysisTools = (
   registerLuaTools(
     server,
     createLuaBytecodeService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerDataBlobTools(
+    server,
+    createDataBlobService(),
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,
