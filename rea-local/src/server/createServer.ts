@@ -18,6 +18,7 @@ import { createRenpyScriptService } from "../composition/renpy.js";
 import { createRpgMakerProjectService } from "../composition/rpgMaker.js";
 import { createGameMakerDataService } from "../composition/gameMaker.js";
 import { createX64dbgDatabaseService } from "../composition/x64dbg.js";
+import { createWasmModuleService } from "../composition/wasmModule.js";
 import { registerJvmTools } from "./registerJvmTools.js";
 import { registerIl2CppTools } from "./registerIl2CppTools.js";
 import { registerCoverageTools } from "./registerCoverageTools.js";
@@ -30,6 +31,7 @@ import { registerRenpyTools } from "./registerRenpyTools.js";
 import { registerRpgMakerTools } from "./registerRpgMakerTools.js";
 import { registerGameMakerTools } from "./registerGameMakerTools.js";
 import { registerX64dbgTools } from "./registerX64dbgTools.js";
+import { registerWasmModuleTools } from "./registerWasmModuleTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -601,6 +603,13 @@ const registerConfiguredAnalysisTools = (
   registerX64dbgTools(
     server,
     createX64dbgDatabaseService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerWasmModuleTools(
+    server,
+    createWasmModuleService(),
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

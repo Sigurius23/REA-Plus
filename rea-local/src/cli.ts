@@ -11,6 +11,7 @@ import { registerRenpyCommands } from "./cli/renpyCommands.js";
 import { registerRpgMakerCommands } from "./cli/rpgMakerCommands.js";
 import { registerGameMakerCommands } from "./cli/gameMakerCommands.js";
 import { registerX64dbgCommands } from "./cli/x64dbgCommands.js";
+import { registerWasmModuleCommands } from "./cli/wasmModuleCommands.js";
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { createDirectAnalysis } from "./composition/directAnalysis.js";
 import { registerEvmCommands } from "./cli/evmCommands.js";
@@ -98,6 +99,7 @@ export const createCli = (
   registerRpgMakerCommands(cli, logger);
   registerGameMakerCommands(cli, logger);
   registerX64dbgCommands(cli, logger);
+  registerWasmModuleCommands(cli, logger);
   registerEvmCommands(cli, logger, environment);
   registerArtifactCommands(cli, logger, analysis.runProviderAnalysis);
   registerManagedCommands(cli, logger, analysis.runProviderAnalysis);

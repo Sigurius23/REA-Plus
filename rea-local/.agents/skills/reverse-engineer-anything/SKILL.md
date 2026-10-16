@@ -117,6 +117,11 @@ explicit path or endpoint and do not need it.
   comments, bookmarks, function and loop ranges, breakpoints, xrefs and
   watches; with `module_path` it places them in the module file and flags
   breakpoints whose original bytes changed in a new build.
+- WebAssembly module (`.wasm`, `.wasm.gz`, `.wasm.br`, `.unityweb`):
+  `inspect_wasm_module` decodes it without WABT. It reports the toolchain
+  (Emscripten, Unity/IL2CPP, Godot, Rust), debug information kept, functions
+  with call counts, callers and callees of one function, imports, exports and
+  data strings. Indirect call targets are counted, not resolved.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

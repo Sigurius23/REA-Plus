@@ -40,6 +40,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.rpgMakerContracts.RPG_MAKER_TOOL_CONTRACTS,
         ...sources.gameMakerContracts.GAMEMAKER_TOOL_CONTRACTS,
         ...sources.x64dbgContracts.X64DBG_TOOL_CONTRACTS,
+        ...sources.wasmModuleContracts.WASM_MODULE_TOOL_CONTRACTS,
       ],
     },
     {
@@ -261,6 +262,10 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.x64dbgProvider.X64DBG_PROVIDER_IDENTITY,
       contracts: sources.x64dbgContracts.X64DBG_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.wasmModuleProvider.WASM_MODULE_PROVIDER_IDENTITY,
+      contracts: sources.wasmModuleContracts.WASM_MODULE_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

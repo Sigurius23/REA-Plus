@@ -46,6 +46,7 @@ export default defineConfig({
           { text: "RPG Maker MV/MZ games", link: "/rpgmaker-projects" },
           { text: "GameMaker data files", link: "/gamemaker-data" },
           { text: "x64dbg databases", link: "/x64dbg-databases" },
+          { text: "WebAssembly modules", link: "/wasm-modules" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "JVM classes and JARs", link: "/jvm-decompilation" },

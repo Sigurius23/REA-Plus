@@ -106,6 +106,7 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_rpgmaker_project: evidence,
   inspect_gamemaker_data: evidence,
   inspect_x64dbg_database: evidence,
+  inspect_wasm_module: evidence,
   inspect_logic_capture: effects({
     mutatesSession: true,
     writesFilesystem: true,
