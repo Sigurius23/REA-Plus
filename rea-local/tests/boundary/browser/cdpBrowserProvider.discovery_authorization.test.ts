@@ -238,3 +238,47 @@ describe("CdpBrowserProvider: discovery authorization 2", () => {
     });
   });
 });
+
+describe("CdpBrowserProvider: blank tabs", () => {
+  it("lists blank tabs without an origin unless origins are filtered", async () => {
+    const browser = await startFakeCdpBrowser({ blankPage: true });
+    trackBrowser(browser);
+    const provider = new CdpBrowserProvider();
+    const listed = await provider.listTargets(
+      listBrowserTargetsInputSchema.parse({ cdp_endpoint: browser.endpoint }),
+    );
+    if (!listed.ok) throw listed.error;
+    expect(listed.value.targets).toContainEqual({
+      target_id: "blank-page",
+      type: "page",
+      title: "about:blank",
+      url: "about:blank",
+      origin: null,
+      attached: false,
+    });
+    expect(listed.value.excluded.unsupported_url).toBe(1);
+
+    const filtered = await provider.listTargets(
+      listBrowserTargetsInputSchema.parse({
+        cdp_endpoint: browser.endpoint,
+        allowed_origins: [browser.allowedOrigin],
+      }),
+    );
+    if (!filtered.ok) throw filtered.error;
+    expect(filtered.value.targets.map(({ target_id }) => target_id)).toEqual([
+      "allowed-page",
+    ]);
+    expect(filtered.value.excluded.unsupported_url).toBe(2);
+
+    const inspected = await provider.inspectPage(
+      inspectWebPageInputSchema.parse({
+        cdp_endpoint: browser.endpoint,
+        target_id: "blank-page",
+        observation_ms: 0,
+      }),
+    );
+    expect(inspected.ok).toBe(false);
+    if (!inspected.ok)
+      expect(inspected.error).toMatchObject({ reason: "target_not_allowed" });
+  });
+});

@@ -185,13 +185,13 @@ const inspectEndpointCall = (
       value: first,
       mechanism: `call:${name}`,
     });
-  const receiverFact = context.openReceiverFacts?.get(node.start ?? -1);
-  const endpoint = endpointArgumentHelper(
-    name,
-    node.arguments,
-    node.callee,
-    receiverFact,
-  );
+  const bindings = context.endpointBindings;
+  const endpoint = endpointArgumentHelper(name, node.arguments, node.callee, {
+    receiverFact: context.openReceiverFacts?.get(node.start ?? -1),
+    ...(bindings === undefined
+      ? {}
+      : { resolve: (argument: t.Node) => bindings.resolve(argument) }),
+  });
   if (endpoint !== undefined)
     addEndpoint(context, {
       node,

@@ -65,6 +65,9 @@ export const analyzeJavaScriptApplicationValidated = async (
         ...(input.analysis_timeout_ms === undefined
           ? {}
           : { analysis_timeout_ms: input.analysis_timeout_ms }),
+        ...(input.max_semantic_source_bytes === undefined
+          ? {}
+          : { max_semantic_source_bytes: input.max_semantic_source_bytes }),
       },
       scope,
       options.signal,

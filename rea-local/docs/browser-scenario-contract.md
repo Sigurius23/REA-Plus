@@ -138,6 +138,13 @@ distinction: it closes and deletes provider-owned profiles, but only disconnects
 from an external CDP browser. Real-browser verification checks both outcomes and
 confirms that an attached external browser remains alive.
 
+A launched browser receives only display, locale, path and temporary-directory
+variables from the environment, plus the proxy variables `HTTPS_PROXY`,
+`HTTP_PROXY`, `ALL_PROXY` and `NO_PROXY` (either case). Chromium on Linux takes
+its proxy from these. On Windows and macOS it uses the system proxy settings
+instead. A proxy that inspects TLS also needs its CA in the browser's trust
+store (on Linux, the NSS database under `$HOME/.pki/nssdb`).
+
 HTTP(S) URLs may include ordinary query values and fragments directly. Use
 ordered structured query entries when a value needs to reference a declared
 environment-backed secret. Form, storage, and cookie values are either literal

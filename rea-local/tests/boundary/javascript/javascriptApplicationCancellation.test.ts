@@ -32,7 +32,11 @@ it("preserves imported manifest status when cancelled before visiting manifests"
       )
       .join("\n"),
   );
-  await writeFile(join(root, "b.cjs"), "module.exports = 1;");
+  // Sources are analyzed smallest first; b.cjs must follow a.cjs.
+  await writeFile(
+    join(root, "b.cjs"),
+    `module.exports = 1;\n// ${"padding ".repeat(64)}`,
+  );
   const controller = new AbortController();
   const visited: string[] = [];
   const result = await analyzeJavaScriptApplication(

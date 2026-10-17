@@ -129,6 +129,14 @@ export class JavaScriptAnalysisWorker {
         "JavaScript worker requires valid heap and execution limits",
       );
     if (
+      limits.maxSemanticSourceBytes !== undefined &&
+      (!Number.isSafeInteger(limits.maxSemanticSourceBytes) ||
+        limits.maxSemanticSourceBytes < 1)
+    )
+      throw new RangeError(
+        "JavaScript worker semantic source limit must be a positive safe integer",
+      );
+    if (
       sourceCount !== undefined &&
       (!Number.isSafeInteger(sourceCount) || sourceCount < 0)
     )
@@ -202,6 +210,10 @@ export class JavaScriptAnalysisWorker {
       });
       const { text: _text, ...metadata } = file;
       let offeredResultBudget = 0;
+      const sourceBytes = Buffer.byteLength(file.text.value);
+      const maxSemanticBytes = this.limits.maxSemanticSourceBytes;
+      const semanticSkipped =
+        maxSemanticBytes !== undefined && sourceBytes > maxSemanticBytes;
       const request = javaScriptWorkerRequestSchema.parse({
         id,
         node_budget: nodeBudget,
@@ -254,9 +266,10 @@ export class JavaScriptAnalysisWorker {
               },
             );
           offeredResultBudget =
-            this.#applicationProjectionFailure !== undefined &&
-            this.#sourcesRemaining !== undefined &&
-            this.#sourcesRemaining > 0
+            semanticSkipped ||
+            (this.#applicationProjectionFailure !== undefined &&
+              this.#sourcesRemaining !== undefined &&
+              this.#sourcesRemaining > 0)
               ? 0
               : this.#remainingResultBudget();
           const admission = javaScriptWorkerAdmissionSchema.parse({
@@ -276,12 +289,23 @@ export class JavaScriptAnalysisWorker {
               javascript,
               module,
               projection,
-              error: new AnalysisResourceConstraintError(
-                OPERATION,
-                response.resource ?? "memory",
-                `${file.path}: ${response.message}`,
-                { ...this.#limits(), ...response.limits },
-              ),
+              error: semanticSkipped
+                ? new AnalysisResourceConstraintError(
+                    OPERATION,
+                    "memory",
+                    `${file.path} is ${String(sourceBytes)} bytes, above max_semantic_source_bytes (${String(maxSemanticBytes)}); semantic analysis was skipped and static facts were retained`,
+                    {
+                      ...this.#limits(),
+                      max_semantic_source_bytes: maxSemanticBytes,
+                      source_bytes: sourceBytes,
+                    },
+                  )
+                : new AnalysisResourceConstraintError(
+                    OPERATION,
+                    response.resource ?? "memory",
+                    `${file.path}: ${response.message}`,
+                    { ...this.#limits(), ...response.limits },
+                  ),
             });
             break;
           }

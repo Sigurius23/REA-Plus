@@ -63,6 +63,8 @@ export const javascriptApplicationOptions = z.object({
   maxHeapMb: javaScriptAnalysisResourceControlsSchema.shape.max_heap_mb,
   analysisTimeoutMs:
     javaScriptAnalysisResourceControlsSchema.shape.analysis_timeout_ms,
+  maxSemanticSourceBytes:
+    javaScriptAnalysisResourceControlsSchema.shape.max_semantic_source_bytes,
   artifactFormat: z
     .enum(["auto", "asar", "directory"])
     .default("auto")

@@ -117,7 +117,8 @@ agent run over a search:
   - `yes_no/` and `yes_no/analysis/`, likely the Consensus Meter;
   - `legacy_search_strategy_stats/`.
 - `/api/threads/{id}/interactions/{id}/agent/stream/` streams the answer.
-  The client reads it through `fetch` stream readers, not WebSockets.
+  The client opens it with `EventSource`, so it is server-sent events, not
+  a WebSocket.
 - `/api/threads/{id}/interactions/{id}/export/`
 - `feedback/thread`
 
@@ -179,6 +180,26 @@ extraction runs over a set of papers:
 - Open Graph images: `/api/og/papers`, `/api/og/questions`,
   `/api/og/threads`, `/api/og/extract`
 
+**HTTP methods.** A later REA+ pass that follows template and variable-held
+URLs (see the gaps section) recovered the method for 145 distinct paths in
+the `_app` chunk: 80 GET, 53 POST, 18 DELETE, 9 PATCH and 4 PUT. The ones
+that shape the design:
+
+| Path | Methods | Reading |
+| --- | --- | --- |
+| `paper_search/` | POST | a search is created, then read by id |
+| `papers/details/` | POST | batch paper details by id list |
+| `threads/` | POST, DELETE | create; bulk delete |
+| `threads/{id}/` | GET, POST, PUT, DELETE | read, follow-up, rename/share, delete |
+| `threads/{id}/interactions/{id}/agent/answer/` | POST | answer a question the agent asked mid-run |
+| `threads/{id}/interactions/{id}/agent/retry/{n}` | POST | rerun an answer |
+| `extraction_tables/{id}/runs/`, `columns/{id}/runs/`, `columns/{id}/papers/{id}/runs/` | POST | table-, column- and cell-level extraction runs |
+| `collections/{id}/papers/` | POST, DELETE | add/remove papers |
+| `collections/{id}/recommendations/` | GET, PATCH | paper recommendations per collection, with `refresh/`, `start-over/`, `{id}/save/` (POST) and `{id}/dismissal/` (PUT, DELETE) |
+| `collections/{id}/invite-link/`, `memberships/invitations/`, `organization-memberships/` | GET, POST, PATCH | sharing with people and organizations |
+| `citation_graph/`, `research_gap_matrix/` | POST | generated analyses |
+| `voice_transcription/` | POST | dictation upload |
+
 ## What this suggests for the rebuild
 
 These are design inputs, not claims about Consensus's internals:
@@ -213,18 +234,26 @@ These are design inputs, not claims about Consensus's internals:
 
 ## REA+ gaps found while doing this
 
-- `capture-browser-scenario` launch mode does not pass `HTTPS_PROXY` (or
+All four have since been fixed in REA+:
+
+- `capture-browser-scenario` launch mode did not pass `HTTPS_PROXY` (or
   `HTTP_PROXY`/`NO_PROXY`) to the browser it starts. Behind this
   environment's TLS-inspecting proxy the load failed with
   `ERR_CERT_AUTHORITY_INVALID`. Connect mode, with a self-started
-  Chromium, worked.
-- `list-browser-targets` lists only HTTP(S) pages, so a fresh browser on
-  `about:blank` needs a page opened first.
-- `analyze-web-bundle` reports endpoints passed as literal strings (about
-  30 here) but not template-literal paths (about 130 more in the same
-  chunk).
-- `analyze-javascript-application` skipped semantic analysis of the 4.5 MB
-  `_app` chunk because it exceeded the result budget.
+  Chromium, worked. *Fixed:* the proxy variables are now passed through.
+- `list-browser-targets` listed only HTTP(S) pages, so a fresh browser on
+  `about:blank` needed a page opened first. *Fixed:* blank tabs are listed
+  with `origin: null`.
+- `analyze-web-bundle` reported endpoints passed as literal strings but not
+  template-literal paths. *Fixed:* templates, concatenation and paths held
+  in a local variable are reported with `{}` for each expression. On the
+  `_app` chunk, network endpoints went from 55 to 192 (108 templated).
+- `analyze-javascript-application` gave three of the 12 chunks no semantic
+  graph: the 4.5 MB `_app` chunk used up the shared result budget before
+  `pages/index` and `webpack` were reached. *Fixed:* JavaScript sources are
+  analyzed smallest first, and `--max-semantic-source-bytes` gives
+  oversized bundles static facts only (2 min 50 s → 53 s here with a 1 MB
+  limit).
 
 ## Documented API and MCP server (published by Consensus)
 

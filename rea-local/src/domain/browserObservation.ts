@@ -152,6 +152,17 @@ export const sanitizedBrowserUrlSchema = z.object({
 });
 export type SanitizedBrowserUrl = z.infer<typeof sanitizedBrowserUrlSchema>;
 
+const BLANK_TAB_URLS = new Set([
+  "",
+  "about:blank",
+  "chrome://newtab/",
+  "chrome://new-tab-page/",
+]);
+
+/** Whether a page target is an empty tab a scenario can navigate from. */
+export const isBlankTabUrl = (value: string): boolean =>
+  BLANK_TAB_URLS.has(value);
+
 /** Preserve local URL data while removing only URL userinfo credentials. */
 export const sanitizeBrowserUrl = (value: string): SanitizedBrowserUrl => {
   let parsed: URL;

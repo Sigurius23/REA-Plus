@@ -73,6 +73,53 @@ it("reuses one real owned analyzer while retaining distinct source identities an
   }
 });
 
+it("keeps static facts and skips semantic analysis above max_semantic_source_bytes", async () => {
+  const worker = new JavaScriptAnalysisWorker({
+    heapMb: 128,
+    timeoutMs: 30_000,
+    maxSemanticSourceBytes: 64,
+  });
+  try {
+    const small = await worker.analyze(
+      source("small.mjs", "export const observed = 7;"),
+      100,
+    );
+    if (!small.ok) throw small.error.error;
+    expect(small.value.module).not.toBeNull();
+
+    const value = `export const load = (id) => fetch(\`/threads/\${id}/\`);${" ".repeat(64)}`;
+    const large = await worker.analyze(source("large.mjs", value), 100);
+    expect(large.ok).toBe(false);
+    if (large.ok) return;
+    expect(large.error.module).toBeNull();
+    expect(large.error.projection).toBeNull();
+    expect(large.error.javascript?.endpoints).toContainEqual(
+      expect.objectContaining({ value: "/threads/{}/" }),
+    );
+    expect(projectAnalysisError(large.error.error)).toMatchObject({
+      code: "resource_constraint",
+      details: {
+        reported_limits: {
+          max_semantic_source_bytes: 64,
+          source_bytes: Buffer.byteLength(value),
+        },
+      },
+    });
+    expect(large.error.error.message).toContain(
+      "above max_semantic_source_bytes (64); semantic analysis was skipped",
+    );
+
+    const after = await worker.analyze(
+      source("after.mjs", "export const next = 8;"),
+      100,
+    );
+    if (!after.ok) throw after.error.error;
+    expect(after.value.module).not.toBeNull();
+  } finally {
+    await worker.close();
+  }
+});
+
 it("reports an actual startup deadline and closes its owned resources before subsequent analysis", async () => {
   const file = source("app.mjs", "export const observed = 7;");
   const expired = new JavaScriptAnalysisWorker({ heapMb: 128, timeoutMs: 1 });

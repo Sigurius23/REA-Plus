@@ -1,5 +1,6 @@
 import type * as t from "@babel/types";
 import type { JavaScriptRpcScan } from "./javascriptRpcEndpoints.js";
+import type { EndpointBindings } from "./javascriptEndpointTemplates.js";
 
 import type {
   JavaScriptBundlerRegistration,
@@ -72,6 +73,8 @@ export interface JavaScriptFindingContext {
   >;
   /** Proven Electron export path segments by root offset. */
   readonly electronBindings?: ReadonlyMap<number, readonly string[]>;
+  /** Paths and URLs held by local variables at the current node. */
+  readonly endpointBindings?: EndpointBindings;
 }
 
 /** Candidate import, require, worker, or service-worker reference. */

@@ -60,6 +60,7 @@ export interface FakeOptions {
   readonly omitTargetWebSocket?: boolean;
   readonly additionalPageWithWebSocket?: boolean;
   readonly additionalPageWithoutWebSocket?: boolean;
+  readonly blankPage?: boolean;
   readonly additionalPageCount?: number;
   readonly additionalElectronPageCount?: number;
   readonly invalidAttachedSession?: boolean;

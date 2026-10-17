@@ -15,7 +15,11 @@ import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 it("retains completed source facts and prior Evidence after SDK cancellation, then accepts subsequent work", async () => {
   const root = await createTestTempDirectory("rea-mcp-js-cancellation-");
   await writeFile(join(root, "main.js"), "export const observed = 1;\n");
-  await writeFile(join(root, "second.js"), "export const pending = 2;\n");
+  // Sources are analyzed smallest first; second.js must follow main.js.
+  await writeFile(
+    join(root, "second.js"),
+    "export const pending = 2; // analyzed second\n",
+  );
   const session = createTestBinarySession(() => {
     throw new Error(
       "Static JavaScript analysis must not start a binary provider",
