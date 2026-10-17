@@ -51,6 +51,7 @@ export default defineConfig({
           { text: "Save and packet blobs", link: "/data-blobs" },
           { text: "Godot resources and scripts", link: "/godot-files" },
           { text: "Protocol field inference", link: "/protocol-fields" },
+          { text: "Binary diffing", link: "/binary-diff" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "MobSF reports", link: "/mobsf-reports" },

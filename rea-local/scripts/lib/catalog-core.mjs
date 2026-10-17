@@ -88,6 +88,8 @@ const SOURCE_PATHS = {
   godotProvider: "dist/godot/GodotInspector.js",
   protocolContracts: "dist/contracts/protocol/protocolToolContracts.js",
   protocolProvider: "dist/protocol/ProtocolFieldsInspector.js",
+  binaryDiffContracts: "dist/contracts/bindiff/binaryDiffToolContracts.js",
+  binaryDiffProvider: "dist/bindiff/BinaryDiffInspector.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",

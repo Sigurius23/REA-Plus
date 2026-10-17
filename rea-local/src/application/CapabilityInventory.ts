@@ -366,7 +366,8 @@ const workflowAvailabilityFor = ({
     name === "inspect_lua_bytecode" ||
     name === "inspect_data_blob" ||
     name === "inspect_godot_file" ||
-    name === "infer_protocol_fields"
+    name === "infer_protocol_fields" ||
+    name === "diff_binaries"
   )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")

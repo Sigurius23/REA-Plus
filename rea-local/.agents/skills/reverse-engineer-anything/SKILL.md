@@ -145,6 +145,11 @@ explicit path or endpoint and do not need it.
   (comments are not stored). Entries named by their original `.gd`/`.tscn`
   path follow `.remap`. Encrypted saves need `key_env` or `password_env`;
   the key itself is never passed.
+- Two builds of a native binary (a patch, a game update, two firmware
+  releases): `diff_binaries` matches their functions through the configured
+  provider, even stripped, and reports changed, added and removed functions;
+  its `function` view gives one function's aligned instruction diff. Matches
+  are inferences; low similarity means look closer.
 - Undocumented network protocol (a game's netcode, a device's control
   channel) in a PCAP/PCAPNG capture or as hex lines: `infer_protocol_fields`
   frames TCP streams, groups messages into formats and proposes each
