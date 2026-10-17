@@ -33,6 +33,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   ├── src/godot/                         # Godot resources, scenes, compiled GDScript and saves
 │   ├── src/protocol/                      # Protocol field inference over captures
 │   ├── src/bindiff/                       # Whole-binary patch diffing
+│   ├── src/libid/                         # FLIRT-style library function identification
 │   ├── src/ida/                           # IDA Pro official MCP connection & runner
 │   ├── src/browser/history/               # Offline HAR, Burp, mitmproxy and PCAP/PCAPNG decoding
 │   └── bridge/frida/                      # Frida scripts & bridge agents
@@ -78,6 +79,7 @@ A Model Context Protocol (MCP) server and CLI tool designed for AI agents to inv
 - **Godot Files**: Binary resources and scenes, compiled GDScript and saves from Godot 3 and 4 games, read from loose files or straight out of a `.pck` (following `.remap` from the original paths): scene trees with instanced scenes, groups and signal connections, every stored property in Godot's text notation, GDScript rebuilt from `.gdc`/`.gde` tokens on the original line numbers, `store_var` saves (also inside `open_compressed` and, with the key or password, `open_encrypted` files) and `project.binary` settings. Checked against Godot 3.5 itself, the token streams of 288 demo scripts and GDQuest's Godot 4.6 course, and 919 scripts, 1,676 resources and 714 scenes from 12 released games ([guide](./rea-local/docs/godot-files.md)).
 - **Protocol Field Inference**: Message formats of undocumented protocols inferred from PCAP/PCAPNG captures or hex messages, without sending anything: TCP streams reassembled and framed by a detected length prefix or delimiter, messages grouped by type field, direction or first word, and each format's header broken into type, length, counter, checksum (with algorithm and covered bytes), timestamp, constant, float, text and enum fields. Checked against tshark's dissections of Wireshark sample captures (TFTP, NTP, DNS, CoAP) and against scapy-generated Modbus/TCP, TFTP and game-style captures ([guide](./rea-local/docs/protocol-fields.md)).
 - **Binary Diffing**: Two builds of a native binary compared function by function, BinDiff/Diaphora-style, through any deep provider and on stripped builds: matches by names, identical or same-mnemonic instructions, strings and constants with the same control-flow shape, call-graph neighbours, call order and similarity; changed, added and removed functions with aligned instruction diffs ([guide](./rea-local/docs/binary-diff.md)).
+- **Library Identification**: Statically linked library functions (libc, zlib, OpenSSL, Lua, engine runtimes) named in stripped ELF and PE binaries from the static libraries or objects they linked, FLIRT-style but over whole bodies with relocated bytes wildcarded; same-byte candidates settled by their calls, strings and object layout ([guide](./rea-local/docs/library-identification.md)).
 - **Cross-Language Support**: Documentation and localization across 18 languages.
 
 ### 2. [AERE Workbench (`agentic-reverse-engineering/`)](./agentic-reverse-engineering)

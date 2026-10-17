@@ -112,6 +112,7 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_data_blob: evidence,
   inspect_godot_file: evidence,
   infer_protocol_fields: evidence,
+  identify_library_functions: evidence,
   diff_binaries: effects({
     mutatesSession: true,
     writesFilesystem: true,

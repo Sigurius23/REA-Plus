@@ -21,6 +21,7 @@ export const CLI_COMMANDS = Object.freeze({
   inspectGodotFile: "inspect-godot-file",
   inferProtocolFields: "infer-protocol-fields",
   diffBinaries: "diff-binaries",
+  identifyLibraryFunctions: "identify-library-functions",
   inspectEvmInterface: "inspect-evm-interface",
   inspectWebNetworkCapture: "inspect-web-network-capture",
   observeWebExecution: "observe-web-execution",

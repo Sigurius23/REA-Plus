@@ -52,6 +52,7 @@ export default defineConfig({
           { text: "Godot resources and scripts", link: "/godot-files" },
           { text: "Protocol field inference", link: "/protocol-fields" },
           { text: "Binary diffing", link: "/binary-diff" },
+          { text: "Library identification", link: "/library-identification" },
           { text: ".NET assemblies", link: "/managed-code-analysis" },
           { text: "Android applications", link: "/android-analysis" },
           { text: "MobSF reports", link: "/mobsf-reports" },

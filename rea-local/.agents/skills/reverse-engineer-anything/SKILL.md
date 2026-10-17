@@ -145,6 +145,11 @@ explicit path or endpoint and do not need it.
   (comments are not stored). Entries named by their original `.gd`/`.tscn`
   path follow `.remap`. Encrypted saves need `key_env` or `password_env`;
   the key itself is never passed.
+- Stripped native binary with statically linked libraries:
+  `identify_library_functions` names their functions from the static
+  libraries or objects (`.a`, `.lib`, `.o`, `.obj`) the binary likely linked,
+  so analysis can skip known library code. Only identically compiled code
+  matches; pass the matching library build.
 - Two builds of a native binary (a patch, a game update, two firmware
   releases): `diff_binaries` matches their functions through the configured
   provider, even stripped, and reports changed, added and removed functions;

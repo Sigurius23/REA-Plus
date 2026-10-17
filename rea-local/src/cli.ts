@@ -18,6 +18,7 @@ import { registerDataBlobCommands } from "./cli/dataBlobCommands.js";
 import { registerGodotCommands } from "./cli/godotCommands.js";
 import { registerProtocolCommands } from "./cli/protocolCommands.js";
 import { registerBinaryDiffCommands } from "./cli/binaryDiffCommands.js";
+import { registerLibraryIdentificationCommands } from "./cli/libraryIdentificationCommands.js";
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { createDirectAnalysis } from "./composition/directAnalysis.js";
 import { registerEvmCommands } from "./cli/evmCommands.js";
@@ -112,6 +113,7 @@ export const createCli = (
   registerGodotCommands(cli, logger, environment);
   registerProtocolCommands(cli, logger);
   registerBinaryDiffCommands(cli, logger, environment);
+  registerLibraryIdentificationCommands(cli, logger);
   registerEvmCommands(cli, logger, environment);
   registerArtifactCommands(cli, logger, analysis.runProviderAnalysis);
   registerManagedCommands(cli, logger, analysis.runProviderAnalysis);

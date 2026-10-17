@@ -47,6 +47,8 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.godotContracts.GODOT_TOOL_CONTRACTS,
         ...sources.protocolContracts.PROTOCOL_TOOL_CONTRACTS,
         ...sources.binaryDiffContracts.BINARY_DIFF_TOOL_CONTRACTS,
+        ...sources.libraryIdentificationContracts
+          .LIBRARY_IDENTIFICATION_TOOL_CONTRACTS,
       ],
     },
     {
@@ -296,6 +298,14 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.binaryDiffProvider.BINARY_DIFF_PROVIDER_IDENTITY,
       contracts: sources.binaryDiffContracts.BINARY_DIFF_TOOL_CONTRACTS,
+    },
+    {
+      identity:
+        sources.libraryIdentificationProvider
+          .LIBRARY_IDENTIFICATION_PROVIDER_IDENTITY,
+      contracts:
+        sources.libraryIdentificationContracts
+          .LIBRARY_IDENTIFICATION_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

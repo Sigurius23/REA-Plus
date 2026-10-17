@@ -66,7 +66,8 @@ const SOURCE_PATHS = {
   cheatTableProvider: "dist/patterns/CheatTableInspector.js",
   unityContracts: "dist/contracts/unity/unityToolContracts.js",
   unityProvider: "dist/unity/UnityAssetsInspector.js",
-  gameArchiveContracts: "dist/contracts/gamearchives/gameArchiveToolContracts.js",
+  gameArchiveContracts:
+    "dist/contracts/gamearchives/gameArchiveToolContracts.js",
   gameArchiveProvider: "dist/gamearchives/GameArchiveInspector.js",
   renpyContracts: "dist/contracts/renpy/renpyToolContracts.js",
   renpyProvider: "dist/renpy/RenpyScriptInspector.js",
@@ -90,6 +91,9 @@ const SOURCE_PATHS = {
   protocolProvider: "dist/protocol/ProtocolFieldsInspector.js",
   binaryDiffContracts: "dist/contracts/bindiff/binaryDiffToolContracts.js",
   binaryDiffProvider: "dist/bindiff/BinaryDiffInspector.js",
+  libraryIdentificationContracts:
+    "dist/contracts/libid/libraryIdentificationToolContracts.js",
+  libraryIdentificationProvider: "dist/libid/LibraryIdentifier.js",
   evmContracts: "dist/contracts/evm/evmToolContracts.js",
   evmProvider: "dist/evm/EvmoleRelease.js",
   artifactContracts: "dist/contracts/artifactToolContracts.js",
