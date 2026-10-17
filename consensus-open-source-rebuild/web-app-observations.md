@@ -225,3 +225,42 @@ These are design inputs, not claims about Consensus's internals:
   chunk).
 - `analyze-javascript-application` skipped semantic analysis of the 4.5 MB
   `_app` chunk because it exceeded the result budget.
+
+## Documented API and MCP server (published by Consensus)
+
+Consensus documents a machine interface for integrators. These facts come
+from its own `https://docs.consensus.app/llms.txt` and
+`https://consensus.app/llms-full.txt`, read on 2026-10-17. The individual
+docs pages return a Cloudflare challenge to automated clients but open in an
+ordinary browser.
+
+- **REST API.** Bearer API key from an organization subscription
+  (`/subscription/api`).
+  - `GET /v1/search` returns ranked papers. The legacy
+    `/v1/quick_search` is deprecated and will be removed on 2027-02-07.
+  - Threads hand a question to the research agent, create-then-poll:
+    - start a Thread to get a `thread_id`, then poll
+      `GET /v1/threads/{thread_id}` until its status is `idle` (about every
+      30 s, capped at 3 requests/s);
+    - follow-ups return a new `interaction_id`, or 409 while the latest
+      interaction is still running;
+    - you can also list your earlier Threads.
+  - Most endpoints allow 1 request/s. Over a limit you get 429 with
+    `Retry-After`.
+  - Full-text passages and papers per request depend on the plan.
+- **MCP server** at `https://mcp.consensus.app/mcp`.
+  - Tools: `search`, `create_thread`, `get_thread`, `add_to_thread`,
+    `find_threads`.
+  - Auth: OAuth 2.1 (authorization code with PKCE, dynamic client
+    registration, discovery at
+    `/.well-known/oauth-authorization-server`) or an API key.
+  - An **anonymous tier** for evaluation returns 3 papers per search with
+    reduced fields, under a shared rate limit.
+  - The ChatGPT and Claude apps are thin wrappers over this server.
+- **Stated corpus.** About 400M records (350M peer-reviewed), from Semantic
+  Scholar, OpenAlex, PubMed and publisher feeds, updated weekly.
+
+This matches the web client's private paths (`threads/{id}/interactions/{id}/...`,
+`paper_search/`, `mcp_credits/`). The documented API is the sanctioned way
+to see real request and response shapes; the private `/api/` paths stay
+undocumented.
