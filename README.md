@@ -47,6 +47,7 @@ An agentic reverse-engineering ecosystem, tools workbench, and multi-platform re
 │   └── categories/                        # Categorized references & guides
 ├── game-modding-research-index-kplex-vault/ # Obsidian markdown knowledge vault
 ├── consensus-open-source-rebuild/         # App analysis & rebuild consensus documentation
+├── field-tests/                           # REA+ field tests on real apps (WHOOP Android)
 ├── repo-completeness-review.md            # In-depth stack & tool completeness audit
 └── agent-reverse-engineering-stack-comparison.md # Cross-stack comparison
 ```
