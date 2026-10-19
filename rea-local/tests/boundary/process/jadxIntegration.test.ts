@@ -201,6 +201,22 @@ it("completes large class inventories with exact case-sensitive search semantics
   await provider.close();
 });
 
+it("lists class names JADX gives to several classes once and reports them", async () => {
+  const { service, apk, provider } = await setup("shared-names");
+  const outcome = await service.execute("search_android_classes", {
+    path: apk,
+    query: "kotlin",
+  });
+  if (!outcome.ok) throw outcome.error;
+  const result = androidResultSchemas.search_android_classes.parse(
+    outcome.value.normalized_result,
+  );
+  expect(result.total_classes).toBe(403);
+  expect(result.matches).toEqual(["kotlin.Function0"]);
+  expect(result.shared_names).toEqual(["kotlin.Function0"]);
+  await provider.close();
+});
+
 it("close cancels active and queued work and prevents later acquisition", async () => {
   const { service, apk, launches, provider } = await setup("stall");
   const active = service.execute("inspect_android_package", { path: apk });

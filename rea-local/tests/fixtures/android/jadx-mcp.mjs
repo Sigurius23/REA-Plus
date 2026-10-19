@@ -16,6 +16,8 @@ const classes = [
     { length: mode === "large-inventory" ? 9000 : 400 },
     (_, index) => `fixture.Class${index}`,
   ),
+  // JADX can give obfuscated classes the same Kotlin-metadata name.
+  ...(mode === "shared-names" ? ["kotlin.Function0", "kotlin.Function0"] : []),
 ];
 const methods = [
   {

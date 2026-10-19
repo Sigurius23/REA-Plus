@@ -51,6 +51,41 @@ it("rejects malformed or unrelated engine archives with JAR-specific recovery", 
   }
 });
 
+it("accepts an engine JAR that repeats shaded license entries", async () => {
+  const root = await createTestTempDirectory("rea-jadx-duplicate-jar-");
+  const javaHome = await createFakeJdk(root);
+  const jar = join(root, "jadx-headless-mcp.jar");
+  // The released 0.7.1 JAR holds LICENSE, META-INF/LICENSE and
+  // META-INF/LICENSE.txt twice, ahead of the bridge classes. Rename a
+  // same-length entry to repeat one.
+  await writeOrderedZip(jar, [
+    "META-INF/LICENSE",
+    "META-INF/LICENSX",
+    "com/atxx/jhmcp/JadxSession.class",
+    "com/atxx/jhmcp/SessionHolder.class",
+    "jadx/api/JadxDecompiler.class",
+    "com/google/gson/Gson.class",
+    "io/modelcontextprotocol/kotlin/sdk/server/Server.class",
+  ]);
+  const bytes = await readFile(jar);
+  await writeFile(
+    jar,
+    Buffer.from(
+      bytes
+        .toString("latin1")
+        .replaceAll("META-INF/LICENSX", "META-INF/LICENSE"),
+      "latin1",
+    ),
+  );
+
+  await expect(
+    resolveConfiguration(
+      { REA_JADX_MCP_JAR: jar, JAVA_HOME: javaHome },
+      "inspect_android_package",
+    ),
+  ).resolves.toMatchObject({ jar: await realpath(jar) });
+});
+
 it("rejects an explicit JAVA_HOME without an executable java binary", async () => {
   const root = await createTestTempDirectory("rea-jadx-config-");
   const jar = join(root, "jadx-headless-mcp.jar");
