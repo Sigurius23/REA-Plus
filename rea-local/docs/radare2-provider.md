@@ -25,7 +25,7 @@ rea xrefs /absolute/path/to/program 0x401000 --json
 | Setting                           | Default  | Meaning                                                                        |
 | --------------------------------- | -------- | ------------------------------------------------------------------------------ |
 | `REA_RADARE2_PATH`                | unset    | Absolute radare2 executable; unset leaves the provider unconfigured            |
-| `REA_RADARE2_ANALYSIS`            | `aaa`    | Analysis command run once per session: `aa`, `aaa` or `aaaa`                   |
+| `REA_RADARE2_ANALYSIS`            | `aaa` (`aa` for DEX) | Analysis command run once per session: `aa`, `aaa` or `aaaa`        |
 | `REA_RADARE2_ANALYSIS_TIMEOUT_MS` | `600000` | Deadline for copying the target, starting radare2 and completing that analysis |
 
 Discovery only checks that `REA_RADARE2_PATH` is an executable file. Resolving
@@ -146,8 +146,15 @@ Differences to keep in mind:
 
 ## Supported targets
 
-ELF (including MIPS), PE, Mach-O and DOS MZ executables are admitted. These
-are refused with a typed reason:
+ELF (including MIPS), PE, Mach-O, DOS MZ and Android DEX executables are
+admitted. DEX files are analyzed as Dalvik bytecode, with the default analysis
+level `aa`; `aaa` finds the same DEX methods and strings several times slower
+because every DEX method already has a symbol. Set
+`REA_RADARE2_ANALYSIS=aaa` explicitly if you want the heavier analysis anyway.
+A `classesN.dex` member has to be extracted from its APK first; REA+ does not
+yet open a DEX file inside a package.
+
+These are refused with a typed reason:
 
 - Archives, databases and non-executable artifacts.
 - PE files classified as non-executable.
@@ -155,6 +162,20 @@ are refused with a typed reason:
   [managed-code tools](managed-code-analysis.md).
 - Universal Mach-O files with several slices: extract the slice first.
 - DOS COM images: use Ghidra's COM profile.
+
+### Android DEX
+
+- radare2 names methods from their class and signature, such as
+  `method.public.static.Lcom_example_Api.Lcom_example_Api.method.load__V`;
+  Rizin prints `method.public.static.com.example.Api.void_load`. Methods of
+  classes in other DEX files of the same APK appear as imports.
+- Dalvik registers are not stack slots, so locals are usually empty and
+  `procedure_pseudo_code` is an annotated Dalvik listing rather than Java.
+  Use `inspect_android_method` for decompiled Java.
+- Addresses are offsets into that DEX file and are not comparable with
+  Ghidra's DEX addresses or with another `classesN.dex` of the same APK.
+- Strings, procedures, references and call edges use the same normalized
+  operations and limitations as the other formats.
 
 ## Verification boundary
 
@@ -185,6 +206,9 @@ buffer), both engines gave the same:
 The differences were those listed under [Rizin](#rizin): local variable
 naming and bases, conditional-jump references, `.dynstr` strings and one
 function's name.
+
+Android DEX has no fixture in these lanes yet; a small `javac`/`d8` DEX
+should be added before treating DEX results as verified on this boundary.
 
 Other radare2 6.x and Rizin 0.9.x releases, other hosts (macOS, Windows),
 other formats and architectures, and decompiler plugins (r2ghidra, r2dec,

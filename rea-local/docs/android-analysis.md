@@ -174,6 +174,28 @@ coverage is `partial` while component arrays still include every component
 from the supplied inventory pages. A path pair does not establish that a
 managed declaration names, loads, or calls the native library.
 
+## Analyze an extracted DEX with radare2
+
+JADX answers questions about Java source. To disassemble the Dalvik bytecode
+itself, extract a `classesN.dex` member (or an app's single `classes.dex`) and
+open it as a target with the [radare2 provider](radare2-provider.md) selected:
+
+```sh
+export REA_RADARE2_PATH=/absolute/path/to/radare2
+export REA_ANALYSIS_PROVIDER=radare2
+rea analyze /absolute/path/to/extracted/classes.dex --json
+rea function /absolute/path/to/extracted/classes.dex method.public.static.Lcom_example_Api.load__V --json
+```
+
+DEX targets default to the `aa` analysis level, because `aaa` finds the same
+methods and strings several times slower. Methods are named from their class
+and signature, Dalvik registers are not stack slots, and `procedure_pseudo_code`
+is an annotated Dalvik listing rather than Java. Addresses are offsets in that
+particular DEX file: they do not match Ghidra's DEX addresses or another
+`classesN.dex` of the same APK. Methods defined in a different DEX of the APK
+appear as imports. Opening a DEX inside an APK is not supported yet; extract
+the member first.
+
 ## Resource and lifecycle limits
 
 REA+ retains one serialized session with private, immutable APK, engine JAR and

@@ -27,6 +27,14 @@ verification coverage. Calls use one worker and provider deadlines; optional
 `REA_JADX_HEAP_MIB` selects the JVM heap. The APK is never launched,
 and no emulator is required.
 
+For the bytecode itself, extract a `classesN.dex` member and open it with the
+[radare2 provider](https://github.com/morluto/rea/blob/main/docs/radare2-provider.md). DEX targets use
+the `aa` analysis level by default, name methods from their class and
+signature, report Dalvik registers rather than stack locals, and expose
+addresses that are offsets in that one DEX file. They are not comparable with
+Ghidra's DEX addresses or another `classesN.dex` of the same APK. A DEX inside
+an APK has to be extracted first.
+
 Manifest entries and decompiled text are static observations, not execution or
 policy enforcement. Incoming references are recovered static relationships;
 reflection, dynamic loading, and unresolved calls remain unknown. Preserve
