@@ -26,7 +26,7 @@ const TYPES = [
 /** Java's modified UTF-8: NUL as C0 80 and supplementary characters as surrogate pairs. */
 const modifiedUtf8 = (bytes: Buffer): string => {
   let out = "";
-  for (let index = 0; index < bytes.length; ) {
+  for (let index = 0; index < bytes.length;) {
     const a = bytes[index] ?? 0;
     if (a < 0x80) {
       out += String.fromCharCode(a);

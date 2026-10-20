@@ -401,7 +401,7 @@ class Matching {
 
   /** Callers and callees of matched pairs, until nothing more matches. */
   propagate(threshold: number): void {
-    for (let added = 1; added > 0; ) {
+    for (let added = 1; added > 0;) {
       const pairs = this.matches.flatMap(({ left, right }) => [
         ...this.#neighbourPairs(left.callees, right.callees),
         ...this.#neighbourPairs(left.callers, right.callers),
@@ -463,7 +463,7 @@ export const matchFunctions = (
         ]),
   );
   const settle = () => {
-    for (let added = 1; added > 0; ) {
+    for (let added = 1; added > 0;) {
       matching.propagate(options.threshold);
       added = matching.callOrder(options.threshold);
     }

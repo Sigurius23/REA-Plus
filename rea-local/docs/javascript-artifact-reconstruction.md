@@ -281,7 +281,7 @@ A request URL built from strings and expressions is reported as a template,
 in both `analyze_javascript_application` and `analyze_web_bundle`, with `{}`
 for each expression:
 
-- template literals: `` api.get(`/threads/${id}/`) `` gives `/threads/{}/`;
+- template literals: ``api.get(`/threads/${id}/`)`` gives `/threads/{}/`;
 - `+` concatenation with a string operand, and `"/papers/".concat(id)`;
 - a local variable passed to the call, followed to the last path or URL it was
   declared with or assigned in source order. `` url = `${url}?${query}` `` and

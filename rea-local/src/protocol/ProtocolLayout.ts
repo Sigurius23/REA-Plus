@@ -155,7 +155,7 @@ class Layout {
     minimum: number,
     kind: InferredField["kind"],
   ): void {
-    for (let start = 0; start < this.limit; ) {
+    for (let start = 0; start < this.limit;) {
       let end = start;
       while (end < this.limit && this.free(end, 1) && test(end)) end += 1;
       if (end - start >= minimum)

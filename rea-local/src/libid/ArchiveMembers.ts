@@ -23,7 +23,7 @@ export const archiveMembers = (
   if (!isArchive(data)) return [{ name: fallbackName, data }];
   const members: ArchiveMember[] = [];
   let longNames: Buffer | undefined;
-  for (let at = MAGIC.length; at + HEADER <= data.length; ) {
+  for (let at = MAGIC.length; at + HEADER <= data.length;) {
     const header = data.toString("latin1", at, at + HEADER);
     const size = Number.parseInt(header.slice(48, 58).trim(), 10);
     if (!Number.isSafeInteger(size) || size < 0) break;

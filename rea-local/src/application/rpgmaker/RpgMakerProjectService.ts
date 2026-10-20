@@ -44,7 +44,8 @@ const filtersHold = (
       (report.maps.every((row) => row.id === map) &&
         report.dialogue.every(inMap) &&
         report.switches.every((row) => row.sites.every(inMap)))) &&
-    (table === undefined || report.database.every((row) => row.table === table)) &&
+    (table === undefined ||
+      report.database.every((row) => row.table === table)) &&
     (input.asset === undefined
       ? report.page.asset === null
       : report.page.asset !== null &&
@@ -118,7 +119,8 @@ export class RpgMakerProjectService {
           {
             path: ["asset"],
             reason: "invalid_format",
-            message: "Expected a path relative to the game folder, without '..'.",
+            message:
+              "Expected a path relative to the game folder, without '..'.",
           },
         ]),
       );

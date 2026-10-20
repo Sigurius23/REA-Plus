@@ -46,7 +46,7 @@ const classic = (bytes: Buffer): CaptureFrames | null => {
   need(bytes, 0, 24, "header");
   const linkType = u32(20) & 0x0fffffff;
   const frames: CaptureFrame[] = [];
-  for (let at = 24; at < bytes.length; ) {
+  for (let at = 24; at < bytes.length;) {
     need(bytes, at, 16, "packet header");
     const length = u32(at + 8);
     need(bytes, at + 16, length, "packet");
@@ -68,7 +68,7 @@ interface Interface {
 
 /** if_tsresol: a power of ten, or of two when the high bit is set. */
 const resolution = (body: Buffer, little: boolean): number => {
-  for (let at = 8; at + 4 <= body.length; ) {
+  for (let at = 8; at + 4 <= body.length;) {
     const code = little ? body.readUInt16LE(at) : body.readUInt16BE(at);
     const length = little
       ? body.readUInt16LE(at + 2)
@@ -88,7 +88,7 @@ const pcapng = (bytes: Buffer): CaptureFrames | null => {
   let little = true;
   let interfaces: Interface[] = [];
   const frames: CaptureFrame[] = [];
-  for (let at = 0; at + 12 <= bytes.length; ) {
+  for (let at = 0; at + 12 <= bytes.length;) {
     if (bytes.readUInt32BE(at) === 0x0a0d0d0a) {
       little = bytes.readUInt32LE(at + 8) === 0x1a2b3c4d;
       interfaces = [];

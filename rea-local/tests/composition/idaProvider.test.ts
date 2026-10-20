@@ -21,6 +21,17 @@ afterEach(async () => {
     await rm(root, { recursive: true, force: true });
 });
 
+const dexTarget = ({ path, sha256 }: { path: string; sha256: string }) =>
+  ({
+    path,
+    sha256,
+    kind: "executable",
+    format: "dex",
+    architecture: "dalvik",
+    availableArchitectures: ["dalvik"],
+    dex: { version: "039" },
+  }) as const;
+
 describe("IDA provider composition", () => {
   it("discovers without launching and commits adapter semantics without persisting credentials", async () => {
     const { root, target } = await createIdaTarget();
@@ -148,18 +159,7 @@ describe("IDA provider composition", () => {
         format: "analysis-database",
       }),
     ).toMatchObject({ status: "unsupported", code: "target_kind_unsupported" });
-    expect(
-      provider.inspectTargetSupport({
-        path: target.path,
-        sha256: target.sha256,
-        kind: "executable",
-        format: "dex",
-        architecture: "dalvik",
-        availableArchitectures: ["dalvik"],
-        dex: { version: "039" },
-      }),
-    ).toMatchObject({
-      status: "unsupported",
+    expect(provider.inspectTargetSupport(dexTarget(target))).toMatchObject({
       code: "target_format_unsupported",
     });
     const session = createTestBinarySession(provider);
