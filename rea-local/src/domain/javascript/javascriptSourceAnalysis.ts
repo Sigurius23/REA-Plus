@@ -27,6 +27,8 @@ export interface JavaScriptSourceAnalysisFailure {
 export interface JavaScriptSourceAnalysisLimits {
   readonly heapMb: number;
   readonly timeoutMs: number;
+  /** Larger sources keep static facts only; semantic analysis is skipped. */
+  readonly maxSemanticSourceBytes?: number | undefined;
 }
 
 /** Sequential source-analysis authority with independently verified cleanup. */

@@ -50,7 +50,14 @@ the exhausted read budget and the selected JAR path.
 
 The current metadata bridge is verified on macOS arm64 with OpenJDK 21 and the
 public Appium ApiDemos fixture. The POSIX adapter also supports Linux; the new
-bridge has not yet undergone real verification on Linux/JDK 25.
+bridge has not yet undergone real verification on Linux/JDK 25. On Linux x64
+with OpenJDK 21 and the pinned JAR, all five operations ran against a
+production APK (WHOOP 5.473.0: 11 DEX files, 47,244 top-level classes).
+
+Readiness lists the JAR's entry names and accepts repeated ones: the pinned
+release repeats `LICENSE`, `META-INF/LICENSE` and `META-INF/LICENSE.txt` from
+the dependencies shaded into it. APKs and other analyzed archives still reject
+repeated entry names.
 Windows x64 uses an owned Job Object with bidirectional stdio, atomic job
 assignment and kill-on-owner-close. Real Windows verification uses JDK 21 and
 the pinned JADX 0.7.1 JAR; see the real verification lane below.
@@ -222,7 +229,11 @@ front; upstream decompilation is limited to **90 seconds**.
 
 Decoded manifest and method text have a **1 MiB** upstream byte budget and report
 truncation. Class-name pages use indexed slices of up to 4,096 names without changing the
-complete, case-sensitive search contract. A protocol frame above **8 MiB**, or combined stdout/stderr above
+complete, case-sensitive search contract. JADX names R8-obfuscated classes from
+their Kotlin metadata, so several classes can share one name (167 names in the
+WHOOP APK above). Search lists each name once and returns the shared ones in
+`shared_names`; `inspect_android_class` reports such a name as ambiguous,
+with its raw identities. A protocol frame above **8 MiB**, or combined stdout/stderr above
 **32 MiB per operation**, fails with a diagnostic instead of returning an incomplete inventory
 as complete. These are memory-safety boundaries, not undocumented result caps.
 

@@ -2,6 +2,8 @@
 
 **Status:** Phase 0 — public-product reconnaissance. This is a clean-room project separate from the game-modding catalog; no Consensus source, assets, or private data have been copied.
 
+**Web client:** the public consensus.app client was characterized with REA+ on 2026-10-17. It covers the stack, the 46 page routes, the API paths the client calls, and feature flags. See [web app observations](web-app-observations.md). Request/response schemas and server internals remain unknown.
+
 ## Verified Android product surface
 
 Consensus has an official Google Play app published by Consensus NLP Inc. The listing URL identifies the package as `app.consensus.android` and shows an update date of September 14, 2026: [Google Play listing](https://play.google.com/store/apps/details?id=app.consensus.android&hl=en_US).
@@ -48,7 +50,7 @@ These tools can characterize client-side behavior. They do not reveal hidden ser
 
 - Whether the Android app is native, WebView-based, or hybrid, and which libraries it includes.
 - The search corpus providers, update pipeline, ranking features, and actual ranking behavior.
-- The server-side request/response schemas, storage model, and model-serving architecture.
+- The server-side request/response schemas, storage model, and model-serving architecture. The web client's API paths are now mapped (see [web app observations](web-app-observations.md)), but not what they carry.
 - The implementation and evaluation rules behind the Consensus Meter and Study Snapshot.
 - Full-text access terms and which document sources can be used by an open-source replacement.
 

@@ -98,6 +98,13 @@ export const parseConfig = (
       ? {}
       : { ghidraNativeAotJar: env.REA_GHIDRA_NATIVEAOT_JAR }),
     ilspyCmdPath: env.REA_ILSPY_CMD_PATH,
+    ...(env.REA_RADARE2_PATH === undefined
+      ? {}
+      : { radare2Path: env.REA_RADARE2_PATH }),
+    ...(env.REA_RADARE2_ANALYSIS === undefined
+      ? {}
+      : { radare2AnalysisLevel: env.REA_RADARE2_ANALYSIS }),
+    radare2AnalysisTimeoutMs: env.REA_RADARE2_ANALYSIS_TIMEOUT_MS,
     fridaPythonPath: env.REA_FRIDA_PYTHON_PATH,
     objectionCommandPath: env.REA_OBJECTION_CMD_PATH,
     hopperLauncherPath:

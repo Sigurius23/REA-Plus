@@ -137,7 +137,7 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
 }> => {
   const state = emptyArtifactAnalysis<JavaScriptModuleSemanticIr>();
   let interruption: AnalysisError | null = null;
-  for (const [index, file] of fileSet.files.entries()) {
+  for (const [index, file] of analysisOrder(fileSet.files).entries()) {
     try {
       await setImmediate();
       await beforeFile(file, index, fileSet.files.length);
@@ -285,7 +285,35 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
         );
     }
   }
+  const position = new Map(fileSet.files.map((file, index) => [file, index]));
+  state.files.sort(
+    (left, right) =>
+      (position.get(left.file) ?? 0) - (position.get(right.file) ?? 0),
+  );
   return { analysis: finalizeArtifactAnalysis(state), interruption };
+};
+
+/**
+ * Sources share one result budget and one semantic-graph node budget, first
+ * come first served, and all but the last source leave most of the budget in
+ * reserve for later sources. Analyzing JavaScript sources smallest first gives
+ * the most sources complete facts and keeps one large bundle from using up
+ * the budget before smaller ones are reached. Other files keep their place.
+ */
+const analysisOrder = (
+  files: readonly JavaScriptArtifactFile[],
+): readonly JavaScriptArtifactFile[] => {
+  const isSource = (file: JavaScriptArtifactFile): boolean =>
+    file.kind === "javascript" && file.text.included;
+  const size = (file: JavaScriptArtifactFile): number =>
+    file.text.included ? Buffer.byteLength(file.text.value) : 0;
+  const sources = files
+    .filter(isSource)
+    .sort((left, right) => size(left) - size(right));
+  let next = 0;
+  return files.map((file) =>
+    isSource(file) ? (sources[next++] ?? file) : file,
+  );
 };
 
 const analyzeArtifactFiles = <SemanticIr extends JavaScriptModuleSemanticIr>(

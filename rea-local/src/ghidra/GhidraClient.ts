@@ -41,7 +41,7 @@ import {
   parseGhidraSessionInfo,
   type GhidraSessionInfo,
 } from "./GhidraSessionValues.js";
-import { createGhidraTargetSnapshot } from "./GhidraTargetSnapshot.js";
+import { createProviderTargetSnapshot } from "../process/ProviderTargetSnapshot.js";
 import { readFile } from "node:fs/promises";
 import { readBoundedFileBytes } from "../process/BoundedFileBytes.js";
 import {
@@ -475,11 +475,15 @@ export class GhidraClient {
       return this.#startupFailure(failure);
     }
     try {
-      const snapshot = await createGhidraTargetSnapshot(
+      const snapshot = await createProviderTargetSnapshot(
         this.#options.targetPath,
         this.#runtimeRoot.path,
         this.#options.targetSha256,
-        { signal: deadline.signal, platform: this.#options.platform },
+        {
+          providerName: "Ghidra",
+          signal: deadline.signal,
+          platform: this.#options.platform,
+        },
       );
       this.#snapshotPath = snapshot.path;
       this.#targetAdmission = snapshot.admission;

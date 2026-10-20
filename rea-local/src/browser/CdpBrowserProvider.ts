@@ -2,6 +2,7 @@ import type { BrowserObservationPort } from "../application/BrowserObservationPo
 import type { ProviderIdentity } from "../application/AnalysisProvider.js";
 import type { ExecutionOptions } from "../application/AnalysisProvider.js";
 import {
+  isBlankTabUrl,
   sanitizeBrowserUrl,
   type InspectWebPageInput,
   type ListBrowserTargetsInput,
@@ -99,7 +100,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
           excluded: selected.excluded,
           limitations: [
             input.allowed_origins.length === 0
-              ? "All page targets with supported HTTP(S) URLs are listed."
+              ? "All page targets with HTTP(S) URLs are listed, and blank tabs (about:blank or the new-tab page) with a null origin. capture_browser_scenario in connect mode can navigate a blank tab; the inspection tools need an HTTP(S) page."
               : "Only page targets whose current URL matches an explicitly requested exact origin are listed.",
             ...(selected.unconnectable === 0
               ? []
@@ -387,11 +388,16 @@ const selectTargets = (
       continue;
     }
     const url = sanitizeBrowserUrl(target.url);
-    if (url.origin === null) {
+    const blank = allowedOrigins === undefined && isBlankTabUrl(target.url);
+    if (url.origin === null && !blank) {
       unsupportedUrl += 1;
       continue;
     }
-    if (allowedOrigins !== undefined && !allowedOrigins.has(url.origin)) {
+    if (
+      allowedOrigins !== undefined &&
+      url.origin !== null &&
+      !allowedOrigins.has(url.origin)
+    ) {
       disallowedOrigin += 1;
       continue;
     }

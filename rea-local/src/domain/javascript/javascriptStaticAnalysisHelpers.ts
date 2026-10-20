@@ -20,6 +20,7 @@ import {
   compareUnicodeCodePoints,
   compositeKey,
 } from "../unicodeCodePointOrder.js";
+import { endpointTemplate } from "./javascriptEndpointTemplates.js";
 
 /** Explicit result for source text that Babel cannot parse. */
 export const failedJavaScriptStaticAnalysis = (): JavaScriptStaticAnalysis => ({
@@ -433,16 +434,9 @@ const BROWSING_CONTEXT_KEYWORDS = new Set([
 const xhrOpenUrl = (
   name: string,
   methodNode: t.Node | null | undefined,
-  urlNode: t.Node | null | undefined,
-  receiverFact?:
-    | "window"
-    | "indexed-db"
-    | "cache-storage"
-    | "local"
-    | "local-indexed-db"
-    | "local-cache-storage",
+  url: string | undefined,
+  receiverFact?: OpenReceiverFact,
 ): string | undefined => {
-  const url = stringValue(urlNode);
   if (url === undefined) return undefined;
   // A lexical fact is stronger than the receiver's spelling. In particular,
   // browser Window and Document globals overload `open` with URL/content APIs.
@@ -509,7 +503,28 @@ const isKeyedCollectionReceiver = (callee: t.Node): boolean => {
   return property === "headers" || property === "searchParams";
 };
 
-/** Select the literal URL argument for recognized network callees. */
+type OpenReceiverFact =
+  | "window"
+  | "indexed-db"
+  | "cache-storage"
+  | "local"
+  | "local-indexed-db"
+  | "local-cache-storage";
+
+/** What a call site knows beyond its syntax. */
+export interface EndpointArgumentContext {
+  readonly receiverFact?: OpenReceiverFact | undefined;
+  /**
+   * Resolve a URL argument that is not an exact string: a template, a
+   * concatenation or a variable. Defaults to {@link endpointTemplate}.
+   */
+  readonly resolve?: ((node: t.Node) => string | undefined) | undefined;
+}
+
+/**
+ * Select the URL argument for recognized network callees: an exact string,
+ * or a path or URL with `{}` for each expression built into it.
+ */
 export const endpointArgument = (
   name: string,
   args: readonly (
@@ -519,24 +534,28 @@ export const endpointArgument = (
     | t.ArgumentPlaceholder
   )[],
   callee: t.Node,
-  receiverFact?:
-    | "window"
-    | "indexed-db"
-    | "cache-storage"
-    | "local"
-    | "local-indexed-db"
-    | "local-cache-storage",
+  context: EndpointArgumentContext = {},
 ): string | undefined => {
+  const { receiverFact } = context;
+  const resolve = context.resolve ?? endpointTemplate;
+  const url = (node: t.Node | undefined): string | undefined =>
+    node === undefined ? undefined : (stringValue(node) ?? resolve(node));
   if (receiverFact === "window") return undefined;
-  if (name === "fetch" || name.endsWith(".fetch") || name === "WebSocket")
-    return stringValue(args[0]);
+  if (
+    name === "fetch" ||
+    name.endsWith(".fetch") ||
+    name === "WebSocket" ||
+    name === "EventSource" ||
+    name.endsWith(".sendBeacon")
+  )
+    return url(args[0]);
   if (name.endsWith(".open"))
-    return xhrOpenUrl(name, args[0], args[1], receiverFact);
+    return xhrOpenUrl(name, args[0], url(args[1]), receiverFact);
   const method = ["get", "post", "put", "patch", "delete", "request"].find(
     (candidate) => name === candidate || name.endsWith(`.${candidate}`),
   );
   if (method !== undefined) {
-    const value = stringValue(args[0]);
+    const value = url(args[0]);
     // Only get and delete also belong to the keyed-collection APIs, whose
     // keys are header, field, and parameter names rather than URLs or paths.
     return value !== undefined &&
@@ -546,7 +565,7 @@ export const endpointArgument = (
       ? undefined
       : value;
   }
-  if (name.endsWith("loadURL")) return stringValue(args[0]);
+  if (name.endsWith("loadURL")) return url(args[0]);
   return undefined;
 };
 

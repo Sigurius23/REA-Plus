@@ -78,6 +78,43 @@ it("passes the selected environment to the actual browser launch boundary", asyn
   });
 });
 
+it("passes proxy settings to the launched browser", async () => {
+  const selected = {
+    HTTPS_PROXY: "http://127.0.0.1:3128",
+    https_proxy: "http://127.0.0.1:3128",
+    NO_PROXY: "localhost,127.0.0.1",
+    no_proxy: "localhost,127.0.0.1",
+    PROXY_PASSWORD: "not-a-launch-setting",
+  };
+  let launchedEnvironment: unknown;
+  const scenario = browserScenarioSchema.parse({
+    browser: { mode: "launch", executable_path: process.execPath },
+    start_url: { url: "https://example.test" },
+    actions: [
+      { step_id: "settle", action: "wait_for_timeout", duration_ms: 1 },
+    ],
+  });
+  await expect(
+    openPlaywrightScenarioBrowser(scenario, selected, {
+      launcher: {
+        connectOverCDP: async () => {
+          throw new Error("Unexpected connection");
+        },
+        launchPersistentContext: async (_profile, options) => {
+          launchedEnvironment = options?.env;
+          throw new Error("launch boundary reached");
+        },
+      },
+    }),
+  ).rejects.toThrow("launch boundary reached");
+  expect(launchedEnvironment).toEqual({
+    HTTPS_PROXY: "http://127.0.0.1:3128",
+    https_proxy: "http://127.0.0.1:3128",
+    NO_PROXY: "localhost,127.0.0.1",
+    no_proxy: "localhost,127.0.0.1",
+  });
+});
+
 it("keeps Termux execution support when launching Chromium on Android", async () => {
   Object.defineProperty(process, "platform", { value: "android" });
   vi.stubEnv("PREFIX", "/data/data/com.termux/files/usr");

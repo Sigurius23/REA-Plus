@@ -40,8 +40,9 @@ views, feature traces and comparisons that take the same saved Evidence.
 ## Native analysis
 
 Configure [Hopper or Ghidra](installation.md#hopper), the
-[IDA adapters](ida-provider.md), or the
-[Binary Ninja adapter](binary-ninja-provider.md) before analyzing a native target. Substitute
+[IDA adapters](ida-provider.md), the
+[Binary Ninja adapter](binary-ninja-provider.md), or the
+[radare2 provider](radare2-provider.md) before analyzing a native target. Substitute
 your target, search text and function name or address in these examples:
 
 ```bash

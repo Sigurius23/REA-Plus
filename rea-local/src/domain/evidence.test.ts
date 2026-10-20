@@ -343,6 +343,28 @@ it("derives byte-stable bundle manifests independent of record order", () => {
   });
 });
 
+describe("DEX analysis evidence identity", () => {
+  it("records DEX targets with the Dalvik architecture", () => {
+    const evidence = createEvidence(
+      {
+        path: TARGET.path,
+        sha256: TARGET.sha256,
+        kind: "executable",
+        format: "dex",
+        architecture: "dalvik",
+        availableArchitectures: ["dalvik"],
+        dex: { version: "039" },
+      },
+      PROVIDER,
+      { operation: "health", parameters: {}, result: true },
+    );
+    expect(parseEvidence(evidence).subject).toMatchObject({
+      format: "dex",
+      architecture: "dalvik",
+    });
+  });
+});
+
 describe("DOS analysis evidence identity", () => {
   it("retains DOS MZ identity independently of PE identity", () => {
     const target = {

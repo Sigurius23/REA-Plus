@@ -77,3 +77,13 @@ export const dosMz = (moduleSize = 128): Buffer => {
   if (size >= 64) bytes.writeUInt32LE(0xfedcba98, 60);
   return bytes;
 };
+
+/** A DEX header for `version` declaring the whole buffer as its file size. */
+export const dex = (version = "039", size = 0x200): Buffer => {
+  const bytes = Buffer.alloc(size);
+  bytes.write(`dex\n${version}\0`, 0, "latin1");
+  bytes.writeUInt32LE(size, 0x20);
+  bytes.writeUInt32LE(0x70, 0x24);
+  bytes.writeUInt32LE(0x12345678, 0x28);
+  return bytes;
+};

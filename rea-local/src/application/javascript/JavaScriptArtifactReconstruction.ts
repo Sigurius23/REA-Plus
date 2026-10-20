@@ -144,6 +144,7 @@ export const reconstructJavaScriptArtifact = async (
           timeoutMs:
             input.analysis_timeout_ms ??
             JAVASCRIPT_ANALYSIS_RESOURCE_DEFAULTS.timeoutMs,
+          maxSemanticSourceBytes: input.max_semantic_source_bytes,
         },
         files.files.filter(
           (file) => file.kind === "javascript" && file.text.included,
@@ -257,11 +258,19 @@ export const reconstructJavaScriptArtifact = async (
             limitations: completed.graph.limitations,
           }),
         );
-        const { max_heap_mb, analysis_timeout_ms, ...coreInput } = input;
+        const {
+          max_heap_mb,
+          analysis_timeout_ms,
+          max_semantic_source_bytes,
+          ...coreInput
+        } = input;
         const parameters = {
           ...coreInput,
           ...(max_heap_mb === undefined ? {} : { max_heap_mb }),
           ...(analysis_timeout_ms === undefined ? {} : { analysis_timeout_ms }),
+          ...(max_semantic_source_bytes === undefined
+            ? {}
+            : { max_semantic_source_bytes }),
         };
         const evidence =
           await createOwnedJavaScriptApplicationEvidenceCooperatively(

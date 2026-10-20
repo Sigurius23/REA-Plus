@@ -206,6 +206,11 @@ const registerJavaScriptApplicationCommand = (
               ...(options.analysisTimeoutMs === undefined
                 ? {}
                 : { analysis_timeout_ms: options.analysisTimeoutMs }),
+              ...(options.maxSemanticSourceBytes === undefined
+                ? {}
+                : {
+                    max_semantic_source_bytes: options.maxSemanticSourceBytes,
+                  }),
             },
             signal,
           ),

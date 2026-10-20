@@ -30,8 +30,9 @@ The canonical tool inventory is the
 
 The canonical parser admits PE/CLI bytes and their metadata/CIL without loading
 an assembly. It reports observed implementation markers and unavailable facts;
-it does not unpack .NET single-file hosts, decode IL2CPP metadata, or infer a
-NativeAOT identity from an ordinary native PE. Inputs without admitted CLI
+it does not unpack .NET single-file hosts, decode IL2CPP metadata (see
+[Unity IL2CPP metadata](il2cpp-metadata.md)), or infer a NativeAOT identity
+from an ordinary native PE. Inputs without admitted CLI
 metadata do not become managed assemblies through naming or routing guesses.
 Inspect separately obtained components explicitly and preserve their identities.
 

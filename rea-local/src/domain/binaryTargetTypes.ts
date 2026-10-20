@@ -5,8 +5,15 @@ export const BINARY_ARCHITECTURES = [
   "arm",
   "arm64",
   "mips",
+  "dalvik",
 ] as const;
 export type BinaryArchitecture = (typeof BINARY_ARCHITECTURES)[number];
+
+/** Facts from an Android DEX header. */
+export interface DexMetadata {
+  /** The three-digit format version from the magic, such as `"039"`. */
+  readonly version: string;
+}
 
 /** Raw ELF facts; family recognition does not establish ISA or ABI support. */
 export interface MipsElfMetadata {
@@ -52,10 +59,10 @@ type NonExecutableMetadata = {
 
 type ExecutableTarget = BinaryTargetIdentity & {
   readonly kind: "executable";
-  readonly architecture: Exclude<BinaryArchitecture, "mips">;
+  readonly architecture: Exclude<BinaryArchitecture, "mips" | "dalvik">;
   readonly availableArchitectures: readonly Exclude<
     BinaryArchitecture,
-    "mips"
+    "mips" | "dalvik"
   >[];
 };
 
@@ -70,6 +77,15 @@ export type BinaryTarget =
       readonly architecture: "mips";
       readonly availableArchitectures: readonly "mips"[];
       readonly mips: MipsElfMetadata;
+      readonly executableRole?: never;
+      readonly managed?: never;
+    })
+  | (BinaryTargetIdentity & {
+      readonly kind: "executable";
+      readonly format: "dex";
+      readonly architecture: "dalvik";
+      readonly availableArchitectures: readonly "dalvik"[];
+      readonly dex: DexMetadata;
       readonly executableRole?: never;
       readonly managed?: never;
     })

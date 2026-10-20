@@ -16,11 +16,11 @@ export const registerWebNetworkCaptureCommands = (
   const service = createWebNetworkCaptureService(environment);
   cli.command(CLI_COMMANDS.inspectWebNetworkCapture, {
     description:
-      "Inspect retained HAR, mitmproxy, PCAP or PCAPNG records offline without fetching recorded URLs",
+      "Inspect retained HAR (incl. Charles/Proxyman), Burp XML, mitmproxy, PCAP or PCAPNG records offline without fetching recorded URLs",
     args: z.object({
       capturePath: z.string().describe("Absolute local capture path"),
       format: z
-        .enum(["har", "mitmproxy", "pcap", "pcapng"])
+        .enum(["har", "mitmproxy", "pcap", "pcapng", "burp"])
         .describe("Producer capture format"),
     }),
     options: z.object({

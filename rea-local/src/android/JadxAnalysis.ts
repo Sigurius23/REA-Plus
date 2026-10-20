@@ -167,16 +167,25 @@ const searchClasses = async (
         "JADX class pagination is incomplete",
       );
   } while (classes.length < total);
-  if (new Set(classes).size !== classes.length || total !== loaded.class_count)
+  if (total !== loaded.class_count)
     throw new AnalysisOutputError(
       request.operation,
-      "JADX class inventory is duplicated or differs from the loaded class count",
+      "JADX class inventory differs from the loaded class count",
     );
+  // JADX names R8-obfuscated classes from Kotlin metadata, so several classes
+  // can share one name; each name is listed once and shared ones reported.
+  const occurrences = new Map<string, number>();
+  for (const name of classes)
+    occurrences.set(name, (occurrences.get(name) ?? 0) + 1);
+  const matches = [...occurrences.keys()].filter((name) =>
+    name.includes(request.input.query),
+  );
   return androidResultSchemas.search_android_classes.parse({
     engine,
     query: request.input.query,
     total_classes: total,
-    matches: classes.filter((name) => name.includes(request.input.query)),
+    matches,
+    shared_names: matches.filter((name) => (occurrences.get(name) ?? 0) > 1),
     coverage: "complete",
   });
 };

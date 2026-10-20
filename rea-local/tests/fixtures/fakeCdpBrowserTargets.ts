@@ -54,6 +54,18 @@ export const targets = (
     attached: false,
     webSocketDebuggerUrl: `ws://localhost:${String(port)}/devtools/page/allowed-page`,
   })),
+  ...(options.blankPage === true
+    ? [
+        {
+          id: "blank-page",
+          type: "page",
+          title: "about:blank",
+          url: "about:blank",
+          attached: false,
+          webSocketDebuggerUrl: `ws://localhost:${String(port)}/devtools/page/blank-page`,
+        },
+      ]
+    : []),
   {
     id: "unsupported-page",
     type: "page",

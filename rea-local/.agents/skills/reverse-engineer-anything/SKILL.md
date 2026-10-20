@@ -64,11 +64,103 @@ explicit path or endpoint and do not need it.
 - Retained HAR, native mitmproxy, classic PCAP or PCAPNG capture:
   `inspect_web_network_capture`. Select original record ordinals when useful;
   inspect producer fields, packet ranges and exact byte/number sidecars without
-  fetching recorded URLs or claiming live attribution. Packet output stops at
-  bounded link/IP/TCP/UDP metadata; it does not decrypt TLS or reassemble
+  fetching recorded URLs or claiming live attribution. Packet output adds
+  bounded link/IP/TCP/UDP metadata plus HTTP/1.x heads, TLS hello SNI/ALPN and
+  DNS messages that begin in one packet; it does not decrypt TLS or reassemble
   streams. See [historical captures](https://github.com/morluto/rea/blob/main/docs/web-network-captures.md)
   for parser profiles and privacy boundaries.
 - User-owned Electron runtime already open: `list_electron_targets`.
+- Explicit local JAR or `.class` file: `inspect_jvm_artifact` lists classes and
+  decompiles named classes with caller-supplied CFR 0.152 (`REA_CFR_JAR`);
+  decompiled Java is a reconstruction, not original source.
+- Unity IL2CPP build (`global-metadata.dat` plus GameAssembly or libil2cpp):
+  `inspect_il2cpp_metadata` pages classes, string literals, interop and
+  assemblies with caller-supplied r2unity 1.2 (`REA_R2UNITY_PATH`). Select the
+  native binary too to recover method addresses, then inspect those addresses
+  with a binary provider.
+- Recorded drcov coverage (DynamoRIO `drrun -t drcov` or a Frida tracer):
+  `inspect_coverage_log` summarizes executed modules and pages a module's
+  blocks; pass a baseline log of a run without the action to keep only the
+  blocks that action added, then inspect their static addresses.
+- Crash minidump (Windows `.dmp`, Breakpad or Crashpad): `inspect_minidump`
+  names the exception and gives the faulting module+offset, threads, registers,
+  modules with symbol identifiers and a return-address stack scan; the scan is
+  a heuristic, not an unwound stack.
+- Logic-analyzer capture (sigrok `.sr` from PulseView): `inspect_logic_capture`
+  reports channel edges and bit-rate estimates; add a decoder stack (uart,
+  spi, i2c, ...) with caller-supplied sigrok-cli 0.7 (`REA_SIGROK_CLI`) to get
+  annotations and byte streams such as a UART console log.
+- AOB signatures or a Cheat Engine table: `scan_byte_patterns` finds
+  signatures in a PE/ELF/Mach-O and resolves rel32 targets (static pointers,
+  call targets); `inspect_cheat_table` reads a `.CT` and, with `binary_path`,
+  re-checks its signatures and asserts against a new build. Neither runs code.
+- Unity asset bundle or player data file (`.bundle`, `level0`,
+  `sharedassets0.assets`, `globalgamemanagers`): `inspect_unity_assets` lists
+  objects with names, owning GameObjects and MonoBehaviour scripts, bundle
+  asset paths and `Resources.Load` paths, and MonoScripts. Pair it with
+  `inspect_il2cpp_metadata` or a .NET provider for the scripts' code.
+- Godot `.pck` (or a Godot game executable), Ren'Py `.rpa`, Valve `.vpk`,
+  Doom WAD or Unreal `.pak`: `inspect_game_archive` lists entries with flags and verified
+  checksums and previews one entry (a `.gd` or `.rpy` script, a map lump).
+  Ren'Py indexes are decoded without unpickling code.
+- Compiled Ren'Py script (`.rpyc`): `inspect_renpy_script` maps labels and
+  jumps, dialogue with translation identifiers, menus, definitions and
+  translations; the pickled AST is read as inert data, never executed.
+- RPG Maker MV/MZ game folder: `inspect_rpgmaker_project` maps maps, dialogue,
+  switch and variable sites, the database and plugins; it verifies the asset
+  key against an encrypted PNG, decrypts one selected asset, and decodes saves.
+- GameMaker `data.win`, `game.unx`, `game.droid` or `audiogroupN.dat`:
+  `inspect_gamemaker_data` lists chunks, resources, bytecode entries, strings,
+  functions and variables, texture pages and audio; it reports VM or YYC and
+  the minimum runtime the chunks imply. Bytecode is listed, not decompiled.
+- x64dbg database (`.dd32`/`.dd64`): `inspect_x64dbg_database` lists labels,
+  comments, bookmarks, function and loop ranges, breakpoints, xrefs and
+  watches; with `module_path` it places them in the module file and flags
+  breakpoints whose original bytes changed in a new build.
+- WebAssembly module (`.wasm`, `.wasm.gz`, `.wasm.br`, `.unityweb`):
+  `inspect_wasm_module` decodes it without WABT. It reports the toolchain
+  (Emscripten, Unity/IL2CPP, Godot, Rust), debug information kept, functions
+  with call counts, callers and callees of one function, imports, exports and
+  data strings. Indirect call targets are counted, not resolved.
+- MobSF static-analysis JSON report: `inspect_mobsf_report` turns MobSF's
+  findings (with CWE/MASVS and file locations), permissions, components and
+  deep links, native library hardening, endpoints, secrets, trackers and
+  APKiD protections into Evidence. With `app_path` it checks the report names
+  the same APK/IPA. The findings are MobSF's, not a new analysis.
+- Compiled Lua (luac 5.1-5.4 chunk, LuaJIT dump, or chunks inside game data):
+  `inspect_lua_bytecode` lists the function tree with name hints and
+  luac/luajit-style instruction listings, constants, locals and upvalues; the
+  chunks view finds embedded chunks for `chunk_offset`. It disassembles; it
+  does not decompile, and shuffled-opcode VMs decode with wrong names.
+- Save file, cache, settings blob or packet payload with no schema:
+  `inspect_data_blob` peels base64/hex/gzip/zlib/zstd/LZ4 (name deflate or
+  brotli in `layers`) and decodes protobuf (as `protoc --decode_raw`),
+  MessagePack, CBOR, BSON, Java/Bedrock NBT, JSON and Minecraft region
+  chunks into a tree with byte offsets; check `candidates`, since a short
+  payload can decode as more than one format.
+- Godot game files (a `.pck` or executable with `entry`, or loose
+  `.res`/`.scn`/`.gdc`/`.gde`, saves, `project.binary`): `inspect_godot_file`
+  lists scene trees with connections and every stored resource property, and
+  rebuilds GDScript from compiled tokens on the original line numbers
+  (comments are not stored). Entries named by their original `.gd`/`.tscn`
+  path follow `.remap`. Encrypted saves need `key_env` or `password_env`;
+  the key itself is never passed.
+- Stripped native binary with statically linked libraries:
+  `identify_library_functions` names their functions from the static
+  libraries or objects (`.a`, `.lib`, `.o`, `.obj`) the binary likely linked,
+  so analysis can skip known library code. Only identically compiled code
+  matches; pass the matching library build.
+- Two builds of a native binary (a patch, a game update, two firmware
+  releases): `diff_binaries` matches their functions through the configured
+  provider, even stripped, and reports changed, added and removed functions;
+  its `function` view gives one function's aligned instruction diff. Matches
+  are inferences; low similarity means look closer.
+- Undocumented network protocol (a game's netcode, a device's control
+  channel) in a PCAP/PCAPNG capture or as hex lines: `infer_protocol_fields`
+  frames TCP streams, groups messages into formats and proposes each
+  format's fields (type, length, counter, checksum with its coverage,
+  timestamp, constants, floats, text). Every field is a hypothesis; confirm
+  it by editing a replayed message.
 - Explicit local WebAssembly artifact: `inspect_wasm_artifact`. Supply WABT 1.0.42
   through `REA_WABT_BIN_DIRECTORY`; retain exact byte/tool identity and decoded WAT.
   Select JavaScript glue and candidate paths explicitly and preserve URL/path

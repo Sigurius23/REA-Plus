@@ -54,4 +54,13 @@ export const javaScriptAnalysisResourceControlsSchema = z.strictObject({
     .describe(
       "Maximum startup, analysis and transfer time per JavaScript source, in milliseconds; defaults to 300000. On timeout, return collected partial Evidence and stop the analysis.",
     ),
+  max_semantic_source_bytes: z
+    .number()
+    .int()
+    .min(1)
+    .max(Number.MAX_SAFE_INTEGER)
+    .optional()
+    .describe(
+      "Largest JavaScript source, in UTF-8 bytes, that gets semantic analysis. Larger sources, such as multi-megabyte vendor bundles, keep their static facts (imports, endpoints, storage, routes) and skip the semantic graph, which saves time and leaves result capacity for the other sources. Unlimited by default.",
+    ),
 });

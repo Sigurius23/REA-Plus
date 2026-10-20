@@ -55,6 +55,7 @@ describe("direct analysis snapshot files", () => {
           "hopper",
           "ida",
           "ida-official",
+          "radare2",
         ],
       },
     });

@@ -118,6 +118,20 @@ describe("official Hex-Rays IDA analysis provider", () => {
     const upstream = new RecordingOfficialIda(target.sha256);
     const provider = new OfficialIdaProvider(config.value, {}, () => upstream);
     expect(provider.identity().id).toBe("ida-official");
+    expect(
+      provider.inspectTargetSupport({
+        path: target.path,
+        sha256: target.sha256,
+        kind: "executable",
+        format: "dex",
+        architecture: "dalvik",
+        availableArchitectures: ["dalvik"],
+        dex: { version: "039" },
+      }),
+    ).toMatchObject({
+      status: "unsupported",
+      code: "target_format_unsupported",
+    });
     expect(provider.inspectAvailability()).toMatchObject({
       status: "available",
       diagnostics: {

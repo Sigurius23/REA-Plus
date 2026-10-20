@@ -23,10 +23,15 @@ const browserTargetSchema = z.object({
   attached: z.boolean(),
 });
 
+/** A discovered target; blank tabs (about:blank, the new-tab page) have no origin. */
+const listedBrowserTargetSchema = browserTargetSchema.extend({
+  origin: z.string().nullable(),
+});
+
 /** Complete policy-filtered browser target discovery result. */
 export const browserTargetListSchema = z.object({
   browser: browserVersionSchema,
-  targets: z.array(browserTargetSchema),
+  targets: z.array(listedBrowserTargetSchema),
   excluded: z.object({
     disallowed_origin: z.number().int().min(0),
     unsupported_url: z.number().int().min(0),

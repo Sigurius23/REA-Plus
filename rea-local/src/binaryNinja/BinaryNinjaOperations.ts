@@ -4,6 +4,7 @@ import {
 } from "../domain/analysisErrorCore.js";
 import type { JsonValue } from "../domain/jsonValue.js";
 import type { ExternalMcpTool } from "../externalMcp/ExternalMcpConnection.js";
+import { searchAddressedItems } from "../contracts/analysisSearchContract.js";
 import { BINARY_NINJA_PROVIDER_IDENTITY } from "./BinaryNinjaIdentity.js";
 import {
   assemblyText,
@@ -19,7 +20,6 @@ import {
 } from "./BinaryNinjaMcpValues.js";
 import {
   requiredProcedure,
-  searchItems,
   semanticArguments,
   validateToolOutput,
 } from "./BinaryNinjaMcpArguments.js";
@@ -66,7 +66,7 @@ export class BinaryNinjaOperationRunner {
       }));
       return operation === "list_procedures"
         ? items
-        : searchItems(items, input);
+        : searchAddressedItems(items, input);
     }
     if (operation === "list_strings" || operation === "search_strings") {
       const strings = await this.#listStrings(signal);
@@ -77,7 +77,7 @@ export class BinaryNinjaOperationRunner {
               ({ address }) => address === normalizeAddress(input.address),
             );
       return operation === "search_strings"
-        ? searchItems(filtered, input)
+        ? searchAddressedItems(filtered, input)
         : filtered;
     }
     if (operation === "procedure_address") {

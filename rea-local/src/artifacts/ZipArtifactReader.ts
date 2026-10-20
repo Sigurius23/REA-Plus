@@ -167,6 +167,18 @@ export class ZipArtifactReader implements ArtifactReader {
     }
   }
 
+  /**
+   * List file entry names, duplicates included, without admitting entries
+   * for reading. Only a presence check may use this: a Java classpath JAR
+   * often repeats license files from the dependencies shaded into it.
+   */
+  async *fileNames(signal?: AbortSignal): AsyncIterable<string> {
+    for await (const entry of this.#reader.getEntriesGenerator()) {
+      abortIfNeeded(signal);
+      if (!entry.directory && entry.encrypted !== true) yield entry.filename;
+    }
+  }
+
   open(entry: ArtifactEntry, signal?: AbortSignal): Promise<Readable> {
     abortIfNeeded(signal);
     const stored = this.#entries.get(entry.adapterKey);

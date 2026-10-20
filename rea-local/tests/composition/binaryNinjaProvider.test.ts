@@ -43,6 +43,20 @@ describe("official Binary Ninja provider composition", () => {
     const upstream = new RecordingBinaryNinja(target.path, target.sha256);
     const provider = new BinaryNinjaProvider(config.value, {}, () => upstream);
     expect(provider.identity().id).toBe("binary-ninja");
+    expect(
+      provider.inspectTargetSupport({
+        path: target.path,
+        sha256: target.sha256,
+        kind: "executable",
+        format: "dex",
+        architecture: "dalvik",
+        availableArchitectures: ["dalvik"],
+        dex: { version: "039" },
+      }),
+    ).toMatchObject({
+      status: "unsupported",
+      code: "target_format_unsupported",
+    });
     expect(provider.inspectAvailability()).toMatchObject({
       status: "available",
       diagnostics: {

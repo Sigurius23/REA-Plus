@@ -123,6 +123,14 @@ export class HopperProvider implements AnalysisProviderCandidate {
         reason: "REA+'s Hopper adapter does not admit MIPS targets.",
         diagnostics,
       };
+    if (target.format === "dex")
+      return {
+        status: "unsupported",
+        code: "target_format_unsupported",
+        reason:
+          "Hopper does not analyze Android DEX bytecode. Select the radare2 or Ghidra provider instead.",
+        diagnostics,
+      };
     if (target.format === "dos-mz" || target.format === "dos-com")
       return {
         status: "unsupported",

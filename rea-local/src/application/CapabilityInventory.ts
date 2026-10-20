@@ -33,6 +33,8 @@ type ToolAvailabilityReason = "available" | ToolUnavailabilityReason;
 type ProviderDescriptor = ProviderCapability;
 export type AvailabilityPolicy = {
   readonly wasmArtifactEnabled?: boolean;
+  readonly jvmArtifactEnabled?: boolean;
+  readonly il2cppMetadataEnabled?: boolean;
   readonly evmInterfaceEnabled?: boolean;
   readonly processCaptureEnabled: boolean;
   readonly optionalProviderLoadFailures?: OptionalProviderLoadFailures;
@@ -330,7 +332,44 @@ const workflowAvailabilityFor = ({
           remediation:
             "Supply WABT 1.0.42 via absolute REA_WABT_BIN_DIRECTORY. No active binary target is required; tools are checked at execution.",
         };
-  if (name === "inspect_pe_resources")
+  if (name === "inspect_jvm_artifact")
+    return policy.jvmArtifactEnabled === true
+      ? { reason: "available", remediation: null }
+      : {
+          reason: "provider_missing",
+          remediation:
+            "Supply CFR 0.152 via absolute REA_CFR_JAR and Java via JAVA_HOME or PATH. No active binary target is required; tools are checked at execution.",
+        };
+  if (name === "inspect_il2cpp_metadata")
+    return policy.il2cppMetadataEnabled === true
+      ? { reason: "available", remediation: null }
+      : {
+          reason: "provider_missing",
+          remediation:
+            "Supply r2unity 1.2.8 or a later 1.2 release via absolute REA_R2UNITY_PATH. No active binary target is required; the tool is checked at execution.",
+        };
+  if (
+    name === "inspect_pe_resources" ||
+    name === "inspect_coverage_log" ||
+    name === "inspect_minidump" ||
+    name === "inspect_logic_capture" ||
+    name === "scan_byte_patterns" ||
+    name === "inspect_cheat_table" ||
+    name === "inspect_unity_assets" ||
+    name === "inspect_game_archive" ||
+    name === "inspect_renpy_script" ||
+    name === "inspect_rpgmaker_project" ||
+    name === "inspect_gamemaker_data" ||
+    name === "inspect_x64dbg_database" ||
+    name === "inspect_wasm_module" ||
+    name === "inspect_mobsf_report" ||
+    name === "inspect_lua_bytecode" ||
+    name === "inspect_data_blob" ||
+    name === "inspect_godot_file" ||
+    name === "infer_protocol_fields" ||
+    name === "diff_binaries" ||
+    name === "identify_library_functions"
+  )
     return { reason: "available", remediation: null };
   if (name === "inspect_evm_interface")
     return policy.evmInterfaceEnabled === true

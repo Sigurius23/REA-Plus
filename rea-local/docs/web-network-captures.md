@@ -9,6 +9,7 @@ rea inspect-web-network-capture /absolute/session.har har --json
 rea inspect-web-network-capture /absolute/session.har har --record 2 --record 0 --json
 rea inspect-web-network-capture /absolute/session.pcap pcap --record 0 --json
 rea inspect-web-network-capture /absolute/session.pcapng pcapng --record 0 --json
+rea inspect-web-network-capture /absolute/burp-history.xml burp --json
 ```
 
 ```json
@@ -53,6 +54,44 @@ for a missing request body. REA+ preserves that reported null, omitting the
 optional field only from its validation copy for this exact producer profile;
 it does not invent an empty string or body bytes.
 
+### Burp Suite, Charles and Proxyman
+
+Burp Suite's XML export ("Save items" from Proxy history, Logger or the site
+map) is read with `format: "burp"`. Each `<item>` holds the raw HTTP request
+and response, usually base64-encoded. REA+ parses those messages into a HAR
+1.2 entry, which then goes through the same pinned HAR validation,
+redaction and selection as a `.har` file. Record pointers refer to that HAR
+projection, and `reported.creator` names Burp and its version.
+
+The conversion builds each entry as follows:
+
+- **Request:** method, URL, HTTP version, headers and cookies, the query
+  string from the item's URL, and the body as `postData` when it is UTF-8
+  text. A binary request body is noted in the entry's `comment` and left
+  out.
+- **Response:** status line, headers and `Set-Cookie` cookies.
+- **Response body:** chunked transfer coding is removed, and gzip, deflate
+  and Brotli content coding is decoded. The body becomes HAR content as text,
+  or base64 when it is not UTF-8.
+- **Time:** `<time>` is a Java `Date.toString` value. Common zone
+  abbreviations are converted; an unknown zone is read as UTC and noted.
+  Burp records no timings, so `time` and `timings` are zero.
+- **Comment:** Burp's own `<comment>` and any conversion notes go into the
+  entry's `comment`. An item without a response gets status 0 and a note.
+
+Entity declarations are refused, so the export cannot pull in external
+entities. Burp declares XML 1.1, which is accepted.
+
+The item layout follows PortSwigger's own saved-items parser (the
+`log-viewer` extension) and sqlmap's Burp log reader. The tests build exports
+in that layout, including gzip, chunked and binary responses and an item
+without a response. No export saved by Burp itself was available here.
+
+Charles and Proxyman both export HAR (Charles: File → Export Session → HTTP
+Archive; Proxyman: Export → HAR). Read those files with `format: "har"`.
+Charles' own `.chls` and `.chlsj` session formats and Proxyman's
+`.proxymanlogv2` are not read.
+
 Native mitmproxy decoding requires a caller-supplied **mitmdump 12.2.3 on
 Linux**. Set its absolute executable path:
 
@@ -82,9 +121,43 @@ blocks and packet-block lengths/trailers are checked; non-packet, custom and
 unknown block contents are not retained or interpreted. PCAPNG permits at most
 65,536 interfaces per section. A normalized transport five-tuple groups TCP/UDP
 packets when endpoints are present; it is not a connection-lifecycle ID and
-repeated sessions can reuse the same key. IP fragments, TCP streams, HTTP and
-TLS are not reassembled, parsed or decrypted. These records do not establish
-browser, process, application or runtime attribution.
+repeated sessions can reuse the same key. IP fragments and TCP streams are not
+reassembled and TLS is not decrypted. These records do not establish browser,
+process, application or runtime attribution.
+
+### Application metadata
+
+Each packet record also has an `application` object (or `null`) for messages
+that begin in that packet. Nothing is reassembled, so data continuing in later
+segments is not decoded.
+
+- **HTTP/1.x**: a request or status line at the start of a TCP payload. The
+  record reports the method and target or status and reason, ordered headers
+  with byte-exact latin1 values, whether the head ended in this segment, any
+  cut-off last line, and body bytes present in the segment.
+- **TLS**: a cleartext ClientHello or ServerHello at the start of a TCP
+  payload. The record reports record and legacy versions, server names (SNI),
+  ALPN protocols, supported versions, the extension type list, the
+  ServerHello cipher suite, and `complete: false` when the hello continues in
+  a later segment.
+- **DNS**: complete messages on UDP or TCP ports 53 and 5353. The record
+  reports the header flags and counts, questions, and answer, authority and
+  additional records with decoded A, AAAA, CNAME, NS, PTR, MX and TXT data
+  (other types keep bounded hex). Names use RFC 1035 presentation escapes.
+  Compression loops, truncation and trailing bytes are reported in
+  `decode_status`; at most 64 records per section are listed.
+
+`Authorization`, `Proxy-Authorization`, `Cookie` and `Set-Cookie` values are
+removed, including a credential line cut at the segment end, and URL userinfo
+is stripped from request targets and `Location`, `Referer` and `Origin`
+values. Each removal is listed in `redactions` as `transport-credential`.
+Because the frame bytes contain the same credential, a frame with any such
+removal keeps neither its bytes nor their digest (`/frame/data` is redacted).
+The decoder identity is `rea-offline-pcap` version `1.1.0`.
+
+Tests use payloads recorded on loopback with tcpdump 4.99.4 from DiG 9.18,
+curl 8.5.0, Python `http.server` and OpenSSL 3.0.13; HTTP/2, QUIC, DNS over
+HTTPS and encrypted TLS records are not decoded.
 
 ## Reading the evidence
 

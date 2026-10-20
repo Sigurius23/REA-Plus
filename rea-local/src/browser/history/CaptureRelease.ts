@@ -22,6 +22,13 @@ export const HAR_CAPTURE_HEAP_ENFORCED =
 export const HAR_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES =
   javaScriptWorkerMemoryLimitBytes(HAR_CAPTURE_HEAP_LIMITS.oldGenerationMiB);
 
+/** Burp Suite XML exports converted to HAR 1.2, then decoded by the HAR profile. */
+export const BURP_CAPTURE_PROVIDER_IDENTITY = {
+  id: "burp-xml/har-schema",
+  name: "REA+ Burp Suite export adapter",
+  version: "xmldom@0.9.12;har-schema@2.0.0;lossless-json@4.3.1",
+} as const;
+
 /** Native executable profile verified with unchanged mitmproxy raw-state decoding. */
 export const MITMPROXY_CAPTURE_PROVIDER_IDENTITY = {
   id: "mitmproxy-native-tnetstring",
@@ -33,7 +40,7 @@ export const MITMPROXY_CAPTURE_PROVIDER_IDENTITY = {
 export const PCAP_CAPTURE_PROVIDER_IDENTITY = {
   id: "rea-offline-pcap",
   name: "REA+ offline PCAP/PCAPNG adapter",
-  version: "1.0.0",
+  version: "1.1.0",
 } as const;
 
 /** Fixed V8 heap settings used by the owned PCAP/PCAPNG decoder process. */

@@ -1,4 +1,24 @@
 import { WASM_TOOL_CONTRACTS } from "./wasm/wasmToolContracts.js";
+import { JVM_TOOL_CONTRACTS } from "./jvm/jvmToolContracts.js";
+import { IL2CPP_TOOL_CONTRACTS } from "./il2cpp/il2cppToolContracts.js";
+import { COVERAGE_TOOL_CONTRACTS } from "./drcov/coverageToolContracts.js";
+import { MINIDUMP_TOOL_CONTRACTS } from "./minidump/minidumpToolContracts.js";
+import { LOGIC_TOOL_CONTRACTS } from "./logic/logicToolContracts.js";
+import { PATTERN_TOOL_CONTRACTS } from "./patterns/patternToolContracts.js";
+import { UNITY_TOOL_CONTRACTS } from "./unity/unityToolContracts.js";
+import { GAME_ARCHIVE_TOOL_CONTRACTS } from "./gamearchives/gameArchiveToolContracts.js";
+import { RENPY_TOOL_CONTRACTS } from "./renpy/renpyToolContracts.js";
+import { RPG_MAKER_TOOL_CONTRACTS } from "./rpgmaker/rpgMakerToolContracts.js";
+import { GAMEMAKER_TOOL_CONTRACTS } from "./gamemaker/gameMakerToolContracts.js";
+import { X64DBG_TOOL_CONTRACTS } from "./x64dbg/x64dbgToolContracts.js";
+import { WASM_MODULE_TOOL_CONTRACTS } from "./wasmmodule/wasmModuleToolContracts.js";
+import { MOBSF_TOOL_CONTRACTS } from "./mobsf/mobsfToolContracts.js";
+import { LUA_TOOL_CONTRACTS } from "./lua/luaToolContracts.js";
+import { DATA_BLOB_TOOL_CONTRACTS } from "./blob/dataBlobToolContracts.js";
+import { GODOT_TOOL_CONTRACTS } from "./godot/godotToolContracts.js";
+import { PROTOCOL_TOOL_CONTRACTS } from "./protocol/protocolToolContracts.js";
+import { BINARY_DIFF_TOOL_CONTRACTS } from "./bindiff/binaryDiffToolContracts.js";
+import { LIBRARY_IDENTIFICATION_TOOL_CONTRACTS } from "./libid/libraryIdentificationToolContracts.js";
 import { EVM_TOOL_CONTRACTS } from "./evm/evmToolContracts.js";
 import { ANALYSIS_VIEW_TOOL_CONTRACTS } from "./analysisViewToolContracts.js";
 import { BINARY_DIAGNOSTICS_TOOL_CONTRACTS } from "./native/binaryDiagnosticsToolContracts.js";
@@ -35,6 +55,26 @@ export const TOOL_CONTRACTS = [
   ...ARTIFACT_TOOL_CONTRACTS,
   ...EVM_TOOL_CONTRACTS,
   ...WASM_TOOL_CONTRACTS,
+  ...JVM_TOOL_CONTRACTS,
+  ...IL2CPP_TOOL_CONTRACTS,
+  ...COVERAGE_TOOL_CONTRACTS,
+  ...MINIDUMP_TOOL_CONTRACTS,
+  ...LOGIC_TOOL_CONTRACTS,
+  ...PATTERN_TOOL_CONTRACTS,
+  ...UNITY_TOOL_CONTRACTS,
+  ...GAME_ARCHIVE_TOOL_CONTRACTS,
+  ...RENPY_TOOL_CONTRACTS,
+  ...RPG_MAKER_TOOL_CONTRACTS,
+  ...GAMEMAKER_TOOL_CONTRACTS,
+  ...X64DBG_TOOL_CONTRACTS,
+  ...WASM_MODULE_TOOL_CONTRACTS,
+  ...MOBSF_TOOL_CONTRACTS,
+  ...LUA_TOOL_CONTRACTS,
+  ...DATA_BLOB_TOOL_CONTRACTS,
+  ...GODOT_TOOL_CONTRACTS,
+  ...PROTOCOL_TOOL_CONTRACTS,
+  ...BINARY_DIFF_TOOL_CONTRACTS,
+  ...LIBRARY_IDENTIFICATION_TOOL_CONTRACTS,
   ...MANAGED_TOOL_CONTRACTS,
   ...ANDROID_TOOL_CONTRACTS,
   ...APKTOOL_TOOL_CONTRACTS,

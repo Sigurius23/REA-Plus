@@ -48,6 +48,7 @@ import {
 } from "./javascriptSourceParser.js";
 
 import { createJavaScriptRpcScan } from "./javascriptRpcEndpoints.js";
+import { EndpointBindings } from "./javascriptEndpointTemplates.js";
 
 /** Parse one JavaScript artifact and recover static structure only. */
 export const analyzeJavaScriptStaticSource = (
@@ -88,6 +89,7 @@ export function* analyzeParsedJavaScriptStaticSourceSteps(
     accumulator,
     ...(openReceiverFacts === undefined ? {} : { openReceiverFacts }),
     electronBindings,
+    endpointBindings: new EndpointBindings(),
     rpcScan: createJavaScriptRpcScan(source, clientRoots),
   });
   addSourceMapDirectives(source, file.comments ?? [], accumulator);
@@ -99,11 +101,13 @@ function* traverseStaticSourceSteps(
   findings: JavaScriptFindingContext,
 ): Generator<void, void> {
   yield* traverseJavaScriptAstSteps(file, {
-    enter: (node) => {
+    enter: (node, parent) => {
       findings.accumulator.visitedNodes += 1;
+      findings.endpointBindings?.enter(node, parent);
       inspectNode(node, findings);
       return undefined;
     },
+    exit: (node) => findings.endpointBindings?.exit(node),
   });
 }
 

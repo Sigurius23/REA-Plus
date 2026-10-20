@@ -68,6 +68,22 @@ const snapshotWithHistoricalEvidence = () => {
 };
 
 describe("analysis snapshot contract", () => {
+  it("preserves a DEX target's format and Dalvik architecture", () => {
+    const target = {
+      path: ANALYSIS_SNAPSHOT_TARGET.path,
+      sha256: ANALYSIS_SNAPSHOT_TARGET.sha256,
+      kind: "executable" as const,
+      format: "dex" as const,
+      architecture: "dalvik" as const,
+      availableArchitectures: ["dalvik" as const],
+      dex: { version: "035" },
+    };
+    expect(snapshotTarget(target)).toMatchObject({
+      format: "dex",
+      architecture: "dalvik",
+    });
+  });
+
   it("preserves DOS MZ target and subject formats with the x86 family", () => {
     const target = {
       path: ANALYSIS_SNAPSHOT_TARGET.path,

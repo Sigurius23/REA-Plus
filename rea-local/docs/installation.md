@@ -448,12 +448,12 @@ registration, the installed skill and optional analysis engines; its overall
 
 Select the part you want to check:
 
-| Task                                | Readiness check                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------------------ |
-| Static JavaScript/Electron analysis | Run `rea analyze-javascript-application PATH --json` directly.                             |
-| One analysis engine                 | `rea doctor --provider ghidra --json` (or `hopper`, `ida`, `ida-official`, `binary-ninja`) |
-| One agent registration              | `rea doctor --client codex --json` (see [client IDs](#supported-agents))                   |
-| Installed workflow instructions     | `rea doctor --skill --json`                                                                |
+| Task                                | Readiness check                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------ |
+| Static JavaScript/Electron analysis | Run `rea analyze-javascript-application PATH --json` directly.           |
+| One analysis engine                 | `rea doctor --provider ghidra --json` (or `hopper`, `ida`, `radare2`)    |
+| One agent registration              | `rea doctor --client codex --json` (see [client IDs](#supported-agents)) |
+| Installed workflow instructions     | `rea doctor --skill --json`                                              |
 
 A scoped report has `scope.mode: "explicit"`. Its `scope_checks` determine
 `healthy` and the exit status. Other checks appear in `informational_checks`;

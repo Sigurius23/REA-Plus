@@ -257,6 +257,9 @@ const acquireAttachedScenario = (
 const allowedBrowserEnvironment = (
   environment: Readonly<Record<string, string | undefined>>,
 ): Record<string, string | undefined> => {
+  // Chromium on Linux reads its proxy from these variables; without them a
+  // browser behind a required or TLS-inspecting proxy cannot load any page.
+  const proxy = ["ALL_PROXY", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY"];
   const allowed = [
     "DBUS_SESSION_BUS_ADDRESS",
     "DISPLAY",
@@ -271,6 +274,8 @@ const allowedBrowserEnvironment = (
     "WAYLAND_DISPLAY",
     "XAUTHORITY",
     "XDG_RUNTIME_DIR",
+    ...proxy,
+    ...proxy.map((name) => name.toLowerCase()),
   ];
   const selected = Object.fromEntries(
     allowed

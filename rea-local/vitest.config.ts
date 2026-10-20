@@ -51,7 +51,7 @@ const TEST_PROJECTS = [
     name: "adapters",
     include: [
       "src/*.test.ts",
-      "src/{apktool,jeb,adb,artifacts,binaryNinja,browser,dotnet,evm,externalMcp,firmware,ghidra,hopper,ida,inspector,javascript,mobileRuntime,native,process,reference,server,wasm,windows}/**/*.test.ts",
+      "src/{apktool,jeb,adb,artifacts,binaryNinja,browser,dotnet,evm,externalMcp,firmware,ghidra,hopper,ida,inspector,javascript,mobileRuntime,native,process,jvm,il2cpp,drcov,minidump,logic,patterns,unity,gamearchives,renpy,rpgmaker,gamemaker,x64dbg,wasmmodule,mobsf,lua,blob,godot,protocol,bindiff,libid,radare2,reference,server,wasm,windows}/**/*.test.ts",
     ],
     pool: "forks" as const,
     maxWorkers: MAX_TEST_WORKERS,

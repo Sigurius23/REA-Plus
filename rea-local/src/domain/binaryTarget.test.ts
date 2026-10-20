@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseExecutableHeader } from "./binaryTarget.js";
-import { dosMz, elf, fat, pe, thinMach } from "./binaryTarget.fixture.js";
+import { dex, dosMz, elf, fat, pe, thinMach } from "./binaryTarget.fixture.js";
 
 describe("executable header parsing", () => {
   it("recognizes a DOS MZ without interpreting load-module bytes as e_lfanew", () => {
@@ -61,6 +61,30 @@ describe("executable header parsing", () => {
     expect(intel.ok && intel.value).toMatchObject({
       architecture: "x86_64",
       availableArchitectures: ["x86_64", "arm64"],
+    });
+  });
+
+  it("recognizes Android DEX files as Dalvik bytecode", () => {
+    expect(parseExecutableHeader(dex("035"), "x64")).toEqual({
+      ok: true,
+      value: {
+        format: "dex",
+        architecture: "dalvik",
+        availableArchitectures: ["dalvik"],
+        dex: { version: "035" },
+      },
+    });
+    expect(parseExecutableHeader(dex("041"), "x64")).toEqual({
+      ok: false,
+      error: "unsupported DEX version 041",
+    });
+    expect(parseExecutableHeader(dex("039").subarray(0, 0x60), "x64")).toEqual({
+      ok: false,
+      error: expect.stringContaining("truncated DEX header"),
+    });
+    expect(parseExecutableHeader(dex("039"), "x64", 0x100)).toEqual({
+      ok: false,
+      error: expect.stringContaining("truncated DEX file"),
     });
   });
 

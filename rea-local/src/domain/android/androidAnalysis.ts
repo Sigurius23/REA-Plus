@@ -121,6 +121,11 @@ export const androidResultSchemas = {
     query: z.string(),
     total_classes: z.number().int().nonnegative(),
     matches: z.array(z.string()),
+    shared_names: z
+      .array(z.string())
+      .describe(
+        "Matches that JADX gives to more than one class, such as obfuscated classes renamed from Kotlin metadata. inspect_android_class reports their raw identities as ambiguous.",
+      ),
     coverage: z.literal("complete"),
   }),
   inspect_android_class: z.strictObject({

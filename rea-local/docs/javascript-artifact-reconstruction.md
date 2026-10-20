@@ -142,8 +142,25 @@ also checks transfer expansion and accumulated results against its remaining
 heap before accepting semantic facts. A resource-limited result has partial
 coverage, the observed limits and an `analyze-javascript-source` unknown scope
 with the specific failure, including captured diagnostics when available.
-Resource failures do not increment syntax parse failures. There is no fixed
-source-length cutoff.
+Resource failures do not increment syntax parse failures.
+
+Sources share the parent's result capacity and the semantic graph's node
+budget, first come first served, and every source but the last leaves most of
+the capacity in reserve for the static facts of sources still to come.
+JavaScript sources are therefore analyzed smallest first, in the places
+JavaScript holds in the inventory; other files keep their place. Large bundles
+come last and cannot use up the capacity before smaller sources are reached.
+Results keep the inventory order. On the 12 chunks of a production Next.js
+app, inventory order left three sources without a semantic graph and this
+order left one.
+
+There is no source-length cutoff by default. `max_semantic_source_bytes` (CLI
+`--max-semantic-source-bytes`) sets one: a larger source keeps its static
+facts, such as imports, endpoints, storage keys and routes, and skips semantic
+analysis. Its file reports a `resource_constraint` naming the limit and the
+source's size. On the 12 Next.js chunks of a production web app, a 1,000,000
+byte limit skipped the 4.5 MB `_app` chunk and cut the run from 2 min 50 s to
+53 s while keeping that chunk's endpoints.
 
 Static observations also need memory when expanded into nodes, relationships
 and Evidence. If that expansion does not fit, the file node retains
@@ -259,6 +276,24 @@ document receivers are treated as browsing-context or document operations,
 while locally shadowed receivers can still contribute network endpoint
 candidates. A template recovered with a parser error and no cooked value stays
 dynamic; its raw spelling is not treated as a valid JavaScript string.
+
+A request URL built from strings and expressions is reported as a template,
+in both `analyze_javascript_application` and `analyze_web_bundle`, with `{}`
+for each expression:
+
+- template literals: ``api.get(`/threads/${id}/`)`` gives `/threads/{}/`;
+- `+` concatenation with a string operand, and `"/papers/".concat(id)`;
+- a local variable passed to the call, followed to the last path or URL it was
+  declared with or assigned in source order. `` url = `${url}?${query}` `` and
+  `url += ...` keep the known prefix. Parameters and other unknown values
+  stay unknown, and `let`/`const` stay inside their block.
+
+A template must start like a path or URL (`/`, `./`, `../`, a scheme and
+`://`, or `{}/`) and contain a letter or digit outside its placeholders.
+Request calls are `fetch`, `WebSocket`, `EventSource`, `sendBeacon`,
+XMLHttpRequest `open`, `get`/`post`/`put`/`patch`/`delete`/`request` methods
+and `loadURL`. A variable assigned in several branches resolves to the last
+assignment in the source, so other branches' paths are missed.
 
 RPC client syntax also contributes network endpoint candidates, in both
 `analyze_javascript_application` and `analyze_web_bundle`, distinguished by

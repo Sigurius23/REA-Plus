@@ -11,6 +11,10 @@ import {
 import { ghidraStartupTimeoutSchema } from "./ghidraStartupTimeout.js";
 import { mcpInputSchemaProfileSchema } from "./mcpInputSchemaProfile.js";
 import { mcpResponseBudgetSchema } from "./mcpResponseBudget.js";
+import {
+  radare2AnalysisLevelSchema,
+  radare2AnalysisTimeoutSchema,
+} from "./radare2Settings.js";
 
 const environmentSchema = z.object({
   REA_ANALYSIS_PROVIDER: analysisProviderSelectorSchema.default("auto"),
@@ -59,6 +63,13 @@ const environmentSchema = z.object({
     .min(1)
     .refine(isAbsolute, "REA_ILSPY_CMD_PATH must be absolute")
     .optional(),
+  REA_RADARE2_PATH: z
+    .string()
+    .min(1)
+    .refine(isAbsolute, "REA_RADARE2_PATH must be absolute")
+    .optional(),
+  REA_RADARE2_ANALYSIS: radare2AnalysisLevelSchema,
+  REA_RADARE2_ANALYSIS_TIMEOUT_MS: radare2AnalysisTimeoutSchema,
   REA_FRIDA_PYTHON_PATH: z
     .string()
     .min(1)

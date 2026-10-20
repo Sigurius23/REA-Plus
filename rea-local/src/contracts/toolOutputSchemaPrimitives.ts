@@ -56,6 +56,7 @@ export const targetFormatSchema = z.enum([
   "pe",
   "dos-mz",
   "dos-com",
+  "dex",
   "zip",
   "ipa",
   "apk",
@@ -426,7 +427,7 @@ const unavailable = z.object({
 
 const availableMemoryPermissions = z.object({
   available: z.literal(true),
-  source: z.literal("ghidra-memory-block"),
+  source: z.enum(["ghidra-memory-block", "radare2-section", "radare2-segment"]),
 });
 
 export const addressedValue = z.object({
@@ -465,7 +466,12 @@ const memoryRegionOutput = z.object({
   writable: z.boolean().nullable(),
   executable: z.boolean().nullable(),
   permissions: z.union([unavailable, availableMemoryPermissions]),
-  provenance: z.enum(["hopper-public-python-api", "ghidra-memory-block"]),
+  provenance: z.enum([
+    "hopper-public-python-api",
+    "ghidra-memory-block",
+    "radare2-section",
+    "radare2-segment",
+  ]),
   address_space: z.string().optional(),
   image_base: z.string().optional(),
   initialized: z.boolean().optional(),

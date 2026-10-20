@@ -28,6 +28,27 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.artifactContracts.ARTIFACT_TOOL_CONTRACTS,
         ...sources.evmContracts.EVM_TOOL_CONTRACTS,
         ...sources.wasmContracts.WASM_TOOL_CONTRACTS,
+        ...sources.jvmContracts.JVM_TOOL_CONTRACTS,
+        ...sources.il2cppContracts.IL2CPP_TOOL_CONTRACTS,
+        ...sources.coverageContracts.COVERAGE_TOOL_CONTRACTS,
+        ...sources.minidumpContracts.MINIDUMP_TOOL_CONTRACTS,
+        ...sources.logicContracts.LOGIC_TOOL_CONTRACTS,
+        ...sources.patternContracts.PATTERN_TOOL_CONTRACTS,
+        ...sources.unityContracts.UNITY_TOOL_CONTRACTS,
+        ...sources.gameArchiveContracts.GAME_ARCHIVE_TOOL_CONTRACTS,
+        ...sources.renpyContracts.RENPY_TOOL_CONTRACTS,
+        ...sources.rpgMakerContracts.RPG_MAKER_TOOL_CONTRACTS,
+        ...sources.gameMakerContracts.GAMEMAKER_TOOL_CONTRACTS,
+        ...sources.x64dbgContracts.X64DBG_TOOL_CONTRACTS,
+        ...sources.wasmModuleContracts.WASM_MODULE_TOOL_CONTRACTS,
+        ...sources.mobsfContracts.MOBSF_TOOL_CONTRACTS,
+        ...sources.luaContracts.LUA_TOOL_CONTRACTS,
+        ...sources.dataBlobContracts.DATA_BLOB_TOOL_CONTRACTS,
+        ...sources.godotContracts.GODOT_TOOL_CONTRACTS,
+        ...sources.protocolContracts.PROTOCOL_TOOL_CONTRACTS,
+        ...sources.binaryDiffContracts.BINARY_DIFF_TOOL_CONTRACTS,
+        ...sources.libraryIdentificationContracts
+          .LIBRARY_IDENTIFICATION_TOOL_CONTRACTS,
       ],
     },
     {
@@ -193,6 +214,98 @@ export const providerCatalog = (sources) => {
     {
       identity: sources.wasmProvider.WABT_PROVIDER_IDENTITY,
       contracts: sources.wasmContracts.WASM_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.jvmProvider.CFR_PROVIDER_IDENTITY,
+      contracts: sources.jvmContracts.JVM_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.il2cppProvider.R2UNITY_PROVIDER_IDENTITY,
+      contracts: sources.il2cppContracts.IL2CPP_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.coverageProvider.COVERAGE_LOG_PROVIDER_IDENTITY,
+      contracts: sources.coverageContracts.COVERAGE_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.minidumpProvider.MINIDUMP_PROVIDER_IDENTITY,
+      contracts: sources.minidumpContracts.MINIDUMP_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.logicProvider.LOGIC_CAPTURE_PROVIDER_IDENTITY,
+      contracts: sources.logicContracts.LOGIC_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.patternProvider.BYTE_PATTERN_PROVIDER_IDENTITY,
+      contracts: sources.patternContracts.PATTERN_TOOL_CONTRACTS.filter(
+        ({ name }) => name === "scan_byte_patterns",
+      ),
+    },
+    {
+      identity: sources.cheatTableProvider.CHEAT_TABLE_PROVIDER_IDENTITY,
+      contracts: sources.patternContracts.PATTERN_TOOL_CONTRACTS.filter(
+        ({ name }) => name === "inspect_cheat_table",
+      ),
+    },
+    {
+      identity: sources.unityProvider.UNITY_ASSETS_PROVIDER_IDENTITY,
+      contracts: sources.unityContracts.UNITY_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.gameArchiveProvider.GAME_ARCHIVE_PROVIDER_IDENTITY,
+      contracts: sources.gameArchiveContracts.GAME_ARCHIVE_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.renpyProvider.RENPY_SCRIPT_PROVIDER_IDENTITY,
+      contracts: sources.renpyContracts.RENPY_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.rpgMakerProvider.RPG_MAKER_PROVIDER_IDENTITY,
+      contracts: sources.rpgMakerContracts.RPG_MAKER_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.gameMakerProvider.GAMEMAKER_PROVIDER_IDENTITY,
+      contracts: sources.gameMakerContracts.GAMEMAKER_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.x64dbgProvider.X64DBG_PROVIDER_IDENTITY,
+      contracts: sources.x64dbgContracts.X64DBG_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.wasmModuleProvider.WASM_MODULE_PROVIDER_IDENTITY,
+      contracts: sources.wasmModuleContracts.WASM_MODULE_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.mobsfProvider.MOBSF_PROVIDER_IDENTITY,
+      contracts: sources.mobsfContracts.MOBSF_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.luaProvider.LUA_PROVIDER_IDENTITY,
+      contracts: sources.luaContracts.LUA_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.dataBlobProvider.DATA_BLOB_PROVIDER_IDENTITY,
+      contracts: sources.dataBlobContracts.DATA_BLOB_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.godotProvider.GODOT_FILE_PROVIDER_IDENTITY,
+      contracts: sources.godotContracts.GODOT_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.protocolProvider.PROTOCOL_FIELDS_PROVIDER_IDENTITY,
+      contracts: sources.protocolContracts.PROTOCOL_TOOL_CONTRACTS,
+    },
+    {
+      identity: sources.binaryDiffProvider.BINARY_DIFF_PROVIDER_IDENTITY,
+      contracts: sources.binaryDiffContracts.BINARY_DIFF_TOOL_CONTRACTS,
+    },
+    {
+      identity:
+        sources.libraryIdentificationProvider
+          .LIBRARY_IDENTIFICATION_PROVIDER_IDENTITY,
+      contracts:
+        sources.libraryIdentificationContracts
+          .LIBRARY_IDENTIFICATION_TOOL_CONTRACTS,
     },
     {
       identity: sources.evmProvider.EVMOLE_PROVIDER_IDENTITY,

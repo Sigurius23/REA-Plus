@@ -2,6 +2,7 @@
 
 `inspect_recorded_crash` / `rea inspect-recorded-crash` inspect a caller-selected
 Linux ELF64 x86-64 little-endian core independently of an active binary target.
+Windows, Breakpad and Crashpad minidumps use [`inspect_minidump`](minidumps.md).
 
 ```sh
 export REA_PWNTOOLS_PYTHON=/absolute/existing/venv/bin/python

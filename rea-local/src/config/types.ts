@@ -4,6 +4,7 @@ import type { AnalysisProviderSelector } from "../contracts/providerSelection.js
 
 import type { GhidraLanguageOverride } from "./ghidraLanguageOverride.js";
 import type { McpInputSchemaProfile } from "./mcpInputSchemaProfile.js";
+import type { Radare2AnalysisLevel } from "./radare2Settings.js";
 
 export interface AppConfig {
   readonly mcpMaxResponseBytes?: number;
@@ -19,6 +20,11 @@ export interface AppConfig {
   readonly ghidraSeedFile?: string;
   readonly ghidraNativeAotJar?: string;
   readonly ilspyCmdPath: string | undefined;
+  /** Absolute caller-supplied radare2 executable; unset leaves radare2 unconfigured. */
+  readonly radare2Path?: string;
+  /** Defaults to aaa when omitted by programmatic callers. */
+  readonly radare2AnalysisLevel?: Radare2AnalysisLevel;
+  readonly radare2AnalysisTimeoutMs?: number;
   readonly fridaPythonPath: string | undefined;
   readonly objectionCommandPath: string | undefined;
   readonly hopperLauncherPath: string;

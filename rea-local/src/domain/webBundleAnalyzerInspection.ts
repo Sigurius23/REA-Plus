@@ -29,6 +29,7 @@ import {
   isUrlLikeModuleSpecifier,
 } from "./webBundleAnalyzerAst.js";
 import { createJavaScriptRpcScan } from "./javascript/javascriptRpcEndpoints.js";
+import { EndpointBindings } from "./javascript/javascriptEndpointTemplates.js";
 
 type BundleObservations = WebBundleAnalysis["observations"];
 type ChunkEdge = BundleObservations["chunks"]["edges"][number];
@@ -72,15 +73,19 @@ export const analyzeScript = (
   }
   accumulator.parsedScripts += 1;
   detectVendorFingerprints(script, accumulator);
-  const openReceiverFacts = classifyParsedJavaScriptOpenReceivers(file);
+  const facts: CallFacts = {
+    openReceiverFacts: classifyParsedJavaScriptOpenReceivers(file),
+    bindings: new EndpointBindings(),
+  };
   const rpc = createJavaScriptRpcScan(
     script.source.artifact.text,
     completeSemanticSteps(classifyParsedJavaScriptRpcClientRootsSteps(file)),
   );
   traverseJavaScriptAst(file, {
-    enter: (node) => {
+    enter: (node, parent) => {
       accumulator.visitedNodes += 1;
-      inspectNode(script, node, accumulator, openReceiverFacts);
+      facts.bindings.enter(node, parent);
+      inspectNode(script, node, accumulator, facts);
       const endpoint = rpc.inspect(node);
       if (endpoint !== undefined)
         addFinding({
@@ -92,14 +97,21 @@ export const analyzeScript = (
           accumulator,
         });
     },
+    exit: (node) => facts.bindings.exit(node),
   });
 };
+
+/** Per-script facts that endpoint recognition reads at each call. */
+interface CallFacts {
+  readonly openReceiverFacts: ReadonlyMap<number, JavaScriptOpenReceiverFact>;
+  readonly bindings: EndpointBindings;
+}
 
 const inspectNode = (
   script: IncludedScript,
   node: t.Node,
   accumulator: AnalysisAccumulator,
-  openReceiverFacts: ReadonlyMap<number, JavaScriptOpenReceiverFact>,
+  facts: CallFacts,
 ): void => {
   if (
     (t.isImportDeclaration(node) || t.isExportAllDeclaration(node)) &&
@@ -134,14 +146,14 @@ const inspectNode = (
     t.isOptionalCallExpression(node) ||
     t.isNewExpression(node)
   )
-    inspectCall(script, node, accumulator, openReceiverFacts);
+    inspectCall(script, node, accumulator, facts);
 };
 
 const inspectCall = (
   script: IncludedScript,
   node: t.CallExpression | t.OptionalCallExpression | t.NewExpression,
   accumulator: AnalysisAccumulator,
-  openReceiverFacts: ReadonlyMap<number, JavaScriptOpenReceiverFact>,
+  facts: CallFacts,
 ): void => {
   const name = calleeName(node.callee);
   const first = stringValue(node.arguments[0]);
@@ -180,12 +192,10 @@ const inspectCall = (
       accumulator,
     });
   }
-  const endpoint = endpointArgument(
-    name,
-    node.arguments,
-    node.callee,
-    openReceiverFacts.get(node.start ?? -1),
-  );
+  const endpoint = endpointArgument(name, node.arguments, node.callee, {
+    receiverFact: facts.openReceiverFacts.get(node.start ?? -1),
+    resolve: (argument) => facts.bindings.resolve(argument),
+  });
   if (endpoint !== undefined)
     addFinding({
       collection: accumulator.endpoints,

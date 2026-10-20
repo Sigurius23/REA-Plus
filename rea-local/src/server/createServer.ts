@@ -1,6 +1,51 @@
 import type { WasmArtifactService } from "../application/wasm/WasmArtifactService.js";
+import type { JvmArtifactService } from "../application/jvm/JvmArtifactService.js";
+import type { Il2CppMetadataService } from "../application/il2cpp/Il2CppMetadataService.js";
 import { createWasmArtifactService } from "../composition/wasm.js";
 import { registerWasmTools } from "./registerWasmTools.js";
+import { createJvmArtifactService } from "../composition/jvm.js";
+import { createIl2CppMetadataService } from "../composition/il2cpp.js";
+import { createCoverageLogService } from "../composition/coverage.js";
+import { createMinidumpService } from "../composition/minidump.js";
+import { createLogicCaptureService } from "../composition/logic.js";
+import {
+  createBytePatternService,
+  createCheatTableService,
+} from "../composition/patterns.js";
+import { createUnityAssetsService } from "../composition/unity.js";
+import { createGameArchiveService } from "../composition/gameArchives.js";
+import { createRenpyScriptService } from "../composition/renpy.js";
+import { createRpgMakerProjectService } from "../composition/rpgMaker.js";
+import { createGameMakerDataService } from "../composition/gameMaker.js";
+import { createX64dbgDatabaseService } from "../composition/x64dbg.js";
+import { createWasmModuleService } from "../composition/wasmModule.js";
+import { createMobsfReportService } from "../composition/mobsf.js";
+import { createLuaBytecodeService } from "../composition/lua.js";
+import { createDataBlobService } from "../composition/blob.js";
+import { createGodotFileService } from "../composition/godot.js";
+import { createProtocolFieldsService } from "../composition/protocol.js";
+import { createBinaryDiffService } from "../composition/binaryDiff.js";
+import { createLibraryIdentificationService } from "../composition/libraryIdentification.js";
+import { registerJvmTools } from "./registerJvmTools.js";
+import { registerIl2CppTools } from "./registerIl2CppTools.js";
+import { registerCoverageTools } from "./registerCoverageTools.js";
+import { registerMinidumpTools } from "./registerMinidumpTools.js";
+import { registerLogicTools } from "./registerLogicTools.js";
+import { registerPatternTools } from "./registerPatternTools.js";
+import { registerUnityTools } from "./registerUnityTools.js";
+import { registerGameArchiveTools } from "./registerGameArchiveTools.js";
+import { registerRenpyTools } from "./registerRenpyTools.js";
+import { registerRpgMakerTools } from "./registerRpgMakerTools.js";
+import { registerGameMakerTools } from "./registerGameMakerTools.js";
+import { registerX64dbgTools } from "./registerX64dbgTools.js";
+import { registerWasmModuleTools } from "./registerWasmModuleTools.js";
+import { registerMobsfTools } from "./registerMobsfTools.js";
+import { registerLuaTools } from "./registerLuaTools.js";
+import { registerDataBlobTools } from "./registerDataBlobTools.js";
+import { registerGodotTools } from "./registerGodotTools.js";
+import { registerProtocolTools } from "./registerProtocolTools.js";
+import { registerBinaryDiffTools } from "./registerBinaryDiffTools.js";
+import { registerLibraryIdentificationTools } from "./registerLibraryIdentificationTools.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { createPeResourcesService } from "../composition/binaryDiagnostics.js";
 import { registerPeResourcesTool } from "./registerPeResourcesTool.js";
@@ -116,6 +161,8 @@ export interface CreateServerOptions {
   readonly environment?: Readonly<NodeJS.ProcessEnv>;
   readonly delivery?: ToolResultDelivery;
   readonly wasmArtifact?: WasmArtifactService;
+  readonly jvmArtifact?: JvmArtifactService;
+  readonly il2cppMetadata?: Il2CppMetadataService;
   readonly evmInterface?: EvmInterfaceService;
   readonly logger?: Logger;
   readonly binaryLayout?: BinaryLayoutService;
@@ -157,6 +204,12 @@ const installSessionToolAvailability = (
       wasmArtifactEnabled:
         options.wasmArtifact !== undefined ||
         isAbsolute(environment.REA_WABT_BIN_DIRECTORY ?? ""),
+      jvmArtifactEnabled:
+        options.jvmArtifact !== undefined ||
+        isAbsolute(environment.REA_CFR_JAR ?? ""),
+      il2cppMetadataEnabled:
+        options.il2cppMetadata !== undefined ||
+        isAbsolute(environment.REA_R2UNITY_PATH ?? ""),
       evmInterfaceEnabled: options.evmInterface !== undefined || linuxX64,
       webModuleResolutionEnabled:
         options.webModuleTrace !== undefined ||
@@ -262,6 +315,10 @@ export const createServer = (
     options.androidAnalysis ?? createAndroidAnalysisProvider(environment);
   const wasmArtifact =
     options.wasmArtifact ?? createWasmArtifactService(environment);
+  const jvmArtifact =
+    options.jvmArtifact ?? createJvmArtifactService(environment);
+  const il2cppMetadata =
+    options.il2cppMetadata ?? createIl2CppMetadataService(environment);
   const apktool =
     options.apktoolAnalysis ??
     createApktoolResourceAnalysisProvider(environment);
@@ -273,6 +330,8 @@ export const createServer = (
     providerClose ??= Promise.allSettled([
       android.close(),
       wasmArtifact.close(),
+      jvmArtifact.close(),
+      il2cppMetadata.close(),
       apktool.close(),
       jeb.close(),
       adbDevice.close(),
@@ -345,6 +404,8 @@ export const createServer = (
     toolContext,
     android,
     wasmArtifact,
+    jvmArtifact,
+    il2cppMetadata,
     jeb,
     firmwareAnalysis,
   );
@@ -370,7 +431,7 @@ export const createServer = (
     analysisAdmission,
   );
   registerMobileRuntimeTools(server, mobileRuntimeService, toolLogger, {
-    recordEvidence,
+    ...(recordEvidence === undefined ? {} : { recordEvidence }),
     withAdmittedAnalysis: analysisAdmission,
   });
   registerObservationTools(toolContext);
@@ -425,6 +486,8 @@ const registerConfiguredAnalysisTools = (
   }: ServerToolContext,
   android: AndroidAnalysisPort,
   wasmArtifact: WasmArtifactService,
+  jvmArtifact: JvmArtifactService,
+  il2cppMetadata: Il2CppMetadataService,
   jeb: JebAnalysisPort,
   firmwareAnalysis: FirmwareAnalysisService,
 ): void => {
@@ -467,6 +530,149 @@ const registerConfiguredAnalysisTools = (
   registerWasmTools(
     server,
     wasmArtifact,
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerJvmTools(
+    server,
+    jvmArtifact,
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerIl2CppTools(
+    server,
+    il2cppMetadata,
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerCoverageTools(
+    server,
+    createCoverageLogService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerMinidumpTools(
+    server,
+    createMinidumpService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerLogicTools(
+    server,
+    createLogicCaptureService(environment),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerPatternTools(
+    server,
+    {
+      patterns: createBytePatternService(),
+      tables: createCheatTableService(),
+    },
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerUnityTools(
+    server,
+    createUnityAssetsService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerGameArchiveTools(
+    server,
+    createGameArchiveService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerRenpyTools(
+    server,
+    createRenpyScriptService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerRpgMakerTools(
+    server,
+    createRpgMakerProjectService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerGameMakerTools(
+    server,
+    createGameMakerDataService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerX64dbgTools(
+    server,
+    createX64dbgDatabaseService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerWasmModuleTools(
+    server,
+    createWasmModuleService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerMobsfTools(
+    server,
+    createMobsfReportService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerLuaTools(
+    server,
+    createLuaBytecodeService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerDataBlobTools(
+    server,
+    createDataBlobService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerGodotTools(
+    server,
+    createGodotFileService(environment),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerProtocolTools(
+    server,
+    createProtocolFieldsService(),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerBinaryDiffTools(
+    server,
+    createBinaryDiffService(environment),
+    toolLogger,
+    recordEvidence,
+    withAdmittedAnalysis,
+  );
+  registerLibraryIdentificationTools(
+    server,
+    createLibraryIdentificationService(),
     toolLogger,
     recordEvidence,
     withAdmittedAnalysis,

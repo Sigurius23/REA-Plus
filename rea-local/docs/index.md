@@ -32,7 +32,7 @@ npx rea-agents setup
 ```
 
 Choose your agent, review the planned changes, and approve setup. Native binary
-analysis can use an existing Hopper, Ghidra, IDA, or Binary Ninja installation;
+analysis can use an existing Hopper, Ghidra, IDA, Binary Ninja, or radare2 installation;
 see the [provider guides](./installation.md#check-readiness-for-your-task) for
 engine-specific setup. Static JavaScript analysis needs no native analysis
 engine.

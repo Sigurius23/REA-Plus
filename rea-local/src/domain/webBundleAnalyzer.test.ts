@@ -321,6 +321,22 @@ describe("web bundle API classification parity", () => {
     ]);
   });
 
+  it("recognizes template and variable-held endpoints like static analysis", () => {
+    const source = `
+      async function thread(id) {
+        let url = \`/threads/\${encodeURIComponent(id)}/\`;
+        return (await api.get(url)).data;
+      }
+      api.post("/collections/".concat(id, "/papers/"));
+    `;
+    const bundle = analyzeCapturedWebBundle(inspection(source));
+    const values = bundle.observations.endpoints.map(({ value }) => value);
+    expect(values).toEqual(["/threads/{}/", "/collections/{}/papers/"]);
+    expect(
+      analyzeJavaScriptStaticSource(source).endpoints.map(({ value }) => value),
+    ).toEqual(values);
+  });
+
   it("recognizes loadURL endpoints like static analysis", () => {
     const result = analyzeCapturedWebBundle(
       inspection('window.win.loadURL("https://embedded.test/app");'),

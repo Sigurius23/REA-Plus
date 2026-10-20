@@ -175,8 +175,9 @@ const requireEngineArchive = async (
   ]);
   const reader = new ZipArtifactReader(jar, "zip", JAR_METADATA_READ_MAX_BYTES);
   try {
-    for await (const entry of reader.entries(signal)) {
-      if (entry.kind === "file" && !entry.encrypted) missing.delete(entry.path);
+    // The released JAR repeats shaded license files, so names may repeat.
+    for await (const name of reader.fileNames(signal)) {
+      missing.delete(name);
       if (missing.size === 0) return;
     }
   } catch (cause) {
