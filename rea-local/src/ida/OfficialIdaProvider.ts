@@ -129,6 +129,14 @@ export class OfficialIdaProvider implements AnalysisProviderCandidate {
           "The normalized official IDA adapter has no verified MIPS lane; select a supported Ghidra profile instead.",
         diagnostics,
       };
+    if (target.format === "dex")
+      return {
+        status: "unsupported",
+        code: "target_format_unsupported",
+        reason:
+          "The normalized official IDA adapter has no verified DEX lane; select the radare2 or Ghidra provider instead.",
+        diagnostics,
+      };
     return { status: "supported", code: null, reason: null, diagnostics };
   }
 

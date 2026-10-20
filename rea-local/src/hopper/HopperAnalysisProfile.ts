@@ -118,6 +118,14 @@ export const hopperLoaderArgsForTarget = (
         "REA+'s Hopper adapter does not admit MIPS targets. Select a verified Ghidra MIPS profile instead.",
       ),
     );
+  if (architecture === "dalvik")
+    return err(
+      new AnalysisCapabilityUnavailableError(
+        "hopper",
+        "resolve_analysis_profile",
+        "Hopper does not analyze Android DEX bytecode. Select the radare2 or Ghidra provider instead.",
+      ),
+    );
   const flag = hopperArchitectureFlag(architecture);
   switch (target.format) {
     case "mach-o":
@@ -147,7 +155,7 @@ export const hopperLoaderArgsForTarget = (
 };
 
 const hopperArchitectureFlag = (
-  architecture: Exclude<BinaryArchitecture, "mips">,
+  architecture: Exclude<BinaryArchitecture, "mips" | "dalvik">,
 ): string => {
   switch (architecture) {
     case "x86":

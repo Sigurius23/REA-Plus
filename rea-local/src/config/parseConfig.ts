@@ -101,7 +101,9 @@ export const parseConfig = (
     ...(env.REA_RADARE2_PATH === undefined
       ? {}
       : { radare2Path: env.REA_RADARE2_PATH }),
-    radare2AnalysisLevel: env.REA_RADARE2_ANALYSIS,
+    ...(env.REA_RADARE2_ANALYSIS === undefined
+      ? {}
+      : { radare2AnalysisLevel: env.REA_RADARE2_ANALYSIS }),
     radare2AnalysisTimeoutMs: env.REA_RADARE2_ANALYSIS_TIMEOUT_MS,
     fridaPythonPath: env.REA_FRIDA_PYTHON_PATH,
     objectionCommandPath: env.REA_OBJECTION_CMD_PATH,

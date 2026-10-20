@@ -104,10 +104,15 @@ describe("runtime configuration", () => {
   });
 
   it("parses the optional radare2 executable, analysis level and deadline", () => {
-    expect(parseConfig({})).toMatchObject({
+    const defaults = parseConfig({});
+    expect(defaults).toMatchObject({
       ok: true,
-      value: { radare2AnalysisLevel: "aaa", radare2AnalysisTimeoutMs: 600_000 },
+      value: { radare2AnalysisTimeoutMs: 600_000 },
     });
+    // Unset, the provider chooses the level for the target.
+    expect(
+      defaults.ok ? defaults.value.radare2AnalysisLevel : "error",
+    ).toBeUndefined();
     expect(
       parseConfig({
         REA_RADARE2_PATH: "/opt/radare2/bin/r2",

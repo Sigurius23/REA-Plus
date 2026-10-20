@@ -158,6 +158,14 @@ export class BinaryNinjaProvider implements AnalysisProviderCandidate {
           "The normalized Binary Ninja adapter accepts executable PE images, not PE files explicitly classified as non-executable.",
         diagnostics,
       };
+    if (target.format === "dex")
+      return {
+        status: "unsupported",
+        code: "target_format_unsupported",
+        reason:
+          "Binary Ninja does not analyze Android DEX bytecode without a plugin. Select the radare2 or Ghidra provider instead.",
+        diagnostics,
+      };
     return { status: "supported", code: null, reason: null, diagnostics };
   }
 

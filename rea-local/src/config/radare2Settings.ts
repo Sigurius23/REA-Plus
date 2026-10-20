@@ -10,10 +10,13 @@ export const DEFAULT_RADARE2_ANALYSIS_TIMEOUT_MS = 600_000;
 // Node schedules delays above this signed 32-bit boundary as a 1 ms timer.
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
-/** radare2 analysis command run once per session: aa, aaa (default) or aaaa. */
+/**
+ * radare2 analysis command run once per session: aa, aaa or aaaa. Unset, the
+ * provider runs aaa, or aa for DEX, where every method already has a symbol.
+ */
 export const radare2AnalysisLevelSchema = z
   .enum(RADARE2_ANALYSIS_LEVELS)
-  .default("aaa");
+  .optional();
 
 /** Parse the optional deadline without reading the ambient process environment. */
 export const radare2AnalysisTimeoutSchema = z

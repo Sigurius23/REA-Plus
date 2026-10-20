@@ -29,6 +29,7 @@ import { createProviderTargetSnapshot } from "../process/ProviderTargetSnapshot.
 import { PrivateRuntimeRoot } from "../process/PrivateRuntimeRoot.js";
 import type { Radare2Dialect } from "./Radare2Dialect.js";
 import {
+  RADARE2_DEX_LIMITATIONS,
   RADARE2_LIMITATIONS,
   RADARE2_OPERATIONS,
   RADARE2_PROVIDER_IDENTITY,
@@ -145,10 +146,15 @@ export class Radare2AnalysisClient implements AnalysisClient {
             analysis_level: this.options.analysisLevel,
             commands: [...outcome.commands],
           },
-          limitations:
-            this.options.dialect.engine === "rizin"
+          limitations: [
+            ...(this.options.dialect.engine === "rizin"
               ? RIZIN_LIMITATIONS
-              : RADARE2_LIMITATIONS,
+              : RADARE2_LIMITATIONS),
+            ...(this.target.kind === "executable" &&
+            this.target.format === "dex"
+              ? RADARE2_DEX_LIMITATIONS
+              : []),
+          ],
           locations: [
             { kind: "artifact-path", path: this.target.path },
             ...(outcome.address === undefined

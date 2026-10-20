@@ -43,6 +43,13 @@ export const RADARE2_LIMITATIONS = Object.freeze([
   "Cancelling or timing out an in-flight radare2 command stops its process. The next operation starts a fresh process and repeats the analysis.",
 ]);
 
+/** Added to either engine's limitations for Android DEX targets. */
+export const RADARE2_DEX_LIMITATIONS = Object.freeze([
+  "DEX methods are named from their class and signature, such as method.public.static.Lcom_example_Api.Lcom_example_Api.method.load__V in radare2 or method.public.static.com.example.Api.void_load in Rizin. Methods of classes in other DEX files of the same APK appear as imports.",
+  "Dalvik registers are not stack slots, so locals are usually empty, and pseudo-code is an annotated Dalvik listing. Use inspect_android_method for decompiled Java.",
+  "Addresses are the engine's offsets for the DEX file and are not comparable with Ghidra's DEX addresses.",
+]);
+
 /** Results observed through Rizin, the radare2 fork, carry these instead. */
 export const RIZIN_LIMITATIONS = Object.freeze([
   "REA+ runs the caller-supplied Rizin executable (REA_RADARE2_PATH) in its -q0 pipe mode over a SHA-256-verified private copy of the admitted target, with user rc files disabled (-N). Rizin has no command sandbox (radare2's cfg.sandbox does not exist in Rizin), so nothing inside Rizin refuses shell or file commands; REA+ sends only fixed commands and never forwards caller text into them.",

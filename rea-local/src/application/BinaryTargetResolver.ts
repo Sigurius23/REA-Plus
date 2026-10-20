@@ -194,7 +194,13 @@ const detectArtifactFormat = async (
 ): Promise<
   | Exclude<
       BinaryTarget["format"],
-      "analysis-database" | "mach-o" | "elf" | "pe" | "dos-mz" | "dos-com"
+      | "analysis-database"
+      | "mach-o"
+      | "elf"
+      | "pe"
+      | "dos-mz"
+      | "dos-com"
+      | "dex"
     >
   | undefined
 > => {
@@ -244,7 +250,7 @@ const namedArtifactFormat = (
 const isArchiveFormat = (
   format: Exclude<
     BinaryTarget["format"],
-    "analysis-database" | "mach-o" | "elf" | "pe" | "dos-mz" | "dos-com"
+    "analysis-database" | "mach-o" | "elf" | "pe" | "dos-mz" | "dos-com" | "dex"
   >,
 ): format is Extract<BinaryTarget, { kind: "archive" }>["format"] =>
   isZipPackageFormat(format) || ["asar", "dmg", "pkg"].includes(format);

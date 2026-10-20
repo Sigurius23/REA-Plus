@@ -121,7 +121,8 @@ export class Radare2Provider implements AnalysisProviderCandidate {
       diagnostics: {
         configured: true,
         executable: configured,
-        analysis_level: this.#analysisLevel(),
+        analysis_level:
+          this.config.radare2AnalysisLevel ?? "aaa, or aa for DEX",
         version_probed: false,
       },
     };
@@ -180,7 +181,7 @@ export class Radare2Provider implements AnalysisProviderCandidate {
   }
 
   async resolveAnalysisProfile(
-    _target: BinaryTarget,
+    target: BinaryTarget,
     options?: AnalysisProfileResolutionOptions,
   ): Promise<
     Result<{ readonly profile: AnalysisProfileCommitment }, AnalysisError>
@@ -207,7 +208,7 @@ export class Radare2Provider implements AnalysisProviderCandidate {
       engine: dialect.engine,
       engine_version: version,
       engine_commit: commit,
-      analysis_level: this.#analysisLevel(),
+      analysis_level: this.#analysisLevel(target),
       process_arguments: [...dialect.processArguments],
       cache_policy: "snapshot",
     });
@@ -240,7 +241,7 @@ export class Radare2Provider implements AnalysisProviderCandidate {
         executable: resolved.executable,
         dialect: resolved.dialect,
         engineVersion: resolved.version,
-        analysisLevel: this.#analysisLevel(),
+        analysisLevel: this.#analysisLevel(target),
         analysisTimeoutMs:
           this.config.radare2AnalysisTimeoutMs ??
           DEFAULT_RADARE2_ANALYSIS_TIMEOUT_MS,
@@ -256,7 +257,12 @@ export class Radare2Provider implements AnalysisProviderCandidate {
     );
   }
 
-  #analysisLevel(): Radare2AnalysisLevel {
-    return this.config.radare2AnalysisLevel ?? "aaa";
+  #analysisLevel(target: BinaryTarget): Radare2AnalysisLevel {
+    // aa already finds every DEX method, since each one has a symbol; on a
+    // 9.7 MB DEX, aaa found the same functions and strings 3x slower.
+    return (
+      this.config.radare2AnalysisLevel ??
+      (target.kind === "executable" && target.format === "dex" ? "aa" : "aaa")
+    );
   }
 }

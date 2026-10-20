@@ -1,7 +1,9 @@
 import type {
   BinaryArchitecture,
+  DexMetadata,
   MipsElfMetadata,
 } from "./binaryTargetTypes.js";
+import { isDexMagic, parseDexHeader } from "./dexHeader.js";
 import { err, ok, type Result } from "./result.js";
 import { mzWindowsHeaderOffset, parseDosMzHeader } from "./dosMz.js";
 
@@ -14,19 +16,25 @@ export type ExecutableMetadata =
       readonly mips: MipsElfMetadata;
     }
   | {
+      readonly format: "dex";
+      readonly architecture: "dalvik";
+      readonly availableArchitectures: readonly "dalvik"[];
+      readonly dex: DexMetadata;
+    }
+  | {
       readonly format: "mach-o" | "elf" | "dos-mz" | "dos-com";
-      readonly architecture: Exclude<BinaryArchitecture, "mips">;
+      readonly architecture: Exclude<BinaryArchitecture, "mips" | "dalvik">;
       readonly availableArchitectures: readonly Exclude<
         BinaryArchitecture,
-        "mips"
+        "mips" | "dalvik"
       >[];
     }
   | {
       readonly format: "pe";
-      readonly architecture: Exclude<BinaryArchitecture, "mips">;
+      readonly architecture: Exclude<BinaryArchitecture, "mips" | "dalvik">;
       readonly availableArchitectures: readonly Exclude<
         BinaryArchitecture,
-        "mips"
+        "mips" | "dalvik"
       >[];
       readonly executableRole:
         | "application"
@@ -51,6 +59,7 @@ export const parseExecutableHeader = (
     return parseElf(bytes, fileSize);
   if (bytes.length >= 2 && bytes[0] === 0x4d && bytes[1] === 0x5a)
     return parseMz(bytes, fileSize);
+  if (isDexMagic(bytes)) return parseDex(bytes, fileSize);
   if (bytes.length < 8) return err("truncated or unsupported binary header");
   const magic = bytes.readUInt32BE(0);
   if ([0xfeedface, 0xfeedfacf, 0xcefaedfe, 0xcffaedfe].includes(magic))
@@ -58,6 +67,25 @@ export const parseExecutableHeader = (
   if ([0xcafebabe, 0xbebafeca, 0xcafebabf, 0xbfbafeca].includes(magic))
     return parseFatMachO(bytes, magic, hostArchitecture, fileSize);
   return err("unsupported binary format");
+};
+
+/** DEX versions 035 to 039: every format Android loaded before the 041 container. */
+const SUPPORTED_DEX_VERSIONS = new Set(["035", "037", "038", "039"]);
+
+const parseDex = (
+  bytes: Buffer,
+  fileSize: number,
+): Result<ExecutableMetadata, string> => {
+  const header = parseDexHeader(bytes, fileSize);
+  if (!header.ok) return header;
+  if (!SUPPORTED_DEX_VERSIONS.has(header.value.version))
+    return err(`unsupported DEX version ${header.value.version}`);
+  return ok({
+    format: "dex",
+    architecture: "dalvik",
+    availableArchitectures: ["dalvik"],
+    dex: { version: header.value.version },
+  });
 };
 
 const parseThinMachO = (
@@ -103,7 +131,7 @@ const parseFatMachO = (
   const entrySize = is64 ? 32 : 20;
   if (count === 0 || count > 128 || bytes.length < 8 + count * entrySize)
     return err("truncated or invalid FAT architecture table");
-  const architectures: Exclude<BinaryArchitecture, "mips">[] = [];
+  const architectures: Exclude<BinaryArchitecture, "mips" | "dalvik">[] = [];
   const sliceEnds = new Map<BinaryArchitecture, bigint>();
   for (let index = 0; index < count; index += 1) {
     const entry = 8 + index * entrySize;
@@ -270,7 +298,7 @@ const peManagedStatus = (
 
 const machArchitecture = (
   cpu: number,
-): Exclude<BinaryArchitecture, "mips"> | undefined => {
+): Exclude<BinaryArchitecture, "mips" | "dalvik"> | undefined => {
   switch (cpu) {
     case 7:
       return "x86";
@@ -284,7 +312,9 @@ const machArchitecture = (
   return undefined;
 };
 
-const elfArchitecture = (machine: number): BinaryArchitecture | undefined => {
+const elfArchitecture = (
+  machine: number,
+): Exclude<BinaryArchitecture, "dalvik"> | undefined => {
   switch (machine) {
     case 3:
       return "x86";
@@ -302,7 +332,7 @@ const elfArchitecture = (machine: number): BinaryArchitecture | undefined => {
 
 const peArchitecture = (
   machine: number,
-): Exclude<BinaryArchitecture, "mips"> | undefined => {
+): Exclude<BinaryArchitecture, "mips" | "dalvik"> | undefined => {
   switch (machine) {
     case 0x14c:
       return "x86";
