@@ -2,9 +2,24 @@
 
 Open work on the `feature/rea-plus-extensions` branch and the field tests.
 
+## Status
+
+- Items 1, 10, 11 and 12 are done; the fixes are committed on `main`.
+- The gate now reaches the end of `test:run`: only three real-`hdiutil` DMG
+  tests fail, because this macOS host is localized to German and the reader
+  matches English diagnostics. `processCaptureProgress.test.ts` is load-flaky
+  and passes in isolation.
+- `jscpd` fails at 2.88% duplicated lines against the 2.6% threshold. This
+  predates the branch's knip fixes and needs a dedicated refactor.
+- This host runs Node v22.17.0, below the repo's `>=22.19` floor. The gate was
+  verified with a local Node v24.11.0; CI needs a compliant Node.
+
 ## Branch and pull request
 
 1. **Fix the `knip` findings.** `npm run check:pr` currently fails on them:
+   Done: the dead HAR helpers and type aliases were removed, the Binary Ninja
+   identity constants are no longer re-exported, and one heap-enforcement flag
+   remains. `turbo run knip` passes.
    - five unused exports: the `BINARY_NINJA_*` re-exports in
      `src/binaryNinja/BinaryNinjaAnalysisClient.ts`, `parseHarJson`
      (`src/browser/history/HarJson.ts`) and `createHarValidator`
@@ -15,8 +30,11 @@ Open work on the `feature/rea-plus-extensions` branch and the field tests.
      `PCAP_CAPTURE_HEAP_ENFORCED` in `src/browser/history/CaptureRelease.ts`.
 2. **Re-run `npm run check:pr`** from `rea-local/`. The full test run,
    `docs:check`, duplicate-code detection and the TODO scan have not run yet,
-   because the gate stops at the first failure.
-3. **Open the pull request** for the branch.
+   because the gate stops at the first failure. Done individually: typecheck,
+   lint, format, knip, metadata, `docs:check` and `scan:todos` pass; `test:run`
+   and `jscpd` remain as described under Status.
+3. **Open the pull request** for the branch. Merged as PR #1; later fixes are
+   committed directly on `main`.
 
 ## DEX support
 
@@ -46,15 +64,18 @@ Open work on the `feature/rea-plus-extensions` branch and the field tests.
    by the Android tools.
 10. **`inspect-jvm-artifact`:** probably rejects JARs with repeated entry
     names, like the JADX bridge JAR did before its fix. Not yet checked.
+    Done: it did reject them. The JAR inventory now keeps the first record of
+    a repeated name; the ZIP reader still rejects collisions elsewhere.
 
 ## Smaller REA+ issues
 
 11. The `open_binary` output schema's format list
     (`targetFormatSchema`) is missing `hap`, `hsp` and `app-pack`, which
-    target resolution can produce.
+    target resolution can produce. Done.
 12. `scripts/rea.mjs` is not executable in this checkout, so the
     `piClientSetup` acceptance test fails with `EACCES`. It failed before
-    this branch's changes too.
+    this branch's changes too. Done: the script is already executable; the
+    remaining setup failures were the Node version floor.
 13. The `clientProfileLifecycle` boundary test hits its 30 s limit when the
     whole suite runs together; it passes on its own.
 
