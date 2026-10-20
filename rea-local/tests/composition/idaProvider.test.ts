@@ -148,6 +148,20 @@ describe("IDA provider composition", () => {
         format: "analysis-database",
       }),
     ).toMatchObject({ status: "unsupported", code: "target_kind_unsupported" });
+    expect(
+      provider.inspectTargetSupport({
+        path: target.path,
+        sha256: target.sha256,
+        kind: "executable",
+        format: "dex",
+        architecture: "dalvik",
+        availableArchitectures: ["dalvik"],
+        dex: { version: "039" },
+      }),
+    ).toMatchObject({
+      status: "unsupported",
+      code: "target_format_unsupported",
+    });
     const session = createTestBinarySession(provider);
     expect((await session.open(target.path)).ok).toBe(true);
     expect(producer.connects).toBe(0);

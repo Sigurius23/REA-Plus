@@ -4,6 +4,7 @@ import { parseConfig } from "../../src/config/parseConfig.js";
 import type { BinaryTarget } from "../../src/domain/binaryTargetTypes.js";
 import { RADARE2_OPERATIONS } from "../../src/radare2/Radare2Identity.js";
 import { Radare2Provider } from "../../src/radare2/Radare2Provider.js";
+import { sessionOutputSchemas } from "../../src/contracts/toolOutputSchemaGroups.js";
 
 const provider = (environment: Readonly<Record<string, string>>) => {
   const config = parseConfig(environment);
@@ -62,6 +63,19 @@ describe("radare2 provider discovery", () => {
   it("admits native executables and refuses targets radare2 would misrepresent", () => {
     const radare2 = provider({ REA_RADARE2_PATH: process.execPath });
     expect(radare2.inspectTargetSupport(elf).status).toBe("supported");
+    const dex: BinaryTarget = {
+      path: "/fixtures/classes.dex",
+      sha256: "0".repeat(64),
+      kind: "executable",
+      format: "dex",
+      architecture: "dalvik",
+      availableArchitectures: ["dalvik"],
+      dex: { version: "039" },
+    };
+    expect(radare2.inspectTargetSupport(dex).status).toBe("supported");
+    expect(
+      sessionOutputSchemas.open_binary.parse({ result: dex }).result,
+    ).toMatchObject({ format: "dex", architecture: "dalvik" });
     expect(
       radare2.inspectTargetSupport({
         ...elf,
