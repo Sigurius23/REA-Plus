@@ -139,8 +139,9 @@ constant names give their roles: `CMD_TO_STRAP`, `CMD_FROM_STRAP`,
 | `11500001-6215-11ee-8c99-0242ac120002` | time-based UUID created 2023-10-03 on a Docker host (node `02:42:ac:12:00:02`); the newest family |
 
 The obfuscated classes `st0.w` (all five families) and `nj0.e` (four) hold
-these as `UUID` fields. Which family belongs to which device was not settled
-statically (see the REA+ gaps below).
+these as `UUID` fields. radare2 on `classes7.dex` shows `nj0.e`'s static
+initializer: `a` = `61080001…`, `b` = `fd4b0001…`, `c` = `59830001…`,
+`d` = `8a580001…`. Which family belongs to which device was not settled.
 
 Standard services are used too: Heart Rate (`180D`, measurement `2A37`, the
 strap's heart-rate broadcast), Battery (`180F`/`2A19`) and Nordic DFU
@@ -196,7 +197,11 @@ not recorded here.
 
 1. No search over string constants or bytecode. Hosts, API paths and the
    UUID-holding classes were found with small DEX string-table and
-   `const-string` scanners outside REA+.
+   `const-string` scanners outside REA+. REA+'s binary tools (`search`,
+   `xrefs`, disassembly through radare2 or Ghidra) would answer this, but
+   they reject DEX files as an unsupported format. radare2 itself, run
+   directly, found the loader of a UUID in 22 s and showed which field
+   each UUID is stored in.
 2. `decode-android-resources` returns the first 2,000 of 5,226 strings with
    no paging, and doesn't expose `res/xml` files such as the network
    security config.
