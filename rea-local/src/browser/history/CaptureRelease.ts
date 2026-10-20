@@ -14,7 +14,7 @@ export const HAR_CAPTURE_HEAP_LIMITS = {
   semiSpaceMiB: 8,
 } as const;
 
-/** The HAR decoder runs on this executable; Bun accepts but ignores V8 heap flags. */
+/** The HAR and PCAP/PCAPNG decoders run on this same executable; Bun accepts but ignores V8 heap flags. */
 export const HAR_CAPTURE_HEAP_ENFORCED =
   javaScriptRuntime(process.versions).id === "node";
 
@@ -48,9 +48,6 @@ export const PCAP_CAPTURE_HEAP_LIMITS = {
   oldGenerationMiB: 192,
   semiSpaceMiB: 8,
 } as const;
-
-/** The PCAP decoder runs on the same executable; Bun accepts but ignores V8 heap flags. */
-export const PCAP_CAPTURE_HEAP_ENFORCED = HAR_CAPTURE_HEAP_ENFORCED;
 
 /** Windows Job Object commit limit replacing ignored V8 flags under Bun. */
 export const PCAP_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES =

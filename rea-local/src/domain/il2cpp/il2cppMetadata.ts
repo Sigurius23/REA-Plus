@@ -225,7 +225,6 @@ export const il2cppMetadataSchema = z.strictObject({
 export type InspectIl2CppMetadataInput = z.output<
   typeof inspectIl2CppMetadataInputSchema
 >;
-export type Il2CppMetadataView = (typeof IL2CPP_METADATA_VIEWS)[number];
 export type Il2CppClass = z.output<typeof il2cppClassSchema>;
 export type Il2CppStringLiteral = z.output<typeof il2cppStringLiteralSchema>;
 export type Il2CppInterop = z.output<typeof il2cppInteropSchema>;

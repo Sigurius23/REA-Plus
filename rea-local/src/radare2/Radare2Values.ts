@@ -86,7 +86,6 @@ export const radare2InfoSchema = z.object({
     endian: z.string(),
   }),
 });
-export type Radare2Info = z.output<typeof radare2InfoSchema>;
 
 /** `aflj` and `afij` rows. */
 export const radare2FunctionSchema = addressed(

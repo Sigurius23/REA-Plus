@@ -21,7 +21,6 @@ import {
   HAR_CAPTURE_HEAP_ENFORCED,
   HAR_CAPTURE_HEAP_LIMITS,
   HAR_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES,
-  PCAP_CAPTURE_HEAP_ENFORCED,
   PCAP_CAPTURE_HEAP_LIMITS,
   PCAP_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES,
 } from "./CaptureRelease.js";
@@ -194,9 +193,7 @@ export const captureMemoryFailure = (
 ): AnalysisResourceConstraintError => {
   const isHar = input.format === "har";
   const isPcap = input.format === "pcap" || input.format === "pcapng";
-  const heapEnforced = isPcap
-    ? PCAP_CAPTURE_HEAP_ENFORCED
-    : isHar && HAR_CAPTURE_HEAP_ENFORCED;
+  const heapEnforced = (isPcap || isHar) && HAR_CAPTURE_HEAP_ENFORCED;
   const heap = isPcap ? PCAP_CAPTURE_HEAP_LIMITS : HAR_CAPTURE_HEAP_LIMITS;
   const processLimit = isPcap
     ? PCAP_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES

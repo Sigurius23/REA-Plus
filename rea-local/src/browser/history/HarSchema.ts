@@ -59,15 +59,6 @@ export const createHarValidationContext = (): HarValidationContext => {
   };
 };
 
-/** Preserve the legacy validator for callers which validate a fully materialized HAR. */
-export const createHarValidator = (): ((value: unknown) => void) => {
-  const context = createHarValidationContext();
-  return (value) => {
-    const problem = context.validateDocument(value);
-    if (problem !== undefined) throw schemaFailure(problem);
-  };
-};
-
 const failure = (
   validate: ValidateFunction,
   value: unknown,

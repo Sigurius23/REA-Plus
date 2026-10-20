@@ -31,7 +31,6 @@ export const inspectMinidumpInputSchema = z.strictObject({
     .default(32)
     .describe("Most stack slots pointing into modules to report."),
 });
-
 /** An address resolved to the module image containing it. */
 const moduleOffset = z
   .strictObject({ module: z.string(), offset: hex })
@@ -176,4 +175,3 @@ export const minidumpSchema = z.strictObject({
 export type InspectMinidumpInput = z.output<typeof inspectMinidumpInputSchema>;
 export type Minidump = z.output<typeof minidumpSchema>;
 export type MinidumpModule = z.output<typeof minidumpModuleSchema>;
-export type MinidumpThread = z.output<typeof minidumpThreadSchema>;

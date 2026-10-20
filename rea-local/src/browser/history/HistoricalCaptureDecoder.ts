@@ -7,7 +7,6 @@ import {
   HAR_CAPTURE_HEAP_ENFORCED,
   HAR_CAPTURE_HEAP_LIMITS,
   HAR_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES,
-  PCAP_CAPTURE_HEAP_ENFORCED,
   PCAP_CAPTURE_HEAP_LIMITS,
   PCAP_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES,
 } from "./CaptureRelease.js";
@@ -299,9 +298,7 @@ const decoderMemoryLimitation = (
   if (format === "mitmproxy")
     return "Native mitmproxy uses a 768 MiB Linux address-space limit and a 30-second CPU limit.";
   const pcap = format === "pcap" || format === "pcapng";
-  const enforced = pcap
-    ? PCAP_CAPTURE_HEAP_ENFORCED
-    : HAR_CAPTURE_HEAP_ENFORCED;
+  const enforced = HAR_CAPTURE_HEAP_ENFORCED;
   const heap = pcap ? PCAP_CAPTURE_HEAP_LIMITS : HAR_CAPTURE_HEAP_LIMITS;
   const processLimit = pcap
     ? PCAP_CAPTURE_PROCESS_MEMORY_LIMIT_BYTES

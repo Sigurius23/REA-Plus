@@ -46,11 +46,6 @@ import type { ToolRole } from "./BinaryNinjaMcpArguments.js";
 import { BinaryNinjaMcpObservations } from "./BinaryNinjaMcpObservation.js";
 import { BinaryNinjaOperationRunner } from "./BinaryNinjaOperations.js";
 
-export {
-  BINARY_NINJA_LIMITATIONS,
-  BINARY_NINJA_OPERATIONS,
-  BINARY_NINJA_PROVIDER_IDENTITY,
-} from "./BinaryNinjaIdentity.js";
 import {
   BINARY_NINJA_LIMITATIONS,
   BINARY_NINJA_OPERATIONS,
