@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { TextReader, Uint8ArrayWriter, ZipWriter } from "@zip.js/zip.js";
 import { expect, it } from "vitest";
 
-import { writeOrderedZip } from "../../fixtures/artifactEntryOrder.js";
+import {
+  renameZipMember,
+  writeOrderedZip,
+  writeZipMembers,
+} from "../../fixtures/artifactEntryOrder.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
 import { parseBinaryTarget } from "../../../src/application/BinaryTargetResolver.js";
@@ -80,26 +84,14 @@ it("binds ZIP opens to the emitted entry metadata", async () => {
 it("rejects duplicate ZIP names before replacing an emitted entry", async () => {
   const root = await createTestTempDirectory("rea-zip-duplicate-identity-");
   const path = join(root, "duplicates.zip");
-  const writer = new ZipWriter(new Uint8ArrayWriter());
-  await writer.add("x.txt", new TextReader("first bytes\n"), { level: 0 });
-  await writer.add("y.txt", new TextReader("later bytes\n"), { level: 0 });
-  const bytes = Buffer.from(await writer.close());
-  // zip.js refuses to produce duplicate names. Rename the second local and
-  // central-directory records without changing their data, sizes, or CRCs.
-  for (const [signature, headerSize] of [
-    [Buffer.from([0x50, 0x4b, 0x03, 0x04]), 30],
-    [Buffer.from([0x50, 0x4b, 0x01, 0x02]), 46],
-  ] as const) {
-    const first = bytes.indexOf(signature);
-    const second = bytes.indexOf(signature, first + 4);
-    if (first < 0 || second <= first)
-      throw new Error("Expected both ZIP member headers");
-    expect(
-      bytes.subarray(second + headerSize, second + headerSize + 5).toString(),
-    ).toBe("y.txt");
-    bytes.write("x.txt", second + headerSize);
-  }
-  await writeFile(path, bytes);
+  await writeZipMembers(path, [
+    { name: "x.txt", content: "first bytes\n" },
+    { name: "y.txt", content: "later bytes\n" },
+  ]);
+  await writeFile(
+    path,
+    renameZipMember(await readFile(path), "y.txt", "x.txt"),
+  );
 
   const reader = new ZipArtifactReader(path, "zip");
   try {
@@ -125,6 +117,40 @@ it("rejects duplicate ZIP names before replacing an emitted entry", async () => 
     });
   } finally {
     await client.close();
+  }
+});
+
+it("keeps the first record of duplicate ZIP names when the caller tolerates them", async () => {
+  const root = await createTestTempDirectory("rea-zip-duplicate-first-");
+  const path = join(root, "duplicates.zip");
+  await writeZipMembers(path, [
+    { name: "x.txt", content: "first bytes\n" },
+    { name: "y.txt", content: "later bytes\n" },
+  ]);
+  await writeFile(
+    path,
+    renameZipMember(await readFile(path), "y.txt", "x.txt"),
+  );
+
+  const reader = new ZipArtifactReader(
+    path,
+    "zip",
+    undefined,
+    undefined,
+    "first",
+  );
+  try {
+    const entries = [];
+    for await (const entry of reader.entries()) entries.push(entry);
+    expect(entries.map((entry) => entry.path)).toEqual(["x.txt"]);
+    const entry = entries[0];
+    if (entry === undefined) throw new Error("Expected the first ZIP member");
+    const stream = await reader.open(entry);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    expect(Buffer.concat(chunks).toString()).toBe("first bytes\n");
+  } finally {
+    await reader.close();
   }
 });
 

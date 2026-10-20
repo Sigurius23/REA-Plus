@@ -128,12 +128,17 @@ export class ZipArtifactReader implements ArtifactReader {
     { readonly source: Entry; readonly metadata: ArtifactEntry }
   >();
 
-  /** Optionally bound each metadata read before allocating its backing buffer. */
+  /**
+   * Optionally bound each metadata read before allocating its backing buffer.
+   * `duplicateNames: "first"` keeps the first record of a repeated name instead
+   * of rejecting the archive, as callers that only inspect a classpath need.
+   */
   constructor(
     path: string,
     format: ZipPackageFormat,
     maximumMetadataReadBytes?: number,
     admitted?: StableRegularFileDescriptor,
+    private readonly duplicateNames: "reject" | "first" = "reject",
   ) {
     this.format = format;
     this.#source = new NodeFileReader(path, maximumMetadataReadBytes, admitted);
@@ -152,11 +157,13 @@ export class ZipArtifactReader implements ArtifactReader {
       abortIfNeeded(signal);
       // Each enumeration can replay valid entries, but a second record with
       // the same name must not replace an already emitted source identity.
-      if (filenames.has(entry.filename))
+      if (filenames.has(entry.filename)) {
+        if (this.duplicateNames === "first") continue;
         throw new ArtifactReaderFailure(
           "path",
           `Artifact path collision: ${entry.filename}`,
         );
+      }
       filenames.add(entry.filename);
       const metadata = projectZipEntry(entry);
       this.#entries.set(entry.filename, {

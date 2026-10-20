@@ -35,7 +35,15 @@ export const listJarClasses = async (
   ) => Promise<JvmClassObservation>;
   readonly close: () => Promise<void>;
 }> => {
-  const reader = new ZipArtifactReader(path, "zip");
+  // Classes are addressed by entry path, and shaded dependency archives often
+  // repeat license files or even class records; keep the first record.
+  const reader = new ZipArtifactReader(
+    path,
+    "zip",
+    undefined,
+    undefined,
+    "first",
+  );
   const entries = new Map<string, ArtifactEntry>();
   const classes: JvmJarClass[] = [];
   try {
