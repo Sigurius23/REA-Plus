@@ -1007,6 +1007,71 @@ describe("native DMG command diagnostics", () => {
   });
 });
 
+describe("native DMG localized verification diagnostics", () => {
+  // Captured from hdiutil on a macOS host whose UI language is German.
+  const localizedVerifyHost = (stderr: string): NativeDmgHost => ({
+    run: () => Promise.resolve({ stdout: "", stderr, exitCode: 1 }),
+  });
+  const unrecognized = (path: string, diagnostic: string): string =>
+    `hdiutil: verify: unable to recognize "${path}" as a disk image. (${diagnostic})\nhdiutil: verify failed - ${diagnostic}\n`;
+
+  it("classifies a translated checksum failure by its untranslated status line", async () => {
+    const stderr = [
+      "Die berechnete CRC32-Prüfsumme ist $26D49AB7, die erwartete CRC32-Prüfsumme ist $6B100DA1",
+      'hdiutil: verify: checksum of "/tmp/image.dmg" is INVALID',
+      "hdiutil: verify failed - Ungültige Prüfsumme",
+    ].join("\n");
+    await expect(
+      createAttachedReader(
+        "/tmp/image.dmg",
+        process.env,
+        undefined,
+        localizedVerifyHost(stderr),
+      ),
+    ).rejects.toMatchObject({ reason: "integrity" });
+  });
+
+  it("separates translated unreadable targets from translated unrecognized images", async () => {
+    const root = await createTestTempDirectory("rea-dmg-localized-");
+    const invalidPath = join(root, "invalid.dmg");
+    const missingPath = join(root, "missing.dmg");
+    await writeFile(invalidPath, "This is not a disk image.\n");
+
+    await expect(
+      createAttachedReader(
+        invalidPath,
+        process.env,
+        undefined,
+        localizedVerifyHost(unrecognized(invalidPath, "Image nicht erkannt")),
+      ),
+    ).rejects.toMatchObject({ reason: "format" });
+    await expect(
+      createAttachedReader(
+        missingPath,
+        process.env,
+        undefined,
+        localizedVerifyHost(
+          unrecognized(
+            missingPath,
+            "Es existiert keine Datei und kein Ordner dieser Art",
+          ),
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "io" });
+  });
+
+  it("keeps translated failures without a known status line unavailable", async () => {
+    await expect(
+      createAttachedReader(
+        "/tmp/image.dmg",
+        process.env,
+        undefined,
+        localizedVerifyHost("hdiutil: verify failed - Unbekannter Fehler"),
+      ),
+    ).rejects.toMatchObject({ reason: "unavailable" });
+  });
+});
+
 describe("native DMG real verification diagnostics", () => {
   it.skipIf(process.platform !== "darwin")(
     "classifies a real hdiutil verify refusal as a format failure with captured output",
@@ -1037,10 +1102,10 @@ describe("native DMG real verification diagnostics", () => {
       await writeFile(unreadablePath, "not a disk image\n");
       await chmod(unreadablePath, 0);
       try {
-        for (const [path, expectedDiagnostic] of [
-          [missingPath, "No such file or directory"],
-          [unreadablePath, "Permission denied"],
-        ] as const) {
+        // hdiutil translates the trailing diagnostic (for example "No such
+        // file or directory") into the macOS UI language; its status line and
+        // the "verify failed - " prefix stay English.
+        for (const path of [missingPath, unreadablePath]) {
           const failure = await createAttachedReader(path, process.env).catch(
             (cause: unknown) => cause,
           );
@@ -1051,12 +1116,12 @@ describe("native DMG real verification diagnostics", () => {
           expect(failure.message).toContain('"arguments":["verify"');
           expect(failure.message).toContain('"exitCode":1');
           expect(failure.message).toContain('"stdout":""');
-          expect(failure.message).toContain(expectedDiagnostic);
+          expect(failure.message).toContain("verify failed - ");
           expect(failure.cause).toBeInstanceOf(Error);
           if (!(failure.cause instanceof Error)) continue;
           expect(Reflect.get(failure.cause, "code")).toBe(1);
           expect(Reflect.get(failure.cause, "stderr")).toContain(
-            expectedDiagnostic,
+            "as a disk image.",
           );
         }
       } finally {
@@ -1122,9 +1187,10 @@ describe("native DMG real verification diagnostics", () => {
       expect(failure.message).toContain('"command":"/usr/bin/hdiutil"');
       expect(failure.message).toContain('"arguments":["verify"');
       expect(failure.message).toContain('"exitCode":1');
-      expect(failure.message).toContain("calculated CRC32");
-      expect(failure.message).toContain("expected   CRC32");
-      expect(failure.message).toContain("verify failed - invalid checksum");
+      // The CRC32 lines and the trailing diagnostic are localized; the
+      // checksum status line is not.
+      expect(failure.message).toContain("is INVALID");
+      expect(failure.message).toContain("verify failed - ");
       expect(failure.cause).toBeInstanceOf(Error);
       if (!(failure.cause instanceof Error)) return;
       expect(Reflect.get(failure.cause, "code")).toBe(1);

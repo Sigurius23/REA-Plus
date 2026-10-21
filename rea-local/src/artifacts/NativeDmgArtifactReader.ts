@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdtemp, open, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import type { Readable } from "node:stream";
@@ -474,7 +474,11 @@ const runChecked = async (
       stdout: result.stdout,
       ...(result.stderr === undefined ? {} : { stderr: result.stderr }),
     };
-    const reason = commandFailureReason(failure, arguments_[0]);
+    const englishReason = commandFailureReason(failure, arguments_[0]);
+    const reason =
+      arguments_[0] === "verify" && englishReason === "unavailable"
+        ? await localizedVerifyFailureReason(failure, arguments_.at(-1))
+        : englishReason;
     const details = describeCommandFailure(failure, arguments_);
     const unknownVerifyFailure =
       arguments_[0] === "verify" && reason === "unavailable";
@@ -596,6 +600,48 @@ const verifyFailureDiagnostic = (
     .map((line) => line.trim())
     .find((line) => line.startsWith(prefix))
     ?.slice(prefix.length);
+};
+
+const UNRECOGNIZED_IMAGE_LINE =
+  /^hdiutil: verify: unable to recognize ".*" as a disk image\./mu;
+const INVALID_CHECKSUM_LINE =
+  /^hdiutil: verify: checksum of ".*" is INVALID\b/mu;
+const TARGET_ACCESS_CODES: ReadonlySet<unknown> = new Set([
+  "ENOENT",
+  "ENOTDIR",
+  "EACCES",
+  "EPERM",
+  "EIO",
+]);
+
+/**
+ * Classify a verify failure whose diagnostic is not in English.
+ *
+ * hdiutil translates the `verify failed - <diagnostic>` suffix into the macOS
+ * UI language (AppleLanguages), which LANG and LC_ALL do not override. Its own
+ * status lines stay English, so they still separate checksum failures from
+ * targets it could not open as images. The latter covers both malformed images
+ * and unreadable paths; opening the target here tells them apart.
+ */
+const localizedVerifyFailureReason = async (
+  cause: unknown,
+  imagePath: string | undefined,
+): Promise<ArtifactReaderFailure["reason"]> => {
+  const output = `${processOutput(cause, "stdout")}\n${processOutput(cause, "stderr")}`;
+  if (INVALID_CHECKSUM_LINE.test(output)) return "integrity";
+  if (imagePath === undefined || !UNRECOGNIZED_IMAGE_LINE.test(output))
+    return "unavailable";
+  try {
+    const handle = await open(imagePath, "r");
+    await handle.close();
+    return "format";
+  } catch (error: unknown) {
+    const code =
+      typeof error === "object" && error !== null
+        ? Reflect.get(error, "code")
+        : undefined;
+    return TARGET_ACCESS_CODES.has(code) ? "io" : "unavailable";
+  }
 };
 
 const command = (
