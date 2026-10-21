@@ -1,12 +1,10 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { LUA_VIEWS } from "../domain/lua/luaBytecode.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected Lua chunk through the shared workflow. */
 export const registerLuaCommands = (cli: CliInstance, logger: Logger): void => {
@@ -51,37 +49,24 @@ export const registerLuaCommands = (cli: CliInstance, logger: Logger): void => {
         .optional()
         .describe("Matching entries to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectLuaBytecode,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createLuaBytecodeService } =
           await import("../composition/lua.js");
-        const service = createLuaBytecodeService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectLuaBytecode,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  view: options.view,
-                  function: options.function,
-                  chunk_offset: options.chunk_offset,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createLuaBytecodeService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        view: options.view,
+        function: options.function,
+        chunk_offset: options.chunk_offset,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

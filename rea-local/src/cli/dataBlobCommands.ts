@@ -1,8 +1,6 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import {
   BLOB_DECODERS,
   BLOB_LAYERS,
@@ -10,7 +8,7 @@ import {
 } from "../domain/blob/dataBlob.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Comma-separated layer names, in the order to remove them. */
 const layerList = (value: string | undefined) =>
@@ -83,42 +81,29 @@ export const registerDataBlobCommands = (
         .optional()
         .describe("Matching rows to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectDataBlob,
+      async () => {
         // Load the decoder only when this command runs, keeping CLI startup light.
         const { createDataBlobService } =
           await import("../composition/blob.js");
-        const service = createDataBlobService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectDataBlob,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  format: options.format,
-                  layers: layerList(options.layers),
-                  view: options.view,
-                  node: options.node,
-                  max_depth: options.max_depth,
-                  region_chunk: options.region_chunk,
-                  range_offset: options.range_offset,
-                  range_length: options.range_length,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createDataBlobService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        format: options.format,
+        layers: layerList(options.layers),
+        view: options.view,
+        node: options.node,
+        max_depth: options.max_depth,
+        region_chunk: options.region_chunk,
+        range_offset: options.range_offset,
+        range_length: options.range_length,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

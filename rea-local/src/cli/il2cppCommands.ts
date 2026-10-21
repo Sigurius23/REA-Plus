@@ -1,12 +1,10 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { IL2CPP_METADATA_VIEWS } from "../domain/il2cpp/il2cppMetadata.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected metadata and binary through the shared workflow. */
 export const registerIl2CppCommands = (
@@ -34,39 +32,26 @@ export const registerIl2CppCommands = (
       offset: z.coerce.number().int().optional().describe("Matches to skip"),
       limit: z.coerce.number().int().optional().describe("Matches to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectIl2CppMetadata,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createIl2CppMetadataService } =
           await import("../composition/il2cpp.js");
-        const service = createIl2CppMetadataService(environment);
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectIl2CppMetadata,
-            async () => {
-              const result = await service.inspect(
-                {
-                  metadata_path: resolve(args.metadata_path),
-                  ...(options.binary_path === undefined
-                    ? {}
-                    : { binary_path: resolve(options.binary_path) }),
-                  code_registration: options.code_registration,
-                  view: options.view,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createIl2CppMetadataService(environment);
+      },
+      (args, options) => ({
+        metadata_path: resolve(args.metadata_path),
+        ...(options.binary_path === undefined
+          ? {}
+          : { binary_path: resolve(options.binary_path) }),
+        code_registration: options.code_registration,
+        view: options.view,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

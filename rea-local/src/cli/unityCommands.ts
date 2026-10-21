@@ -6,7 +6,7 @@ import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { UNITY_ASSET_VIEWS } from "../domain/unity/unityAssets.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected bundle or serialized file through the shared workflow. */
 export const registerUnityCommands = (
@@ -43,36 +43,23 @@ export const registerUnityCommands = (
         .optional()
         .describe("Matching entries to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectUnityAssets,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createUnityAssetsService } =
           await import("../composition/unity.js");
-        const service = createUnityAssetsService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectUnityAssets,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  view: options.view,
-                  class_name: options.class_name,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createUnityAssetsService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        view: options.view,
+        class_name: options.class_name,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

@@ -1,12 +1,10 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { GODOT_VIEWS } from "../domain/godot/godotFile.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected Godot file or pack entry through the shared workflow. */
 export const registerGodotCommands = (
@@ -71,41 +69,28 @@ export const registerGodotCommands = (
         .optional()
         .describe("Matching rows to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectGodotFile,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createGodotFileService } =
           await import("../composition/godot.js");
-        const service = createGodotFileService(environment);
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectGodotFile,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  entry: options.entry,
-                  view: options.view,
-                  resource: options.resource,
-                  node: options.node,
-                  key_env: options.key_env,
-                  password_env: options.password_env,
-                  engine: options.engine,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createGodotFileService(environment);
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        entry: options.entry,
+        view: options.view,
+        resource: options.resource,
+        node: options.node,
+        key_env: options.key_env,
+        password_env: options.password_env,
+        engine: options.engine,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

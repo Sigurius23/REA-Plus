@@ -1,15 +1,13 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import {
   GAMEMAKER_RESOURCE_KINDS,
   GAMEMAKER_VIEWS,
 } from "../domain/gamemaker/gameMakerData.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected GameMaker data file through the shared workflow. */
 export const registerGameMakerCommands = (
@@ -54,36 +52,23 @@ export const registerGameMakerCommands = (
         .optional()
         .describe("Matching entries to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectGameMakerData,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createGameMakerDataService } =
           await import("../composition/gameMaker.js");
-        const service = createGameMakerDataService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectGameMakerData,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  view: options.view,
-                  kind: options.kind,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createGameMakerDataService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        view: options.view,
+        kind: options.kind,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

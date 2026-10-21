@@ -1,15 +1,13 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import {
   IDENTIFICATION_STATUSES,
   LIBRARY_VIEWS,
 } from "../domain/libid/libraryIdentification.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Name statically linked library functions in a binary through the shared workflow. */
 export const registerLibraryIdentificationCommands = (
@@ -50,39 +48,26 @@ export const registerLibraryIdentificationCommands = (
       offset: z.coerce.number().int().optional().describe("Rows to skip"),
       limit: z.coerce.number().int().optional().describe("Rows to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.identifyLibraryFunctions,
+      async () => {
         // Load the identifier only when this command runs, keeping CLI startup light.
         const { createLibraryIdentificationService } =
           await import("../composition/libraryIdentification.js");
-        const service = createLibraryIdentificationService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.identifyLibraryFunctions,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  libraries: options.library.map((library) => resolve(library)),
-                  min_bytes: options.minBytes,
-                  include_local: options.includeLocal,
-                  view: options.view,
-                  status: options.status,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createLibraryIdentificationService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        libraries: options.library.map((library) => resolve(library)),
+        min_bytes: options.minBytes,
+        include_local: options.includeLocal,
+        view: options.view,
+        status: options.status,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

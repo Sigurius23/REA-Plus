@@ -1,12 +1,10 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { X64DBG_VIEWS } from "../domain/x64dbg/x64dbgDatabase.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected x64dbg database through the shared workflow. */
 export const registerX64dbgCommands = (
@@ -51,40 +49,27 @@ export const registerX64dbgCommands = (
         .optional()
         .describe("Matching entries to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectX64dbgDatabase,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createX64dbgDatabaseService } =
           await import("../composition/x64dbg.js");
-        const service = createX64dbgDatabaseService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectX64dbgDatabase,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  view: options.view,
-                  module: options.module,
-                  module_path:
-                    options.module_path === undefined
-                      ? undefined
-                      : resolve(options.module_path),
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createX64dbgDatabaseService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        view: options.view,
+        module: options.module,
+        module_path:
+          options.module_path === undefined
+            ? undefined
+            : resolve(options.module_path),
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };

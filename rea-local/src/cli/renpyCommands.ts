@@ -1,12 +1,10 @@
 import { z } from "incur";
 import { resolve } from "node:path";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { logCliCommand } from "../cliLogging.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
 import { RENPY_SCRIPT_VIEWS } from "../domain/renpy/renpyScript.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
-import { withCommandCancellation } from "./commandCancellation.js";
+import { offlineInspectCommand } from "./offlineInspectCommand.js";
 
 /** Resolve the caller-selected .rpyc through the shared workflow. */
 export const registerRenpyCommands = (
@@ -45,36 +43,23 @@ export const registerRenpyCommands = (
         .optional()
         .describe("Matching entries to return"),
     }),
-    run: ({ args, options }) =>
-      withCommandCancellation(async (signal) => {
+    run: offlineInspectCommand(
+      logger,
+      CLI_COMMANDS.inspectRenpyScript,
+      async () => {
         // Load the reader only when this command runs, keeping CLI startup light.
         const { createRenpyScriptService } =
           await import("../composition/renpy.js");
-        const service = createRenpyScriptService();
-        try {
-          return await logCliCommand(
-            logger,
-            CLI_COMMANDS.inspectRenpyScript,
-            async () => {
-              const result = await service.inspect(
-                {
-                  path: resolve(args.path),
-                  view: options.view,
-                  label: options.label,
-                  query: options.query,
-                  offset: options.offset,
-                  limit: options.limit,
-                },
-                { signal },
-              );
-              return result.ok
-                ? result.value
-                : projectAnalysisError(result.error);
-            },
-          );
-        } finally {
-          await service.close();
-        }
+        return createRenpyScriptService();
+      },
+      (args, options) => ({
+        path: resolve(args.path),
+        view: options.view,
+        label: options.label,
+        query: options.query,
+        offset: options.offset,
+        limit: options.limit,
       }),
+    ),
   });
 };
