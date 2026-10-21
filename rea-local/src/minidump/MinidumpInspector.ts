@@ -12,7 +12,10 @@ import {
 } from "../domain/minidump/minidump.js";
 import type { Result } from "../domain/result.js";
 import { MinidumpFormatError } from "./MinidumpFile.js";
-import { buildMinidumpReport, MinidumpThreadNotFound } from "./MinidumpReport.js";
+import {
+  buildMinidumpReport,
+  MinidumpThreadNotFound,
+} from "./MinidumpReport.js";
 
 const OPERATION = "inspect_minidump";
 
@@ -53,6 +56,7 @@ export const createMinidumpInspector = (): MinidumpPort => {
     inspect: (
       input: InspectMinidumpInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };

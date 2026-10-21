@@ -67,7 +67,8 @@ export const artifactInspectorFailure =
     if (cause instanceof AnalysisCancelledError) return cause;
     const reason = cause instanceof Error ? cause.message : String(cause);
     if (
-      (cause instanceof ArtifactReaderFailure && cause.reason === "cancelled") ||
+      (cause instanceof ArtifactReaderFailure &&
+        cause.reason === "cancelled") ||
       (cause instanceof Error && cause.name === "AbortError")
     )
       return new AnalysisCancelledError(spec.operation, { cause });
@@ -143,19 +144,25 @@ export const inspectSingleArtifact = <Input extends { readonly path: string }>(
   ): Promise<Result<AnalysisExecution, AnalysisError>> => {
     const signal = options?.signal;
     try {
-      if (signal?.aborted === true) throw new AnalysisCancelledError(spec.operation);
+      if (signal?.aborted === true)
+        throw new AnalysisCancelledError(spec.operation);
       const selected = await readStableArtifact(
         input.path,
         spec.maxFileBytes,
         signal,
       );
       signal?.throwIfAborted();
-      const report = spec.schema.parse(buildReport(selected, input, spec.limitations));
+      const report = spec.schema.parse(
+        buildReport(selected, input, spec.limitations),
+      );
       return ok(
         createAnalysisExecution(report, spec.identity, {
           ...artifactPathSubject(input.path, selected.sha256),
           ...(spec.reportLimitations === true
-            ? { limitations: (report as { limitations: readonly string[] }).limitations }
+            ? {
+                limitations: (report as { limitations: readonly string[] })
+                  .limitations,
+              }
             : { limitations: spec.limitations }),
         }),
       );

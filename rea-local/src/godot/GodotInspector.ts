@@ -55,6 +55,7 @@ export const createGodotFileInspector = (
     inspect: (
       input: InspectGodotFileInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };

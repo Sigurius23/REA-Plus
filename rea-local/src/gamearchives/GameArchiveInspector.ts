@@ -56,6 +56,7 @@ export const createGameArchiveInspector = (): GameArchivePort => {
     inspect: (
       input: InspectGameArchiveInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };

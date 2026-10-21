@@ -57,6 +57,7 @@ export const createUnityAssetsInspector = (): UnityAssetsPort => {
     inspect: (
       input: InspectUnityAssetsInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };

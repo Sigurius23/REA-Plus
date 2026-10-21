@@ -53,6 +53,7 @@ export const createGameMakerInspector = (): GameMakerDataPort => {
     inspect: (
       input: InspectGameMakerDataInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };

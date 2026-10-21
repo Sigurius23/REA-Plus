@@ -53,6 +53,7 @@ export const createDataBlobInspector = (): DataBlobPort => {
     inspect: (
       input: InspectDataBlobInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };

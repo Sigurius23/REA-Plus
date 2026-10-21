@@ -44,13 +44,15 @@ const SPEC = {
 export const createLuaInspector = (): LuaBytecodePort => {
   const inspect = inspectSingleArtifact<InspectLuaBytecodeInput>(
     SPEC,
-    (selected, input, limitations) => buildLuaReport(selected, input, limitations),
+    (selected, input, limitations) =>
+      buildLuaReport(selected, input, limitations),
   );
   return {
     close: () => Promise.resolve(),
     inspect: (
       input: InspectLuaBytecodeInput,
       options?: ExecutionOptions,
-    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+    ): Promise<Result<AnalysisExecution, AnalysisError>> =>
+      inspect(input, options),
   };
 };
