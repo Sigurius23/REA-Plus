@@ -1,15 +1,15 @@
-import { isAbsolute } from "node:path";
 import type { ExecutionOptions } from "../AnalysisProvider.js";
+import {
+  parseInputWithAbsolutePaths,
+  inlineReportEvidence,
+} from "../InlineReportService.js";
 import type { X64dbgDatabasePort } from "./X64dbgDatabasePort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import {
   AnalysisCancelledError,
-  AnalysisInputError,
   AnalysisOutputError,
 } from "../../domain/analysisErrorCore.js";
-import { createEvidence, type Evidence } from "../../domain/evidence.js";
-import { analysisInputErrorFromIssues } from "../../domain/inputIssueProjection.js";
-import type { JsonValue } from "../../domain/jsonValue.js";
+import type { Evidence } from "../../domain/evidence.js";
 import { err, ok, type Result } from "../../domain/result.js";
 import {
   inspectX64dbgDatabaseInputSchema,
@@ -52,15 +52,6 @@ const matchesSelection = (
   );
 };
 
-const absolute = (field: "path" | "module_path"): AnalysisInputError =>
-  new AnalysisInputError(OPERATION, undefined, [
-    {
-      path: [field],
-      reason: "invalid_format",
-      message: "Expected an absolute filesystem path on this host.",
-    },
-  ]);
-
 /** Shared x64dbg database validation and typed inline Evidence for CLI/MCP. */
 export class X64dbgDatabaseService {
   constructor(readonly provider: X64dbgDatabasePort) {}
@@ -75,20 +66,17 @@ export class X64dbgDatabaseService {
   ): Promise<Result<Evidence, AnalysisError>> {
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
-    const input = inspectX64dbgDatabaseInputSchema.safeParse(rawInput);
-    if (!input.success)
-      return err(
-        analysisInputErrorFromIssues(OPERATION, input.error.issues, rawInput, {
-          cause: input.error,
-        }),
-      );
-    if (!isAbsolute(input.data.path)) return err(absolute("path"));
-    if (
-      input.data.module_path !== undefined &&
-      !isAbsolute(input.data.module_path)
-    )
-      return err(absolute("module_path"));
-    const inspected = await this.provider.inspect(input.data, options);
+    const input = parseInputWithAbsolutePaths(
+      OPERATION,
+      inspectX64dbgDatabaseInputSchema,
+      rawInput,
+      (input) => [
+        [["path"], input.path],
+        [["module_path"], input.module_path],
+      ],
+    );
+    if (!input.ok) return input;
+    const inspected = await this.provider.inspect(input.value, options);
     if (!inspected.ok) return inspected;
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
@@ -96,8 +84,8 @@ export class X64dbgDatabaseService {
     const report = x64dbgDatabaseSchema.safeParse(execution.result);
     if (
       !report.success ||
-      !matchesSelection(report.data, input.data) ||
-      execution.subject?.path !== input.data.path ||
+      !matchesSelection(report.data, input.value) ||
+      execution.subject?.path !== input.value.path ||
       execution.subject.sha256 !== report.data.database.sha256
     )
       return err(
@@ -107,19 +95,13 @@ export class X64dbgDatabaseService {
         ),
       );
     return ok(
-      createEvidence(execution.subject, execution.provider, {
-        operation: OPERATION,
-        parameters: Object.fromEntries(
-          Object.entries(input.data).filter(([, value]) => value !== undefined),
-        ) as Readonly<Record<string, JsonValue>>,
-        result: report.data,
-        ...(execution.rawResult === null
-          ? {}
-          : { rawResult: execution.rawResult }),
-        confidence: "observed",
-        locations: execution.locations,
-        limitations: execution.limitations,
-      }),
+      inlineReportEvidence(
+        OPERATION,
+        execution,
+        input.value,
+        report.data,
+        "observed",
+      ),
     );
   }
 }

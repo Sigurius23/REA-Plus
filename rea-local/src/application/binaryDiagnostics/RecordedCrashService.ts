@@ -1,10 +1,9 @@
-import { isAbsolute } from "node:path";
 import type { ExecutionOptions } from "../AnalysisProvider.js";
+import { parsePathInput } from "../InlineReportService.js";
 import type { RecordedCrashPort } from "./RecordedCrashPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import {
   AnalysisCancelledError,
-  AnalysisInputError,
   AnalysisOutputError,
 } from "../../domain/analysisErrorCore.js";
 import { createEvidence, type Evidence } from "../../domain/evidence.js";
@@ -12,7 +11,6 @@ import {
   inspectRecordedCrashInputSchema,
   recordedCrashSchema,
 } from "../../domain/native/recordedCrash.js";
-import { analysisInputErrorFromIssues } from "../../domain/inputIssueProjection.js";
 import { err, ok, type Result } from "../../domain/result.js";
 
 const OPERATION = "inspect_recorded_crash";
@@ -28,24 +26,13 @@ export class RecordedCrashService {
   ): Promise<Result<Evidence, AnalysisError>> {
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
-    const input = inspectRecordedCrashInputSchema.safeParse(rawInput);
-    if (!input.success)
-      return err(
-        analysisInputErrorFromIssues(OPERATION, input.error.issues, rawInput, {
-          cause: input.error,
-        }),
-      );
-    if (!isAbsolute(input.data.path))
-      return err(
-        new AnalysisInputError(OPERATION, undefined, [
-          {
-            path: ["path"],
-            reason: "invalid_format",
-            message: "Expected an absolute filesystem path on this host.",
-          },
-        ]),
-      );
-    const inspected = await this.provider.inspect(input.data, options);
+    const input = parsePathInput(
+      OPERATION,
+      inspectRecordedCrashInputSchema,
+      rawInput,
+    );
+    if (!input.ok) return input;
+    const inspected = await this.provider.inspect(input.value, options);
     if (!inspected.ok) return inspected;
     const diagnostics = recordedCrashSchema.shape.diagnostics.safeParse(
       inspected.value.diagnostics,
@@ -58,9 +45,9 @@ export class RecordedCrashService {
     const report = recordedCrashSchema.safeParse(inspected.value);
     if (
       !report.success ||
-      report.data.artifact.path !== input.data.path ||
+      report.data.artifact.path !== input.value.path ||
       (report.data.debugger.status === "available") !==
-        input.data.include_debugger_context
+        input.value.include_debugger_context
     )
       return err(
         new AnalysisOutputError(
@@ -81,7 +68,7 @@ export class RecordedCrashService {
         this.provider.identity,
         {
           operation: OPERATION,
-          parameters: input.data,
+          parameters: input.value,
           result: value,
           // The decoded report is the only representation; do not repeat it.
           rawResult: null,

@@ -1,10 +1,12 @@
-import { isAbsolute } from "node:path";
 import type { ExecutionOptions } from "../AnalysisProvider.js";
+import {
+  parseInputWithAbsolutePaths,
+  inlineReportEvidence,
+} from "../InlineReportService.js";
 import type { CoverageLogPort } from "./CoverageLogPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import {
   AnalysisCancelledError,
-  AnalysisInputError,
   AnalysisOutputError,
 } from "../../domain/analysisErrorCore.js";
 import {
@@ -13,9 +15,7 @@ import {
   type CoverageLog,
   type InspectCoverageLogInput,
 } from "../../domain/drcov/coverageLog.js";
-import { createEvidence, type Evidence } from "../../domain/evidence.js";
-import { analysisInputErrorFromIssues } from "../../domain/inputIssueProjection.js";
-import type { JsonValue } from "../../domain/jsonValue.js";
+import type { Evidence } from "../../domain/evidence.js";
 import { err, ok, type Result } from "../../domain/result.js";
 
 const OPERATION = "inspect_coverage_log";
@@ -52,30 +52,17 @@ export class CoverageLogService {
   ): Promise<Result<Evidence, AnalysisError>> {
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
-    const input = inspectCoverageLogInputSchema.safeParse(rawInput);
-    if (!input.success)
-      return err(
-        analysisInputErrorFromIssues(OPERATION, input.error.issues, rawInput, {
-          cause: input.error,
-        }),
-      );
-    const relative = (["path", "baseline_path"] as const).filter((field) => {
-      const value = input.data[field];
-      return value !== undefined && !isAbsolute(value);
-    });
-    if (relative.length > 0)
-      return err(
-        new AnalysisInputError(
-          OPERATION,
-          undefined,
-          relative.map((field) => ({
-            path: [field],
-            reason: "invalid_format" as const,
-            message: "Expected an absolute filesystem path on this host.",
-          })),
-        ),
-      );
-    const inspected = await this.provider.inspect(input.data, options);
+    const input = parseInputWithAbsolutePaths(
+      OPERATION,
+      inspectCoverageLogInputSchema,
+      rawInput,
+      (input) => [
+        [["path"], input.path],
+        [["baseline_path"], input.baseline_path],
+      ],
+    );
+    if (!input.ok) return input;
+    const inspected = await this.provider.inspect(input.value, options);
     if (!inspected.ok) return inspected;
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
@@ -83,8 +70,8 @@ export class CoverageLogService {
     const report = coverageLogSchema.safeParse(execution.result);
     if (
       !report.success ||
-      !matchesSelection(report.data, input.data) ||
-      execution.subject?.path !== input.data.path ||
+      !matchesSelection(report.data, input.value) ||
+      execution.subject?.path !== input.value.path ||
       execution.subject.sha256 !== report.data.log.sha256
     )
       return err(
@@ -94,19 +81,13 @@ export class CoverageLogService {
         ),
       );
     return ok(
-      createEvidence(execution.subject, execution.provider, {
-        operation: OPERATION,
-        parameters: Object.fromEntries(
-          Object.entries(input.data).filter(([, value]) => value !== undefined),
-        ) as Readonly<Record<string, JsonValue>>,
-        result: report.data,
-        ...(execution.rawResult === null
-          ? {}
-          : { rawResult: execution.rawResult }),
-        confidence: "observed",
-        locations: execution.locations,
-        limitations: execution.limitations,
-      }),
+      inlineReportEvidence(
+        OPERATION,
+        execution,
+        input.value,
+        report.data,
+        "observed",
+      ),
     );
   }
 }

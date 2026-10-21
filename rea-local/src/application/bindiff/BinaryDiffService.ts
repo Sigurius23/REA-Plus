@@ -1,15 +1,15 @@
-import { isAbsolute } from "node:path";
 import type { ExecutionOptions } from "../AnalysisProvider.js";
+import {
+  parseInputWithAbsolutePaths,
+  inlineReportEvidence,
+} from "../InlineReportService.js";
 import type { BinaryDiffPort } from "./BinaryDiffPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import {
   AnalysisCancelledError,
-  AnalysisInputError,
   AnalysisOutputError,
 } from "../../domain/analysisErrorCore.js";
-import { createEvidence, type Evidence } from "../../domain/evidence.js";
-import { analysisInputErrorFromIssues } from "../../domain/inputIssueProjection.js";
-import type { JsonValue } from "../../domain/jsonValue.js";
+import type { Evidence } from "../../domain/evidence.js";
 import { err, ok, type Result } from "../../domain/result.js";
 import {
   binaryDiffSchema,
@@ -75,25 +75,17 @@ export class BinaryDiffService {
   ): Promise<Result<Evidence, AnalysisError>> {
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
-    const input = diffBinariesInputSchema.safeParse(rawInput);
-    if (!input.success)
-      return err(
-        analysisInputErrorFromIssues(OPERATION, input.error.issues, rawInput, {
-          cause: input.error,
-        }),
-      );
-    for (const side of ["left", "right"] as const)
-      if (!isAbsolute(input.data[side]))
-        return err(
-          new AnalysisInputError(OPERATION, undefined, [
-            {
-              path: [side],
-              reason: "invalid_format",
-              message: "Expected an absolute filesystem path on this host.",
-            },
-          ]),
-        );
-    const inspected = await this.provider.inspect(input.data, options);
+    const input = parseInputWithAbsolutePaths(
+      OPERATION,
+      diffBinariesInputSchema,
+      rawInput,
+      (input) => [
+        [["left"], input.left],
+        [["right"], input.right],
+      ],
+    );
+    if (!input.ok) return input;
+    const inspected = await this.provider.inspect(input.value, options);
     if (!inspected.ok) return inspected;
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
@@ -101,8 +93,8 @@ export class BinaryDiffService {
     const report = binaryDiffSchema.safeParse(execution.result);
     if (
       !report.success ||
-      !matchesSelection(report.data, input.data) ||
-      execution.subject?.path !== input.data.right ||
+      !matchesSelection(report.data, input.value) ||
+      execution.subject?.path !== input.value.right ||
       execution.subject.sha256 !== report.data.right.sha256
     )
       return err(
@@ -112,19 +104,13 @@ export class BinaryDiffService {
         ),
       );
     return ok(
-      createEvidence(execution.subject, execution.provider, {
-        operation: OPERATION,
-        parameters: Object.fromEntries(
-          Object.entries(input.data).filter(([, value]) => value !== undefined),
-        ) as Readonly<Record<string, JsonValue>>,
-        result: report.data,
-        ...(execution.rawResult === null
-          ? {}
-          : { rawResult: execution.rawResult }),
-        confidence: "inferred",
-        locations: execution.locations,
-        limitations: execution.limitations,
-      }),
+      inlineReportEvidence(
+        OPERATION,
+        execution,
+        input.value,
+        report.data,
+        "inferred",
+      ),
     );
   }
 }

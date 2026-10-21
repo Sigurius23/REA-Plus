@@ -1,15 +1,15 @@
-import { isAbsolute } from "node:path";
 import type { ExecutionOptions } from "../AnalysisProvider.js";
+import {
+  parsePathInput,
+  inlineReportEvidence,
+} from "../InlineReportService.js";
 import type { ProtocolFieldsPort } from "./ProtocolFieldsPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import {
   AnalysisCancelledError,
-  AnalysisInputError,
   AnalysisOutputError,
 } from "../../domain/analysisErrorCore.js";
-import { createEvidence, type Evidence } from "../../domain/evidence.js";
-import { analysisInputErrorFromIssues } from "../../domain/inputIssueProjection.js";
-import type { JsonValue } from "../../domain/jsonValue.js";
+import type { Evidence } from "../../domain/evidence.js";
 import { err, ok, type Result } from "../../domain/result.js";
 import {
   inferProtocolFieldsInputSchema,
@@ -66,24 +66,13 @@ export class ProtocolFieldsService {
   ): Promise<Result<Evidence, AnalysisError>> {
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
-    const input = inferProtocolFieldsInputSchema.safeParse(rawInput);
-    if (!input.success)
-      return err(
-        analysisInputErrorFromIssues(OPERATION, input.error.issues, rawInput, {
-          cause: input.error,
-        }),
-      );
-    if (!isAbsolute(input.data.path))
-      return err(
-        new AnalysisInputError(OPERATION, undefined, [
-          {
-            path: ["path"],
-            reason: "invalid_format",
-            message: "Expected an absolute filesystem path on this host.",
-          },
-        ]),
-      );
-    const inspected = await this.provider.inspect(input.data, options);
+    const input = parsePathInput(
+      OPERATION,
+      inferProtocolFieldsInputSchema,
+      rawInput,
+    );
+    if (!input.ok) return input;
+    const inspected = await this.provider.inspect(input.value, options);
     if (!inspected.ok) return inspected;
     if (options?.signal?.aborted)
       return err(new AnalysisCancelledError(OPERATION));
@@ -91,8 +80,8 @@ export class ProtocolFieldsService {
     const report = protocolFieldsSchema.safeParse(execution.result);
     if (
       !report.success ||
-      !matchesSelection(report.data, input.data) ||
-      execution.subject?.path !== input.data.path ||
+      !matchesSelection(report.data, input.value) ||
+      execution.subject?.path !== input.value.path ||
       execution.subject.sha256 !== report.data.file.sha256
     )
       return err(
@@ -102,19 +91,13 @@ export class ProtocolFieldsService {
         ),
       );
     return ok(
-      createEvidence(execution.subject, execution.provider, {
-        operation: OPERATION,
-        parameters: Object.fromEntries(
-          Object.entries(input.data).filter(([, value]) => value !== undefined),
-        ) as Readonly<Record<string, JsonValue>>,
-        result: report.data,
-        ...(execution.rawResult === null
-          ? {}
-          : { rawResult: execution.rawResult }),
-        confidence: "observed",
-        locations: execution.locations,
-        limitations: execution.limitations,
-      }),
+      inlineReportEvidence(
+        OPERATION,
+        execution,
+        input.value,
+        report.data,
+        "observed",
+      ),
     );
   }
 }
