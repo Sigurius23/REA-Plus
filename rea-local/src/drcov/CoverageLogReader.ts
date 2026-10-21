@@ -3,16 +3,11 @@ import {
   type AnalysisExecution,
   type ExecutionOptions,
 } from "../application/AnalysisProvider.js";
+import { artifactInspectorFailure } from "../application/ArtifactInspection.js";
 import type { CoverageLogPort } from "../application/drcov/CoverageLogPort.js";
-import { ArtifactReaderFailure } from "../artifacts/ArtifactReader.js";
 import { readStableArtifact } from "../artifacts/readStableArtifact.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
-import {
-  AnalysisAccessDeniedError,
-  AnalysisArtifactChangedError,
-  AnalysisCancelledError,
-  AnalysisInputError,
-} from "../domain/analysisErrorCore.js";
+import { AnalysisCancelledError } from "../domain/analysisErrorCore.js";
 import {
   coverageLogSchema,
   type CoverageLog,
@@ -121,32 +116,12 @@ const selectModule = (
   );
 };
 
-const failure = (cause: unknown, path: string): AnalysisError => {
-  if (cause instanceof AnalysisCancelledError) return cause;
-  const reason = cause instanceof Error ? cause.message : String(cause);
-  if (
-    (cause instanceof ArtifactReaderFailure && cause.reason === "cancelled") ||
-    (cause instanceof Error && cause.name === "AbortError")
-  )
-    return new AnalysisCancelledError(OPERATION, { cause });
-  if (cause instanceof CoverageInputRejected)
-    return new AnalysisInputError(OPERATION, { cause }, [
-      { path: [cause.field], reason: "invalid_value", message: reason },
-    ]);
-  if (cause instanceof ArtifactReaderFailure && cause.reason === "integrity")
-    return new AnalysisArtifactChangedError(OPERATION, path, reason, { cause });
-  if (
-    cause instanceof Error &&
-    "code" in cause &&
-    (cause.code === "EACCES" || cause.code === "EPERM")
-  )
-    return new AnalysisAccessDeniedError(OPERATION, path, cause.code, {
-      cause,
-    });
-  return new AnalysisInputError(OPERATION, { cause }, [
-    { path: ["path"], reason: "invalid_value", message: reason },
-  ]);
-};
+const failure = artifactInspectorFailure({
+  operation: OPERATION,
+  fieldErrors: [{ error: CoverageInputRejected }],
+  formatErrors: [],
+  notReadable: "Not a readable coverage log",
+});
 
 /** Read caller-selected drcov logs; nothing is traced or executed. */
 export class CoverageLogReader implements CoverageLogPort {
@@ -230,7 +205,7 @@ export class CoverageLogReader implements CoverageLogPort {
         }),
       );
     } catch (cause: unknown) {
-      return err(failure(cause, input.path));
+      return err(failure(input.path)(cause));
     }
   }
 }

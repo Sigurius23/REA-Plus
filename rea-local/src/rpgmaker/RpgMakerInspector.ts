@@ -3,15 +3,10 @@ import {
   type AnalysisExecution,
   type ExecutionOptions,
 } from "../application/AnalysisProvider.js";
+import { artifactInspectorFailure } from "../application/ArtifactInspection.js";
 import type { RpgMakerProjectPort } from "../application/rpgmaker/RpgMakerProjectPort.js";
-import { ArtifactReaderFailure } from "../artifacts/ArtifactReader.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
-import {
-  AnalysisAccessDeniedError,
-  AnalysisArtifactChangedError,
-  AnalysisCancelledError,
-  AnalysisInputError,
-} from "../domain/analysisErrorCore.js";
+import { AnalysisCancelledError } from "../domain/analysisErrorCore.js";
 import {
   rpgMakerProjectSchema,
   type InspectRpgMakerProjectInput,
@@ -37,35 +32,11 @@ const LIMITATIONS = [
   "Assets are decrypted with the engine's scheme only (RPGMV header, first 16 bytes XORed with the key); games packed into an executable or encrypted by a plugin must be unpacked first.",
 ];
 
-const failure = (cause: unknown, path: string): AnalysisError => {
-  if (cause instanceof AnalysisCancelledError) return cause;
-  const reason = cause instanceof Error ? cause.message : String(cause);
-  if (
-    (cause instanceof ArtifactReaderFailure && cause.reason === "cancelled") ||
-    (cause instanceof Error && cause.name === "AbortError")
-  )
-    return new AnalysisCancelledError(OPERATION, { cause });
-  if (cause instanceof ArtifactReaderFailure && cause.reason === "integrity")
-    return new AnalysisArtifactChangedError(OPERATION, path, reason, { cause });
-  if (
-    cause instanceof Error &&
-    "code" in cause &&
-    (cause.code === "EACCES" || cause.code === "EPERM")
-  )
-    return new AnalysisAccessDeniedError(OPERATION, path, cause.code, {
-      cause,
-    });
-  return new AnalysisInputError(OPERATION, { cause }, [
-    {
-      path: ["path"],
-      reason: "invalid_value",
-      message:
-        cause instanceof RpgMakerFormatError || cause instanceof LzStringError
-          ? `Not a readable RPG Maker MV/MZ game: ${reason}`
-          : reason,
-    },
-  ]);
-};
+const failure = artifactInspectorFailure({
+  operation: OPERATION,
+  formatErrors: [RpgMakerFormatError, LzStringError],
+  notReadable: "Not a readable RPG Maker MV/MZ game",
+});
 
 /** Read a caller-selected MV/MZ game folder; nothing in it is executed. */
 export class RpgMakerInspector implements RpgMakerProjectPort {
@@ -98,7 +69,7 @@ export class RpgMakerInspector implements RpgMakerProjectPort {
         }),
       );
     } catch (cause: unknown) {
-      return err(failure(cause, input.path));
+      return err(failure(input.path)(cause));
     }
   }
 }

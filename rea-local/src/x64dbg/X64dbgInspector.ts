@@ -3,16 +3,11 @@ import {
   type AnalysisExecution,
   type ExecutionOptions,
 } from "../application/AnalysisProvider.js";
+import { artifactInspectorFailure } from "../application/ArtifactInspection.js";
 import type { X64dbgDatabasePort } from "../application/x64dbg/X64dbgDatabasePort.js";
-import { ArtifactReaderFailure } from "../artifacts/ArtifactReader.js";
 import { readStableArtifact } from "../artifacts/readStableArtifact.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
-import {
-  AnalysisAccessDeniedError,
-  AnalysisArtifactChangedError,
-  AnalysisCancelledError,
-  AnalysisInputError,
-} from "../domain/analysisErrorCore.js";
+import { AnalysisCancelledError } from "../domain/analysisErrorCore.js";
 import { err, ok, type Result } from "../domain/result.js";
 import {
   x64dbgDatabaseSchema,
@@ -44,37 +39,12 @@ const LIMITATIONS = [
   "Trace records, encode maps, address colours and per-module hashes are counted in sections, not decoded.",
 ];
 
-const failure = (cause: unknown, path: string): AnalysisError => {
-  if (cause instanceof AnalysisCancelledError) return cause;
-  const reason = cause instanceof Error ? cause.message : String(cause);
-  if (
-    (cause instanceof ArtifactReaderFailure && cause.reason === "cancelled") ||
-    (cause instanceof Error && cause.name === "AbortError")
-  )
-    return new AnalysisCancelledError(OPERATION, { cause });
-  if (cause instanceof ArtifactReaderFailure && cause.reason === "integrity")
-    return new AnalysisArtifactChangedError(OPERATION, path, reason, { cause });
-  if (
-    cause instanceof Error &&
-    "code" in cause &&
-    (cause.code === "EACCES" || cause.code === "EPERM")
-  )
-    return new AnalysisAccessDeniedError(OPERATION, path, cause.code, {
-      cause,
-    });
-  const unreadable =
-    cause instanceof X64dbgDatabaseError ||
-    cause instanceof UnityCompressionError;
-  return new AnalysisInputError(OPERATION, { cause }, [
-    {
-      path: [cause instanceof ImageLayoutError ? "module_path" : "path"],
-      reason: "invalid_value",
-      message: unreadable
-        ? `Not a readable x64dbg database: ${reason}`
-        : reason,
-    },
-  ]);
-};
+const failure = artifactInspectorFailure({
+  operation: OPERATION,
+  fieldErrors: [{ error: ImageLayoutError, field: "module_path" }],
+  formatErrors: [X64dbgDatabaseError, UnityCompressionError],
+  notReadable: "Not a readable x64dbg database",
+});
 
 const moduleImage = async (
   path: string | undefined,
@@ -145,7 +115,7 @@ export class X64dbgInspector implements X64dbgDatabasePort {
         }),
       );
     } catch (cause: unknown) {
-      return err(failure(cause, input.path));
+      return err(failure(input.path)(cause));
     }
   }
 }
