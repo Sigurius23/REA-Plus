@@ -1,35 +1,27 @@
-import {
-  createAnalysisExecution,
-  type AnalysisExecution,
-  type ExecutionOptions,
+import type {
+  AnalysisExecution,
+  ExecutionOptions,
+  ProviderIdentity,
 } from "../application/AnalysisProvider.js";
+import { inspectSingleArtifact } from "../application/ArtifactInspection.js";
 import type { GodotFilePort } from "../application/godot/GodotFilePort.js";
-import { ArtifactReaderFailure } from "../artifacts/ArtifactReader.js";
-import { readStableArtifact } from "../artifacts/readStableArtifact.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
-import {
-  AnalysisAccessDeniedError,
-  AnalysisArtifactChangedError,
-  AnalysisCancelledError,
-  AnalysisInputError,
-} from "../domain/analysisErrorCore.js";
 import {
   godotFileSchema,
   type InspectGodotFileInput,
 } from "../domain/godot/godotFile.js";
-import { err, ok, type Result } from "../domain/result.js";
+import type { Result } from "../domain/result.js";
 import { GodotFormatError, GodotSelectionError } from "./GodotBytes.js";
 import { buildGodotFileReport } from "./GodotReport.js";
 import type { Environment } from "./GodotSelect.js";
 
 const OPERATION = "inspect_godot_file";
-const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024;
 
-export const GODOT_FILE_PROVIDER_IDENTITY = {
+export const GODOT_FILE_PROVIDER_IDENTITY: ProviderIdentity = {
   id: "godot-file-reader",
   name: "REA+ Godot file reader",
   version: "1",
-} as const;
+};
 
 const LIMITATIONS = [
   "Reads Godot 3 and 4 binary resources and scenes, compiled GDScript (bytecode 12 and 13 from Godot 3, tokenizer 100 and 101 from Godot 4.3 and later), and store_var data, without loading or running them. Text resources (.tres, .tscn) and plain .gd scripts are already readable and are not parsed.",
@@ -38,77 +30,31 @@ const LIMITATIONS = [
   "Property values are shown as Godot's text format writes them, cut at 4000 characters; external resources are named by path, sub-resources by id.",
 ];
 
-const failure = (cause: unknown, path: string): AnalysisError => {
-  if (cause instanceof AnalysisCancelledError) return cause;
-  const reason = cause instanceof Error ? cause.message : String(cause);
-  if (
-    (cause instanceof ArtifactReaderFailure && cause.reason === "cancelled") ||
-    (cause instanceof Error && cause.name === "AbortError")
-  )
-    return new AnalysisCancelledError(OPERATION, { cause });
-  if (cause instanceof ArtifactReaderFailure && cause.reason === "integrity")
-    return new AnalysisArtifactChangedError(OPERATION, path, reason, { cause });
-  if (
-    cause instanceof Error &&
-    "code" in cause &&
-    (cause.code === "EACCES" || cause.code === "EPERM")
-  )
-    return new AnalysisAccessDeniedError(OPERATION, path, cause.code, {
-      cause,
-    });
-  if (cause instanceof GodotSelectionError)
-    return new AnalysisInputError(OPERATION, { cause }, [
-      { path: [cause.field], reason: "invalid_value", message: reason },
-    ]);
-  return new AnalysisInputError(OPERATION, { cause }, [
-    {
-      path: ["path"],
-      reason: "invalid_value",
-      message:
-        cause instanceof GodotFormatError || cause instanceof RangeError
-          ? `Not a readable Godot file: ${reason}`
-          : reason,
-    },
-  ]);
-};
+const SPEC = {
+  operation: OPERATION,
+  identity: GODOT_FILE_PROVIDER_IDENTITY,
+  maxFileBytes: 2 * 1024 * 1024 * 1024,
+  schema: godotFileSchema,
+  limitations: LIMITATIONS,
+  fieldErrors: [{ error: GodotSelectionError }],
+  formatErrors: [GodotFormatError, RangeError],
+  notReadable: "Not a readable Godot file",
+} as const;
 
 /** Decode a caller-selected Godot file or pack entry; nothing is loaded or run. */
-export class GodotFileInspector implements GodotFilePort {
-  constructor(private readonly environment: Environment = {}) {}
-
-  close(): Promise<void> {
-    return Promise.resolve();
-  }
-
-  async inspect(
-    input: InspectGodotFileInput,
-    options?: ExecutionOptions,
-  ): Promise<Result<AnalysisExecution, AnalysisError>> {
-    const signal = options?.signal;
-    try {
-      if (signal?.aborted === true) throw new AnalysisCancelledError(OPERATION);
-      const selected = await readStableArtifact(
-        input.path,
-        MAX_FILE_BYTES,
-        signal,
-      );
-      signal?.throwIfAborted();
-      const report = godotFileSchema.parse(
-        buildGodotFileReport(selected, input, this.environment, LIMITATIONS),
-      );
-      return ok(
-        createAnalysisExecution(report, GODOT_FILE_PROVIDER_IDENTITY, {
-          subject: {
-            path: input.path,
-            format: "file",
-            sha256: selected.sha256,
-          },
-          locations: [{ kind: "artifact-path", path: input.path }],
-          limitations: LIMITATIONS,
-        }),
-      );
-    } catch (cause: unknown) {
-      return err(failure(cause, input.path));
-    }
-  }
-}
+export const createGodotFileInspector = (
+  environment: Environment = {},
+): GodotFilePort => {
+  const inspect = inspectSingleArtifact<InspectGodotFileInput>(
+    SPEC,
+    (selected, input, limitations) =>
+      buildGodotFileReport(selected, input, environment, limitations),
+  );
+  return {
+    close: () => Promise.resolve(),
+    inspect: (
+      input: InspectGodotFileInput,
+      options?: ExecutionOptions,
+    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+  };
+};

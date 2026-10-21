@@ -1,38 +1,26 @@
-import {
-  createAnalysisExecution,
-  type AnalysisExecution,
-  type ExecutionOptions,
+import type {
+  AnalysisExecution,
+  ExecutionOptions,
+  ProviderIdentity,
 } from "../application/AnalysisProvider.js";
+import { inspectSingleArtifact } from "../application/ArtifactInspection.js";
 import type { MinidumpPort } from "../application/minidump/MinidumpPort.js";
-import { ArtifactReaderFailure } from "../artifacts/ArtifactReader.js";
-import { readStableArtifact } from "../artifacts/readStableArtifact.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
-import {
-  AnalysisAccessDeniedError,
-  AnalysisArtifactChangedError,
-  AnalysisCancelledError,
-  AnalysisInputError,
-} from "../domain/analysisErrorCore.js";
 import {
   minidumpSchema,
   type InspectMinidumpInput,
 } from "../domain/minidump/minidump.js";
-import { err, ok, type Result } from "../domain/result.js";
+import type { Result } from "../domain/result.js";
 import { MinidumpFormatError } from "./MinidumpFile.js";
-import {
-  buildMinidumpReport,
-  MinidumpThreadNotFound,
-} from "./MinidumpReport.js";
+import { buildMinidumpReport, MinidumpThreadNotFound } from "./MinidumpReport.js";
 
 const OPERATION = "inspect_minidump";
-/** Full-memory dumps are read into memory up to this size. */
-const MAX_DUMP_BYTES = 2 * 1024 * 1024 * 1024;
 
-export const MINIDUMP_PROVIDER_IDENTITY = {
+export const MINIDUMP_PROVIDER_IDENTITY: ProviderIdentity = {
   id: "minidump-reader",
   name: "REA+ minidump reader",
   version: "1",
-} as const;
+};
 
 const LIMITATIONS = [
   "The stack scan reports stack slots that point into module images; it is the classic return-address heuristic, not unwinding, and can include stale values or data pointers.",
@@ -41,74 +29,30 @@ const LIMITATIONS = [
   "Streams REA+ does not interpret are listed with their sizes; malformed streams are reported and the rest of the dump is still decoded.",
 ];
 
-const failure = (cause: unknown, path: string): AnalysisError => {
-  if (cause instanceof AnalysisCancelledError) return cause;
-  const reason = cause instanceof Error ? cause.message : String(cause);
-  if (
-    (cause instanceof ArtifactReaderFailure && cause.reason === "cancelled") ||
-    (cause instanceof Error && cause.name === "AbortError")
-  )
-    return new AnalysisCancelledError(OPERATION, { cause });
-  if (cause instanceof MinidumpThreadNotFound)
-    return new AnalysisInputError(OPERATION, { cause }, [
-      { path: ["thread_id"], reason: "invalid_value", message: reason },
-    ]);
-  if (cause instanceof ArtifactReaderFailure && cause.reason === "integrity")
-    return new AnalysisArtifactChangedError(OPERATION, path, reason, { cause });
-  if (
-    cause instanceof Error &&
-    "code" in cause &&
-    (cause.code === "EACCES" || cause.code === "EPERM")
-  )
-    return new AnalysisAccessDeniedError(OPERATION, path, cause.code, {
-      cause,
-    });
-  return new AnalysisInputError(OPERATION, { cause }, [
-    {
-      path: ["path"],
-      reason: "invalid_value",
-      message:
-        cause instanceof MinidumpFormatError
-          ? `Not a readable minidump: ${reason}`
-          : reason,
-    },
-  ]);
-};
+const SPEC = {
+  operation: OPERATION,
+  identity: MINIDUMP_PROVIDER_IDENTITY,
+  /** Full-memory dumps are read into memory up to this size. */
+  maxFileBytes: 2 * 1024 * 1024 * 1024,
+  schema: minidumpSchema,
+  limitations: LIMITATIONS,
+  fieldErrors: [{ error: MinidumpThreadNotFound, field: "thread_id" }],
+  formatErrors: [MinidumpFormatError],
+  notReadable: "Not a readable minidump",
+} as const;
 
 /** Read caller-selected minidumps; nothing is loaded, executed or symbolized. */
-export class MinidumpInspector implements MinidumpPort {
-  close(): Promise<void> {
-    return Promise.resolve();
-  }
-
-  async inspect(
-    input: InspectMinidumpInput,
-    options?: ExecutionOptions,
-  ): Promise<Result<AnalysisExecution, AnalysisError>> {
-    const signal = options?.signal;
-    try {
-      if (signal?.aborted === true) throw new AnalysisCancelledError(OPERATION);
-      const selected = await readStableArtifact(
-        input.path,
-        MAX_DUMP_BYTES,
-        signal,
-      );
-      const report = minidumpSchema.parse(
-        buildMinidumpReport(selected.bytes, input, selected, LIMITATIONS),
-      );
-      return ok(
-        createAnalysisExecution(report, MINIDUMP_PROVIDER_IDENTITY, {
-          subject: {
-            path: input.path,
-            format: "file",
-            sha256: selected.sha256,
-          },
-          locations: [{ kind: "artifact-path", path: input.path }],
-          limitations: LIMITATIONS,
-        }),
-      );
-    } catch (cause: unknown) {
-      return err(failure(cause, input.path));
-    }
-  }
-}
+export const createMinidumpInspector = (): MinidumpPort => {
+  const inspect = inspectSingleArtifact<InspectMinidumpInput>(
+    SPEC,
+    (selected, input, limitations) =>
+      buildMinidumpReport(selected.bytes, input, selected, limitations),
+  );
+  return {
+    close: () => Promise.resolve(),
+    inspect: (
+      input: InspectMinidumpInput,
+      options?: ExecutionOptions,
+    ): Promise<Result<AnalysisExecution, AnalysisError>> => inspect(input, options),
+  };
+};
