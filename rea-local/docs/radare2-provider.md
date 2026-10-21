@@ -22,11 +22,11 @@ rea decompile /absolute/path/to/program main --json
 rea xrefs /absolute/path/to/program 0x401000 --json
 ```
 
-| Setting                           | Default  | Meaning                                                                        |
-| --------------------------------- | -------- | ------------------------------------------------------------------------------ |
-| `REA_RADARE2_PATH`                | unset    | Absolute radare2 executable; unset leaves the provider unconfigured            |
-| `REA_RADARE2_ANALYSIS`            | `aaa` (`aa` for DEX) | Analysis command run once per session: `aa`, `aaa` or `aaaa`        |
-| `REA_RADARE2_ANALYSIS_TIMEOUT_MS` | `600000` | Deadline for copying the target, starting radare2 and completing that analysis |
+| Setting                           | Default              | Meaning                                                                        |
+| --------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
+| `REA_RADARE2_PATH`                | unset                | Absolute radare2 executable; unset leaves the provider unconfigured            |
+| `REA_RADARE2_ANALYSIS`            | `aaa` (`aa` for DEX) | Analysis command run once per session: `aa`, `aaa` or `aaaa`                   |
+| `REA_RADARE2_ANALYSIS_TIMEOUT_MS` | `600000`             | Deadline for copying the target, starting radare2 and completing that analysis |
 
 Discovery only checks that `REA_RADARE2_PATH` is an executable file. Resolving
 an analysis profile runs `radare2 -v` once; releases outside `>=6.0.0 <7.0.0`
