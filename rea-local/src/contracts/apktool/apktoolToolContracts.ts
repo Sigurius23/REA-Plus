@@ -22,7 +22,7 @@ export const APKTOOL_TOOL_CONTRACTS = [
     name: "decode_android_resources",
     ...toolContractMetadata("decode_android_resources"),
     description:
-      "Decode one local APK's resources with `apktool d --no-src` in a provider-owned workspace that is removed after projection: the readable AndroidManifest.xml, apktool.yml version and SDK facts, the app's string resources (default or one locale, bounded to 2000 entries), available string locales, and the decoded file count. The target APK is digest with SHA-256 before decoding; smali is skipped because Java-source recovery belongs to the JADX family.",
+      "Decode one local APK's resources with `apktool d --no-src` in a provider-owned workspace that is removed after projection: the readable AndroidManifest.xml, apktool.yml version and SDK facts, the app's string resources (default or one locale; page through more than 2000 parsed entries with strings_offset and strings_limit, reported in strings_page), optionally the decoded res/xml files such as a network security config through include_xml_resources, available string locales, and the decoded file count. The target APK is digest with SHA-256 before decoding; smali is skipped because Java-source recovery belongs to the JADX family.",
     kind: "apktool-provider",
     inputSchema: apktoolInputSchemas.decode_android_resources,
     outputSchema: evidenceResultOf(
@@ -36,6 +36,17 @@ export const APKTOOL_TOOL_CONTRACTS = [
       {
         title: "Decode one locale's strings",
         input: { path: "/targets/Example.apk", locale: "de" },
+      },
+      {
+        title: "Page past the first 2000 string entries",
+        input: {
+          path: "/targets/Example.apk",
+          strings_offset: 2_000,
+        },
+      },
+      {
+        title: "Include decoded res/xml files",
+        input: { path: "/targets/Example.apk", include_xml_resources: true },
       },
     ],
   },

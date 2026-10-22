@@ -1,16 +1,12 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
 import {
   parseInputWithAbsolutePaths,
-  inlineReportEvidence,
+  inspectInlineReport,
 } from "../InlineReportService.js";
 import type { X64dbgDatabasePort } from "./X64dbgDatabasePort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
-import { err, ok, type Result } from "../../domain/result.js";
+import type { Result } from "../../domain/result.js";
 import {
   inspectX64dbgDatabaseInputSchema,
   X64DBG_VIEWS,
@@ -64,44 +60,31 @@ export class X64dbgDatabaseService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parseInputWithAbsolutePaths(
-      OPERATION,
-      inspectX64dbgDatabaseInputSchema,
-      rawInput,
-      (input) => [
-        [["path"], input.path],
-        [["module_path"], input.module_path],
-      ],
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = x64dbgDatabaseSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.database.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parseInputWithAbsolutePaths(
+            OPERATION,
+            inspectX64dbgDatabaseInputSchema,
+            rawInput,
+            (input) => [
+              [["path"], input.path],
+              [["module_path"], input.module_path],
+            ],
+          ),
+        reportSchema: x64dbgDatabaseSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.database.path,
+        reportSha256: (report) => report.database.sha256,
+        malformedMessage:
           "x64dbg database reader returned malformed data, changed the selected database or module, or returned a different view or page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "observed",
-      ),
+        confidence: "observed",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

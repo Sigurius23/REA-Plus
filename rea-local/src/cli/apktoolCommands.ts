@@ -66,11 +66,35 @@ export const registerApktoolCommands = (
         .boolean()
         .default(false)
         .describe("Skip projecting string resources"),
+      "strings-offset": z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe(
+          "Index of the first parsed string entry projected in this response",
+        ),
+      "strings-limit": z
+        .number()
+        .int()
+        .min(1)
+        .max(2_000)
+        .default(2_000)
+        .describe("Maximum parsed string entries projected in this response"),
+      "include-xml-resources": z
+        .boolean()
+        .default(false)
+        .describe(
+          "Project decoded res/xml files such as a network security config",
+        ),
     }),
     run: ({ args, options }) =>
       execute(CLI_COMMANDS.decodeAndroidResources, "decode_android_resources", {
         path: args.path,
         include_strings: !options["no-strings"],
+        strings_offset: options["strings-offset"],
+        strings_limit: options["strings-limit"],
+        include_xml_resources: options["include-xml-resources"],
         ...(options.locale === undefined ? {} : { locale: options.locale }),
       }),
   });

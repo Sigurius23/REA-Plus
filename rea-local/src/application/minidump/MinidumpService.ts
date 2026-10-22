@@ -1,22 +1,15 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
-import {
-  parsePathInput,
-  inlineReportEvidence,
-} from "../InlineReportService.js";
+import { parsePathInput, inspectInlineReport } from "../InlineReportService.js";
 import type { MinidumpPort } from "./MinidumpPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
+import type { Result } from "../../domain/result.js";
 import {
   inspectMinidumpInputSchema,
   minidumpSchema,
   type InspectMinidumpInput,
   type Minidump,
 } from "../../domain/minidump/minidump.js";
-import { err, ok, type Result } from "../../domain/result.js";
 
 const OPERATION = "inspect_minidump";
 
@@ -45,40 +38,23 @@ export class MinidumpService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parsePathInput(
-      OPERATION,
-      inspectMinidumpInputSchema,
-      rawInput,
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = minidumpSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.dump.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parsePathInput(OPERATION, inspectMinidumpInputSchema, rawInput),
+        reportSchema: minidumpSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.dump.path,
+        reportSha256: (report) => report.dump.sha256,
+        malformedMessage:
           "Minidump reader returned malformed data, changed the selected dump identity or reported a different thread than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "observed",
-      ),
+        confidence: "observed",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

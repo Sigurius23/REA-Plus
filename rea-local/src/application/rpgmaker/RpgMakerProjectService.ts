@@ -1,24 +1,17 @@
 import { isAbsolute } from "node:path";
 import type { ExecutionOptions } from "../AnalysisProvider.js";
-import {
-  parsePathInput,
-  inlineReportEvidence,
-} from "../InlineReportService.js";
+import { parsePathInput, inspectInlineReport } from "../InlineReportService.js";
 import type { RpgMakerProjectPort } from "./RpgMakerProjectPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisInputError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
+import { err, type Result } from "../../domain/result.js";
+import { AnalysisInputError } from "../../domain/analysisErrorCore.js";
 import {
   inspectRpgMakerProjectInputSchema,
   rpgMakerProjectSchema,
   type InspectRpgMakerProjectInput,
   type RpgMakerProjectReport,
 } from "../../domain/rpgmaker/rpgMakerProject.js";
-import { err, ok, type Result } from "../../domain/result.js";
 
 const OPERATION = "inspect_rpgmaker_project";
 
@@ -92,55 +85,45 @@ export class RpgMakerProjectService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parsePathInput(
-      OPERATION,
-      inspectRpgMakerProjectInputSchema,
-      rawInput,
-    );
-    if (!input.ok) return input;
-    if (
-      input.value.asset !== undefined &&
-      (isAbsolute(input.value.asset) ||
-        input.value.asset.split(/[\\/]/u).includes(".."))
-    )
-      return err(
-        new AnalysisInputError(OPERATION, undefined, [
-          {
-            path: ["asset"],
-            reason: "invalid_format",
-            message:
-              "Expected a path relative to the game folder, without '..'.",
-          },
-        ]),
-      );
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = rpgMakerProjectSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.project.data_sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) => {
+          const input = parsePathInput(
+            OPERATION,
+            inspectRpgMakerProjectInputSchema,
+            rawInput,
+          );
+          if (!input.ok) return input;
+          if (
+            input.value.asset !== undefined &&
+            (isAbsolute(input.value.asset) ||
+              input.value.asset.split(/[\\/]/u).includes(".."))
+          )
+            return err(
+              new AnalysisInputError(OPERATION, undefined, [
+                {
+                  path: ["asset"],
+                  reason: "invalid_format",
+                  message:
+                    "Expected a path relative to the game folder, without '..'.",
+                },
+              ]),
+            );
+          return input;
+        },
+        reportSchema: rpgMakerProjectSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.project.path,
+        reportSha256: (report) => report.project.data_sha256,
+        malformedMessage:
           "RPG Maker reader returned malformed data, changed the selected game identity or returned a different view, filter or page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "observed",
-      ),
+        confidence: "observed",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

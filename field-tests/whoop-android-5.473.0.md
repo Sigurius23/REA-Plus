@@ -198,10 +198,12 @@ not recorded here.
 1. No search over string constants or bytecode. Hosts, API paths and the
    UUID-holding classes were found with small DEX string-table and
    `const-string` scanners outside REA+. REA+'s binary tools (`search`,
-   `xrefs`, disassembly through radare2 or Ghidra) would answer this, but
-   they reject DEX files as an unsupported format. radare2 itself, run
-   directly, found the loader of a UUID in 22 s and showed which field
-   each UUID is stored in.
+   `xrefs`, disassembly through radare2 or Ghidra) admit standalone DEX
+   files now (radare2 6.2.4 loads DEX; Ghidra 12.1.4 uses its DexLoader with
+   a styled Dalvik language), so this gap is now about exposing constant and
+   bytecode search through the REA+ tools, not about format admission.
+   radare2 itself, run directly, found the loader of a UUID in 22 s and
+   showed which field each UUID is stored in.
 2. `decode-android-resources` returns the first 2,000 of 5,226 strings with
    no paging, and doesn't expose `res/xml` files such as the network
    security config.

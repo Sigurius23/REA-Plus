@@ -201,5 +201,8 @@ for (const group of groups) {
           access(join(skillDirectory, "SKILL.md")),
         ).rejects.toMatchObject({ code: "ENOENT" });
     },
+    // Serial compiled-CLI invocations across many clients exceed the 30s
+    // default under parallel whole-suite load.
+    120_000,
   );
 }

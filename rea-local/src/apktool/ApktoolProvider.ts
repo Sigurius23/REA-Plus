@@ -11,7 +11,7 @@ import {
   stat,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { Transform, type TransformCallback } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { FileHandle } from "node:fs/promises";
@@ -77,6 +77,7 @@ const MANIFEST_MAX_BYTES = 512 * 1024;
 const STRINGS_XML_MAX_BYTES = 8 * 1024 * 1024;
 const MAX_STRINGS = 2_000;
 const MAX_DECODED_ENTRIES_VISITED = 100_000;
+const MAX_XML_RESOURCES = 200;
 const STDERR_EXCERPT_BYTES = 512;
 
 const throwIfCancelled = (
@@ -248,6 +249,81 @@ const runApktool = async (
       ),
     );
   }
+};
+
+/**
+ * List the decoded `res/xml` entries within a bounded, deterministic walk.
+ * The returned paths are workspace-relative POSIX spellings, sorted; `page`
+ * carries the file contents only when the caller asked to include them.
+ */
+const collectXmlResources = async (
+  workspace: string,
+  include: boolean,
+  signal: AbortSignal | undefined,
+  operation: string,
+): Promise<{
+  paths: readonly string[];
+  page: readonly {
+    readonly path: string;
+    readonly bytes: number;
+    readonly truncated: boolean;
+    readonly content: string | null;
+  }[];
+  capped: boolean;
+}> => {
+  const root = join(workspace, "res", "xml");
+  const paths: string[] = [];
+  let capped = false;
+  const directories = [root];
+  while (directories.length > 0 && !capped) {
+    throwIfCancelled(operation, signal);
+    const directory = directories.pop()!;
+    const entries = await opendir(directory).catch((cause: unknown) => {
+      if ((cause as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw cause;
+    });
+    if (entries === null) continue;
+    for await (const entry of entries) {
+      throwIfCancelled(operation, signal);
+      if (paths.length >= MAX_XML_RESOURCES) {
+        capped = true;
+        break;
+      }
+      const path = join(directory, entry.name);
+      // The workspace is REA-owned; apktool writes plain files or directories.
+      if (entry.isDirectory()) directories.push(path);
+      else if (entry.isFile()) paths.push(path);
+    }
+  }
+  paths.sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  const page: {
+    readonly path: string;
+    readonly bytes: number;
+    readonly truncated: boolean;
+    readonly content: string | null;
+  }[] = [];
+  if (include) {
+    for (const path of paths) {
+      throwIfCancelled(operation, signal);
+      const declared = await stat(path).then(
+        (metadata) => metadata.size,
+        () => 0,
+      );
+      const read = await readBoundedText(
+        path,
+        MANIFEST_MAX_BYTES,
+        operation,
+        signal,
+      );
+      page.push({
+        path: relative(workspace, path).split(sep).join("/"),
+        bytes: declared,
+        truncated: read.truncated || read.text === null,
+        content: read.text === null || read.truncated ? null : read.text,
+      });
+    }
+  }
+  return { paths, page, capped };
 };
 
 /** Count files while bounding streamed directory-entry traversal. */
@@ -502,6 +578,9 @@ export class ApktoolProvider {
       readonly path: string;
       readonly include_strings: boolean;
       readonly locale?: string | undefined;
+      readonly strings_offset: number;
+      readonly strings_limit: number;
+      readonly include_xml_resources: boolean;
     },
     signal: AbortSignal | undefined,
   ): Promise<Result<AnalysisExecution, AnalysisError>> {
@@ -667,15 +746,35 @@ export class ApktoolProvider {
         stringsXml === null
           ? { entries: [], unparsedCount: 0 }
           : parseDecodedStrings(stringsXml);
-      const bounded = parsedStrings.entries.slice(0, MAX_STRINGS);
+      const stringsPageSlice = parsedStrings.entries.slice(
+        input.strings_offset,
+        input.strings_offset + input.strings_limit,
+      );
+      const stringsPage = {
+        offset: input.strings_offset,
+        limit: input.strings_limit,
+        total: parsedStrings.entries.length,
+        returned: stringsPageSlice.length,
+      };
+      const xml = await collectXmlResources(
+        workspace,
+        input.include_xml_resources,
+        signal,
+        operation,
+      );
+      const truncatedXmlResources = xml.page.filter(
+        (resource) => resource.truncated,
+      ).length;
       const files = await countDecodedFiles(workspace, signal, operation);
       throwIfCancelled(operation, signal);
       const coverage =
-        (stringsXml !== null && parsedStrings.entries.length > MAX_STRINGS) ||
+        parsedStrings.entries.length > stringsPageSlice.length ||
         manifestRead.truncated ||
         stringsRead.truncated ||
         parsedStrings.unparsedCount > 0 ||
-        files.capped
+        files.capped ||
+        xml.capped ||
+        truncatedXmlResources > 0
           ? "partial"
           : "complete";
       await removeWorkspace();
@@ -692,7 +791,9 @@ export class ApktoolProvider {
               package_name: packageName,
             },
             manifest,
-            strings: bounded,
+            strings: stringsPageSlice,
+            strings_page: stringsPage,
+            xml_resources: xml.page,
             locale: input.locale ?? null,
             locales: files.locales,
             decoded_file_count: files.count,
@@ -719,9 +820,9 @@ export class ApktoolProvider {
                     `${String(parsedStrings.unparsedCount)} string entries with nested markup were not projected`,
                   ]
                 : []),
-              ...(parsedStrings.entries.length > MAX_STRINGS
+              ...(parsedStrings.entries.length > stringsPageSlice.length
                 ? [
-                    `strings reports the first ${String(MAX_STRINGS)} of ${String(parsedStrings.entries.length)} entries`,
+                    `strings reports ${String(stringsPageSlice.length)} of ${String(parsedStrings.entries.length)} parsed entries from index ${String(input.strings_offset)}; page with strings_offset past the returned entries`,
                   ]
                 : []),
               ...(manifestRead.truncated
@@ -734,9 +835,19 @@ export class ApktoolProvider {
                     `strings.xml exceeds the ${String(STRINGS_XML_MAX_BYTES)}-byte projection budget`,
                   ]
                 : []),
-              ...(files.capped
+              ...(xml.capped
                 ? [
-                    `Decoded workspace enumeration stopped after ${String(MAX_DECODED_ENTRIES_VISITED)} entries; decoded_file_count and locales may be partial`,
+                    `res/xml enumeration stopped at ${String(MAX_XML_RESOURCES)} files; xml_resources may be incomplete`,
+                  ]
+                : []),
+              ...(truncatedXmlResources > 0
+                ? [
+                    `${String(truncatedXmlResources)} res/xml file(s) exceeded the ${String(MANIFEST_MAX_BYTES)}-byte projection budget and were omitted`,
+                  ]
+                : []),
+              ...(!input.include_xml_resources && xml.paths.length > 0
+                ? [
+                    `${String(xml.paths.length)} decoded res/xml file(s) were not projected; enable include_xml_resources`,
                   ]
                 : []),
               ...(cleanupFailure === null ? [] : [cleanupFailure]),

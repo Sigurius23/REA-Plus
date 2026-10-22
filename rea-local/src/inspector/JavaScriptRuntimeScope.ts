@@ -111,8 +111,12 @@ export const authorizeRuntimeTargetLocation = async (
     return authorizeRuntimeLocation(value);
 
   // Node concatenates the pathname, then replaces quotes and backslashes with
-  // underscores. A remaining underscore cannot prove which pathname was used.
-  if (process.platform !== "win32" && !/[_"\\]/u.test(reportedPath)) {
+  // underscores in the script name. Only the basename becomes ambiguous: an
+  // underscore elsewhere cannot make a reported file mask a different script
+  // inside the same approved directory, because authorization still verifies
+  // the resolved file itself.
+  const reportedName = reportedPath.split(/[\\/]/u).pop() ?? "";
+  if (process.platform !== "win32" && !/[_"\\]/u.test(reportedName)) {
     if (reportedPath.startsWith("/")) {
       const decision = await authorizeRuntimeLocation(
         pathToFileURL(reportedPath).href,

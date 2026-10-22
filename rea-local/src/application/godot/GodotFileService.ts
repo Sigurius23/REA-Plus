@@ -1,16 +1,9 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
-import {
-  parsePathInput,
-  inlineReportEvidence,
-} from "../InlineReportService.js";
+import { parsePathInput, inspectInlineReport } from "../InlineReportService.js";
 import type { GodotFilePort } from "./GodotFilePort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
-import { err, ok, type Result } from "../../domain/result.js";
+import type { Result } from "../../domain/result.js";
 import {
   DEFAULT_GODOT_VIEW,
   godotFileSchema,
@@ -74,40 +67,23 @@ export class GodotFileService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parsePathInput(
-      OPERATION,
-      inspectGodotFileInputSchema,
-      rawInput,
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = godotFileSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.file.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parsePathInput(OPERATION, inspectGodotFileInputSchema, rawInput),
+        reportSchema: godotFileSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.file.path,
+        reportSha256: (report) => report.file.sha256,
+        malformedMessage:
           "Godot file reader returned malformed data, changed the selected file or entry, or returned a different view, selection or page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "observed",
-      ),
+        confidence: "observed",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

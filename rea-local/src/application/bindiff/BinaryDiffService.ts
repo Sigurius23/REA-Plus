@@ -1,16 +1,12 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
 import {
+  inspectInlineReport,
   parseInputWithAbsolutePaths,
-  inlineReportEvidence,
 } from "../InlineReportService.js";
 import type { BinaryDiffPort } from "./BinaryDiffPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
-import { err, ok, type Result } from "../../domain/result.js";
+import type { Result } from "../../domain/result.js";
 import {
   binaryDiffSchema,
   diffBinariesInputSchema,
@@ -73,44 +69,31 @@ export class BinaryDiffService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parseInputWithAbsolutePaths(
-      OPERATION,
-      diffBinariesInputSchema,
-      rawInput,
-      (input) => [
-        [["left"], input.left],
-        [["right"], input.right],
-      ],
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = binaryDiffSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.right ||
-      execution.subject.sha256 !== report.data.right.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parseInputWithAbsolutePaths(
+            OPERATION,
+            diffBinariesInputSchema,
+            rawInput,
+            (input) => [
+              [["left"], input.left],
+              [["right"], input.right],
+            ],
+          ),
+        reportSchema: binaryDiffSchema,
+        matchesSelection,
+        inputPath: ({ right }) => right,
+        reportPath: (report) => report.right.path,
+        reportSha256: (report) => report.right.sha256,
+        malformedMessage:
           "Binary diffing returned malformed data, changed the selected builds, or returned a different view or page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "inferred",
-      ),
+        confidence: "inferred",
+      },
+      async (input, signal) => this.provider.inspect(input, signal),
+      rawInput,
+      options,
     );
   }
 }

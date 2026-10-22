@@ -24,7 +24,7 @@ Open work on `main` following PR #1 and the field tests.
 
 3. **radare2 side:**
    - [x] Documentation: `docs/radare2-provider.md`, `docs/android-analysis.md` and skill reference updated.
-   - [ ] Real-radare2 fixture test on a small DEX built from Java source with `javac` and `d8`.
+   - [x] Real-radare2 fixture test on a small DEX built from Java source with `javac` and `d8` (`tests/boundary/providers/radare2/radare2Provider.dex.test.ts`; 3/3 green against radare2 6.2.4).
 4. **Ghidra side** (done):
    - [x] Force Ghidra's DEX loader and choose the Dalvik language from the DEX version;
    - [x] Make `list_strings`/`search_strings` cover the DEX string pool (post-analysis pool definition, `align` markers excluded);
@@ -61,7 +61,7 @@ Open work on `main` following PR #1 and the field tests.
 14. **Open field-test questions:**
     - Running the app or its traffic; reading the strap protocol itself; strap unlock and membership checks.
     - Mapping UUID families to device generations, and identifying codenames (Kenmore, Copley).
-    - Update [field-tests/whoop-android-5.473.0.md](field-tests/whoop-android-5.473.0.md) to reflect that radare2 now admits DEX files.
+    - Update [field-tests/whoop-android-5.473.0.md](field-tests/whoop-android-5.473.0.md) to reflect that radare2 and Ghidra now admit standalone DEX files (done: "gaps still open" item 1 rewritten).
 
 ## Environment
 

@@ -6,6 +6,8 @@ import { digestSchema } from "../digests.js";
 const MAX_MANIFEST_BYTES = 512 * 1024;
 const MAX_STRINGS = 2_000;
 
+const count = z.number().int().nonnegative();
+
 /**
  * Caller intent for Apktool-backed resource decoding. Apktool is
  * bring-your-own: REA+ never installs it, and decoding happens in a
@@ -32,6 +34,29 @@ export const apktoolInputSchemas = {
       .optional()
       .describe(
         "Project strings from res/values-<locale>/strings.xml instead of the default table",
+      ),
+    strings_offset: z
+      .number()
+      .int()
+      .min(0)
+      .default(0)
+      .describe(
+        "Index of the first parsed string entry projected in this response",
+      ),
+    strings_limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_STRINGS)
+      .default(MAX_STRINGS)
+      .describe(
+        `Maximum parsed string entries projected in this response (bounded to ${String(MAX_STRINGS)})`,
+      ),
+    include_xml_resources: z
+      .boolean()
+      .default(false)
+      .describe(
+        "Project decoded res/xml files such as a network security config",
       ),
   }),
 } as const;
@@ -93,6 +118,20 @@ export const apktoolResultSchemas = {
       z.strictObject({
         name: z.string().min(1),
         value: z.string(),
+      }),
+    ),
+    strings_page: z.strictObject({
+      offset: count,
+      limit: count,
+      total: count,
+      returned: count,
+    }),
+    xml_resources: z.array(
+      z.strictObject({
+        path: z.string().min(1),
+        bytes: count,
+        truncated: z.boolean(),
+        content: z.string().nullable(),
       }),
     ),
     locale: z.string().nullable(),

@@ -2,16 +2,12 @@ import type { ExecutionOptions } from "../AnalysisProvider.js";
 import {
   parseInputWithAbsolutePaths,
   type InputPathField,
-  inlineReportEvidence,
+  inspectInlineReport,
 } from "../InlineReportService.js";
 import type { LibraryIdentificationPort } from "./LibraryIdentificationPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
-import { err, ok, type Result } from "../../domain/result.js";
+import type { Result } from "../../domain/result.js";
 import {
   identifyLibraryFunctionsInputSchema,
   libraryIdentificationSchema,
@@ -56,47 +52,34 @@ export class LibraryIdentificationService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parseInputWithAbsolutePaths(
-      OPERATION,
-      identifyLibraryFunctionsInputSchema,
-      rawInput,
-      (input) => [
-        [["path"], input.path],
-        ...input.libraries.map((path, index): InputPathField => [
-          ["libraries", index],
-          path,
-        ]),
-      ],
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = libraryIdentificationSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.file.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parseInputWithAbsolutePaths(
+            OPERATION,
+            identifyLibraryFunctionsInputSchema,
+            rawInput,
+            (input) => [
+              [["path"], input.path],
+              ...input.libraries.map((path, index): InputPathField => [
+                ["libraries", index],
+                path,
+              ]),
+            ],
+          ),
+        reportSchema: libraryIdentificationSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.file.path,
+        reportSha256: (report) => report.file.sha256,
+        malformedMessage:
           "Library identification returned malformed data, changed the selected file or libraries, or returned a different view or page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "inferred",
-      ),
+        confidence: "inferred",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

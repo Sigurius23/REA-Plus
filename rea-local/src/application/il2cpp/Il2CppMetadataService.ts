@@ -1,7 +1,7 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
 import {
   parseInputWithAbsolutePaths,
-  inlineReportEvidence,
+  inspectInlineReport,
 } from "../InlineReportService.js";
 import type { Il2CppMetadataPort } from "./Il2CppMetadataPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
@@ -66,44 +66,31 @@ export class Il2CppMetadataService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parseInputWithAbsolutePaths(
-      OPERATION,
-      inspectIl2CppMetadataInputSchema,
-      rawInput,
-      (input) => [
-        [["metadata_path"], input.metadata_path],
-        [["binary_path"], input.binary_path],
-      ],
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = il2cppMetadataSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.metadata_path ||
-      execution.subject.sha256 !== report.data.metadata.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parseInputWithAbsolutePaths(
+            OPERATION,
+            inspectIl2CppMetadataInputSchema,
+            rawInput,
+            (input) => [
+              [["metadata_path"], input.metadata_path],
+              [["binary_path"], input.binary_path],
+            ],
+          ),
+        reportSchema: il2cppMetadataSchema,
+        matchesSelection,
+        inputPath: ({ metadata_path }) => metadata_path,
+        reportPath: (report) => report.metadata.path,
+        reportSha256: (report) => report.metadata.sha256,
+        malformedMessage:
           "r2unity adapter returned malformed data, changed a selected file identity or returned a different page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "derived",
-      ),
+        confidence: "derived",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

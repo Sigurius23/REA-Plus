@@ -1,22 +1,18 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
 import {
   parseInputWithAbsolutePaths,
-  inlineReportEvidence,
+  inspectInlineReport,
 } from "../InlineReportService.js";
 import type { CoverageLogPort } from "./CoverageLogPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
+import type { Evidence } from "../../domain/evidence.js";
+import type { Result } from "../../domain/result.js";
 import {
   coverageLogSchema,
   inspectCoverageLogInputSchema,
   type CoverageLog,
   type InspectCoverageLogInput,
 } from "../../domain/drcov/coverageLog.js";
-import type { Evidence } from "../../domain/evidence.js";
-import { err, ok, type Result } from "../../domain/result.js";
 
 const OPERATION = "inspect_coverage_log";
 
@@ -50,44 +46,31 @@ export class CoverageLogService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parseInputWithAbsolutePaths(
-      OPERATION,
-      inspectCoverageLogInputSchema,
-      rawInput,
-      (input) => [
-        [["path"], input.path],
-        [["baseline_path"], input.baseline_path],
-      ],
-    );
-    if (!input.ok) return input;
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = coverageLogSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.log.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) =>
+          parseInputWithAbsolutePaths(
+            OPERATION,
+            inspectCoverageLogInputSchema,
+            rawInput,
+            (input) => [
+              [["path"], input.path],
+              [["baseline_path"], input.baseline_path],
+            ],
+          ),
+        reportSchema: coverageLogSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.log.path,
+        reportSha256: (report) => report.log.sha256,
+        malformedMessage:
           "Coverage reader returned malformed data, changed a selected log identity or returned a different page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "observed",
-      ),
+        confidence: "observed",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

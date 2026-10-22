@@ -1,17 +1,10 @@
 import type { ExecutionOptions } from "../AnalysisProvider.js";
-import {
-  parsePathInput,
-  inlineReportEvidence,
-} from "../InlineReportService.js";
+import { parsePathInput, inspectInlineReport } from "../InlineReportService.js";
 import type { WasmModulePort } from "./WasmModulePort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
-import {
-  AnalysisCancelledError,
-  AnalysisInputError,
-  AnalysisOutputError,
-} from "../../domain/analysisErrorCore.js";
 import type { Evidence } from "../../domain/evidence.js";
-import { err, ok, type Result } from "../../domain/result.js";
+import { err, type Result } from "../../domain/result.js";
+import { AnalysisInputError } from "../../domain/analysisErrorCore.js";
 import {
   inspectWasmModuleInputSchema,
   WASM_MODULE_VIEWS,
@@ -66,50 +59,43 @@ export class WasmModuleService {
     rawInput: unknown,
     options?: ExecutionOptions,
   ): Promise<Result<Evidence, AnalysisError>> {
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const input = parsePathInput(
-      OPERATION,
-      inspectWasmModuleInputSchema,
-      rawInput,
-    );
-    if (!input.ok) return input;
-    if (input.value.view === "calls" && input.value.function === undefined)
-      return err(
-        new AnalysisInputError(OPERATION, undefined, [
-          {
-            path: ["function"],
-            reason: "invalid_value",
-            message: "The calls view needs a function index or name.",
-          },
-        ]),
-      );
-    const inspected = await this.provider.inspect(input.value, options);
-    if (!inspected.ok) return inspected;
-    if (options?.signal?.aborted)
-      return err(new AnalysisCancelledError(OPERATION));
-    const execution = inspected.value;
-    const report = wasmModuleSchema.safeParse(execution.result);
-    if (
-      !report.success ||
-      !matchesSelection(report.data, input.value) ||
-      execution.subject?.path !== input.value.path ||
-      execution.subject.sha256 !== report.data.module.sha256
-    )
-      return err(
-        new AnalysisOutputError(
-          OPERATION,
+    return inspectInlineReport(
+      {
+        operation: OPERATION,
+        parseInput: (rawInput) => {
+          const input = parsePathInput(
+            OPERATION,
+            inspectWasmModuleInputSchema,
+            rawInput,
+          );
+          if (!input.ok) return input;
+          if (
+            input.value.view === "calls" &&
+            input.value.function === undefined
+          )
+            return err(
+              new AnalysisInputError(OPERATION, undefined, [
+                {
+                  path: ["function"],
+                  reason: "invalid_value",
+                  message: "The calls view needs a function index or name.",
+                },
+              ]),
+            );
+          return input;
+        },
+        reportSchema: wasmModuleSchema,
+        matchesSelection,
+        inputPath: ({ path }) => path,
+        reportPath: (report) => report.module.path,
+        reportSha256: (report) => report.module.sha256,
+        malformedMessage:
           "WebAssembly reader returned malformed data, changed the selected module identity or returned a different view or page than requested.",
-        ),
-      );
-    return ok(
-      inlineReportEvidence(
-        OPERATION,
-        execution,
-        input.value,
-        report.data,
-        "observed",
-      ),
+        confidence: "observed",
+      },
+      (input, invocation) => this.provider.inspect(input, invocation),
+      rawInput,
+      options,
     );
   }
 }

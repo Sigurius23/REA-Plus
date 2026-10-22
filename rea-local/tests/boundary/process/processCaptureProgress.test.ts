@@ -271,7 +271,10 @@ itWithCaptureCapability(
       },
     });
   },
-  30_000,
+  // Spawn-heavy fixtures (compiled CLI + MCP server + child) exceed the 30s
+  // default under parallel whole-suite load; internal latency commitments are
+  // independent of this test-level budget.
+  60_000,
 );
 
 itWithCaptureCapability(
@@ -311,7 +314,10 @@ itWithCaptureCapability(
     ).toBeGreaterThanOrEqual(10);
     expect(updates.at(-1)?.details.owned_process_group).toBe("cleaned");
   },
-  30_000,
+  // Spawn-heavy fixtures (compiled CLI + MCP server + child) exceed the 30s
+  // default under parallel whole-suite load; internal latency commitments are
+  // independent of this test-level budget.
+  60_000,
 );
 
 itWithCaptureCapability(
@@ -340,7 +346,10 @@ itWithCaptureCapability(
       },
     });
   },
-  30_000,
+  // Spawn-heavy fixtures (compiled CLI + MCP server + child) exceed the 30s
+  // default under parallel whole-suite load; internal latency commitments are
+  // independent of this test-level budget.
+  60_000,
 );
 
 itWithCaptureCapability(
@@ -372,7 +381,10 @@ itWithCaptureCapability(
       },
     });
   },
-  30_000,
+  // Spawn-heavy fixtures (compiled CLI + MCP server + child) exceed the 30s
+  // default under parallel whole-suite load; internal latency commitments are
+  // independent of this test-level budget.
+  60_000,
 );
 
 itWithCaptureCapability(
@@ -458,7 +470,10 @@ itWithCaptureCapability(
         .join(""),
     ).toContain("TOKEN_CHILD_STARTED");
   },
-  30_000,
+  // Spawn-heavy fixtures (compiled CLI + MCP server + child) exceed the 30s
+  // default under parallel whole-suite load; internal latency commitments are
+  // independent of this test-level budget.
+  60_000,
 );
 
 itWithCaptureCapability(
@@ -554,5 +569,8 @@ itWithCaptureCapability(
       /setInterval|CHILD/u,
     );
   },
-  30_000,
+  // Spawn-heavy fixtures (compiled CLI + MCP server + child) exceed the 30s
+  // default under parallel whole-suite load; internal latency commitments are
+  // independent of this test-level budget.
+  60_000,
 );

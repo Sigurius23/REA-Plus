@@ -50,7 +50,13 @@ it("composes observed Evidence with the caller parameters inline", async () => {
     async execute(request) {
       expect(request).toEqual({
         operation: "decode_android_resources",
-        input: { path: "/targets/app.apk", include_strings: true },
+        input: {
+          path: "/targets/app.apk",
+          include_strings: true,
+          strings_offset: 0,
+          strings_limit: 2_000,
+          include_xml_resources: false,
+        },
       });
       return ok(execution);
     },
@@ -66,6 +72,9 @@ it("composes observed Evidence with the caller parameters inline", async () => {
   expect(evidence.parameters).toEqual({
     path: "/targets/app.apk",
     include_strings: true,
+    strings_offset: 0,
+    strings_limit: 2_000,
+    include_xml_resources: false,
   });
   expect(evidence.confidence).toBe("observed");
 });

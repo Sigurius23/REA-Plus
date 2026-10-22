@@ -37,6 +37,8 @@ rea inspect-apktool-client
 rea decode-android-resources /targets/Example.apk
 rea decode-android-resources /targets/Example.apk --locale de
 rea decode-android-resources /targets/Example.apk --no-strings
+rea decode-android-resources /targets/Example.apk --strings-offset 2000
+rea decode-android-resources /targets/Example.apk --include-xml-resources
 ```
 
 Equivalent MCP methods are `inspect_apktool_client` and
@@ -45,6 +47,20 @@ Equivalent MCP methods are `inspect_apktool_client` and
 table), and `include_strings` (default true). Regional locales such as `pt-BR`
 select Android's `values-pt-rBR`; Android qualifiers such as `pt-rBR` and
 `b+zh+Hans+CN` may also be supplied directly.
+
+`decode_android_resources` may also take:
+
+- `strings_offset` (default 0) and `strings_limit` (default and upper bound 2000) to page through more parsed entries than one response carries. The
+  response reports the slice in `strings_page` (`total`, `offset`, `limit`,
+  `returned`), and a response that does not carry every parsed entry reports
+  partial coverage with a limitation naming `strings_offset`.
+- `include_xml_resources` (default false) to project each decoded file under
+  `res/xml`, such as a network security config, sorted by path and bounded to
+  200 files. Each entry names its workspace-relative path, the decoded size,
+  and the decoded text; a file larger than the 512 KiB per-file budget keeps
+  its size but carries `content: null` with `truncated: true` and a
+  limitation. When exposure is skipped but the folder is present, the
+  limitations say how many files were skipped.
 
 ## Interpret the result
 
@@ -57,9 +73,15 @@ select Android's `values-pt-rBR`; Android qualifiers such as `pt-rBR` and
   truncated when larger.
 - **Strings are projected verbatim.** Escaped entities stay escaped, and
   entries containing nested markup (`<b>`, `<xliff:g>`) are counted as
-  unparsed rather than flattened — the limitation names the count. The
-  default table is bounded to 2000 entries with partial coverage when more
-  exist; `locales` lists every `values-<locale>` that has a strings table.
+  unparsed rather than flattened — the limitation names the count. One
+  response carries at most 2000 entries, selected by `strings_offset` and
+  `strings_limit`; `strings_page` reports `total`, `offset`, `limit` and
+  `returned`, and partial coverage marks a response that omits parsed
+  entries. `locales` lists every `values-<locale>` that has a strings table.
+- **`res/xml` exposure is opt-in.** With `include_xml_resources`, every
+  decoded file under `res/xml` (up to 200 files) appears in `xml_resources`
+  with its size, truncation state and decoded content; otherwise the
+  limitations name the skipped file count instead of the contents.
 - **Smali is skipped by design** (`apktool d --no-src`): Java-source
   recovery belongs to the JADX family. Resource smali edits and rebuild are
   a follow-up lane with mutation authority.
@@ -76,9 +98,11 @@ select Android's `values-pt-rBR`; Android qualifiers such as `pt-rBR` and
   `resource_constraint`.
 - Manifest reads are bounded to 512 KiB before decoding UTF-8. Strings XML
   reads are bounded to 8 MiB; larger documents are skipped with partial
-  coverage and an explicit limit, rather than reported as missing.
+  coverage and an explicit limit, rather than reported as missing. Each
+  projected `res/xml` file is likewise bounded to 512 KiB.
 - `decoded_file_count` is capped at 100,000 files; the cap is reported in
-  the limitations when hit.
+  the limitations when hit. `xml_resources` is capped at 200 files, also
+  reported as a limitation when reached.
 - Apktool's own decode failures (`AndrolibException`, directory traversal
   refusals) surface as `unsupported_target` with apktool's reason preserved
   verbatim.

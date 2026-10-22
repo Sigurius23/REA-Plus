@@ -36,6 +36,8 @@ const results: Readonly<Record<string, unknown>> = {
     manifest:
       '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rea.apktool.probe"/>',
     strings: [{ name: "app_name", value: "ApktoolProbe" }],
+    strings_page: { offset: 0, limit: 2_000, total: 1, returned: 1 },
+    xml_resources: [],
     locale: null,
     locales: ["de"],
     decoded_file_count: 5,
