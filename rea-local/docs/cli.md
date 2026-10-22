@@ -109,6 +109,23 @@ be verified. See [MCP contracts](mcp-contracts.md) for session lifecycle and
 [Ghidra first-query deadlines](mcp-contracts.md#ghidra-first-query-deadlines-and-recovery)
 for import, client timeouts and recovery.
 
+## Open a DEX member inside an APK container
+
+Target-accepting commands pass a `container#member` fragment to analyze one
+DEX file inside an APK (or other ZIP-package container) without manual
+extraction; `--staging-dir` chooses where extracted members are staged (default:
+beside the container):
+
+```bash
+rea analyze /path/Example.apk#classes2.dex
+rea decompile /path/Example.apk#classes2.dex --staging-dir /absolute/path/staging
+```
+
+The member must be a top-level `.dex` entry of a verified ZIP-package
+container; a missing member error lists the container's DEX members. See
+[Android DEX member targeting](android-analysis.md#open-one-dex-member-inside-an-apk-container)
+for the full boundary.
+
 ## Save and reuse analysis snapshots
 
 A snapshot retains successful analysis results for later queries. REA+ reuses

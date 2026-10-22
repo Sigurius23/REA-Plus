@@ -32,7 +32,9 @@ export const registerAndroidCommands = (
         return result.ok ? result.value : projectAnalysisError(result.error);
       }),
     );
-  const path = z.string().describe("Local standalone APK path");
+  const path = z
+    .string()
+    .describe("Local standalone APK or XAPK container path");
   const className = z.string().describe("Exact fully qualified class name");
   cli.command(CLI_COMMANDS.inspectAndroidPackage, {
     description:

@@ -5,6 +5,7 @@ import {
 } from "../application/AnalysisProvider.js";
 import type { AndroidRequest } from "../domain/android/androidAnalysis.js";
 import type { AndroidPartialObservation } from "../domain/android/androidPartialObservation.js";
+import { admittedAndroidContainerFormat } from "../domain/android/androidContainerFormat.js";
 import {
   AnalysisCapabilityUnavailableError,
   AnalysisInputError,
@@ -69,6 +70,8 @@ export class JadxSession {
     readonly jarHash: string;
     readonly bridgeHash: string;
     readonly signal: AbortSignal;
+    /** Admission-scope notes appended to the producer's own limitations. */
+    readonly limitations?: readonly string[];
   }): Promise<AnalysisExecution> {
     const { request, target, snapshot, jarHash, signal } = context;
     this.#partialContext = {
@@ -151,7 +154,7 @@ export class JadxSession {
           calls: this.#observedCalls,
         },
         subject: target,
-        limitations: JADX_LIMITATIONS,
+        limitations: [...JADX_LIMITATIONS, ...(context.limitations ?? [])],
         locations:
           request.operation === "inspect_android_package"
             ? [{ kind: "artifact-path", path: "AndroidManifest.xml" }]
@@ -173,7 +176,7 @@ export class JadxSession {
         selected_path: context.selectedPath,
         path: context.target.path,
         sha256: context.target.sha256,
-        format: "apk",
+        format: admittedAndroidContainerFormat(context.target.format),
       },
       provider_facts: {
         jar_sha256: context.jarHash,

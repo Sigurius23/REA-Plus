@@ -20,10 +20,12 @@ import {
 } from "../../../src/application/AppBundleExecutable.js";
 import {
   dosMz,
+  dex,
   pe,
   thinMach,
 } from "../../../src/domain/binaryTarget.fixture.js";
 import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
+import { writeZipMembers } from "../../fixtures/artifactEntryOrder.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
 describe("binary target I/O: app plist permissions and decoding", () => {
@@ -771,6 +773,101 @@ describe("DOS binary target I/O", () => {
     expect(await parseBinaryTarget(path)).toMatchObject({
       ok: false,
       error: { message: "Cannot open artifact: truncated DOS MZ load module" },
+    });
+  });
+});
+
+describe("container DEX member target I/O", () => {
+  const apkWithDex = async (directory: string): Promise<string> => {
+    const path = join(directory, "app.apk");
+    await writeZipMembers(path, [
+      { name: "AndroidManifest.xml", content: "" },
+      { name: "classes.dex", content: dex("035") },
+      { name: "classes2.dex", content: dex("037") },
+      { name: "res/layout.xml", content: "" },
+    ]);
+    return path;
+  };
+
+  it("stages and admits a selected DEX member with container provenance", async () => {
+    const directory = await createTestTempDirectory("rea-container-dex-");
+    const apk = await apkWithDex(directory);
+    const result = await parseBinaryTarget(`${apk}#classes2.dex`);
+    if (!result.ok) throw result.error;
+    expect(result.value).toMatchObject({
+      kind: "executable",
+      format: "dex",
+      architecture: "dalvik",
+      dex: { version: "037" },
+      containerSelection: {
+        path: await realpath(apk),
+        member: "classes2.dex",
+      },
+    });
+    const staged = result.value.path;
+    expect(staged).toBe(join(directory, "app-extracted", "classes2.dex"));
+    expect(await readFile(staged)).toEqual(dex("037"));
+  });
+
+  it("stages under a caller-supplied directory and reuses staged bytes by digest", async () => {
+    const directory = await createTestTempDirectory("rea-container-dex-stage-");
+    const apk = await apkWithDex(directory);
+    const staging = join(directory, "staging");
+    const options = { stagingDir: staging } as const;
+    const first = await parseBinaryTarget(`${apk}#classes.dex`, options);
+    const second = await parseBinaryTarget(`${apk}#classes.dex`, options);
+    if (!first.ok) throw first.error;
+    if (!second.ok) throw second.error;
+    expect(second.value.path).toBe(first.value.path);
+    expect(first.value.path.startsWith(staging)).toBe(true);
+  });
+
+  it("lists the container DEX members when the selection is missing", async () => {
+    const directory = await createTestTempDirectory("rea-container-dex-miss-");
+    const apk = await apkWithDex(directory);
+    const result = await parseBinaryTarget(`${apk}#classes9.dex`);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        reason: expect.stringContaining(
+          'Container member "classes9.dex" was not found; DEX members: classes.dex, classes2.dex',
+        ),
+      },
+    });
+  });
+
+  it("rejects non-DEX member selections before reading the archive", async () => {
+    const directory = await createTestTempDirectory("rea-container-dex-name-");
+    const apk = await apkWithDex(directory);
+    expect(await parseBinaryTarget(`${apk}#AndroidManifest.xml`)).toMatchObject(
+      {
+        ok: false,
+        error: {
+          reason: expect.stringContaining("only accepts .dex entries"),
+        },
+      },
+    );
+  });
+
+  it("resolves real `#` filenames verbatim when no fragment container exists", async () => {
+    const directory = await createTestTempDirectory("rea-container-hash-name-");
+    const literal = join(directory, "odd#name.apk");
+    await writeZipMembers(literal, [{ name: "assets/a", content: "" }]);
+    expect(await parseBinaryTarget(literal)).toMatchObject({
+      ok: true,
+      value: { kind: "archive", format: "apk" },
+    });
+  });
+
+  it("rejects member selection inside a non-ZIP container", async () => {
+    const directory = await createTestTempDirectory("rea-container-notzip-");
+    const executable = join(directory, "native");
+    await writeFile(executable, thinMach(0xfeedfacf, 0x0100000c));
+    expect(await parseBinaryTarget(`${executable}#classes.dex`)).toMatchObject({
+      ok: false,
+      error: {
+        reason: expect.stringContaining("requires a ZIP-based container"),
+      },
     });
   });
 });

@@ -101,6 +101,77 @@ fallback for an overloaded method instead of attributing all bodies to one
 selected overload. Native/abstract methods with no decompiled body report
 `body_status: "not_available"` without inferring which implementation flag caused it.
 
+## Open one DEX member inside an APK container
+
+The generic binary/session layer (CLI `analyze`, `inspect`, `decompile`,
+`xrefs`, `search`, MCP `open_binary` and the other target-accepting operations)
+accepts a `container#member` fragment to analyze one DEX file inside an APK (or
+any ZIP-package container) without manual extraction:
+
+```sh
+rea analyze /path/Example.apk#classes2.dex
+rea analyze /path/Example.apk#classes2.dex --provider ghidra
+```
+
+```json
+{
+  "name": "open_binary",
+  "arguments": {
+    "path": "/path/Example.apk#classes2.dex"
+  }
+}
+```
+
+The container is verified by its ZIP directory and SHA-256 first; the selected
+member must be a top-level `.dex` entry. REA+ streams the member into a staging
+file beside the container (`app-extracted/classes2.dex`), reuses an equally
+digested stage on later opens, classifies the staged bytes as Dalvik, and then
+admits the extracted DEX target to any DEX-capable provider (`radare2`,
+`ghidra`). The open result stays bound to the staged file; the container path,
+container digest and member name are retained as provenance
+(`container_selection`) on the resolved target.
+
+Pass `--staging-dir` (CLI) or `staging_dir` (MCP `open_binary`) to stage
+extractions under a caller-owned directory instead of beside the container.
+Staged files are not deleted by resolution: delete them with close or manually.
+Filename-level boundaries stay explicit: the fragment applies only when the
+part before `#` exists as a readable file (a file literally named
+`odd#name.apk` still resolves whole), other container kinds report
+`requires a ZIP-based container`, non-`.dex` member names are rejected before
+the archive is read, and a missing member lists the container's DEX members.
+Errors list exact member names so callers can pick the right `classesN.dex`.
+The Android-specific `inspect_android_*` operations keep whole-package semantics
+and do not fragment-match: pass those operations the container path itself.
+
+## Analyze a XAPK container
+
+The five Android operations admit `.xapk` packages (crucible/XAPK-style ZIP
+containers) in addition to standalone APKs. Admission composes the analysis
+image the engine actually loads, instead of copying the container into the
+session's private runtime root:
+
+- The container must carry a top-level `manifest.json` and one readable,
+  top-level `base.apk`; mis-shaped containers are refused with their
+  disproportionate or nested members listed as ignored.
+- The base module's entries are copied into a stored-entry `bundle.apk` as-is
+  (manifest, resources, native libraries, signing metadata), so the loaded
+  package stays byte-derived from `base.apk`.
+- Every other top-level APK member (split APKs) contributes only its `*.dex`
+  entries. A colliding declared name — each split ships its own `classes.dex` —
+  is kept under `splits/<member>/<name>`, e.g.
+  `splits/split_config.arm64_v8a/classes.dex`, so jadx decompiles all of them.
+- Split resources, native libraries and member signatures are deliberately not
+  merged, and the image is not the signed install package; the Evidence
+  limitations state the merged members and entry count for every XAPK request.
+- Composition happens once per admitted container, streamed with constant
+  memory, capped at a 4 GiB image and 65,535 entries. Failed admission leaves
+  no composed image. A stable container yields a byte-stable image and SHA-256.
+
+The inspection result then reflects the merged Java code: class counts include
+split DEX entries. The retained session still numbers the _composed_ input,
+while Evidence subject fields keep the original container path and its SHA-256.
+Inventory and extraction treat `.xapk` like any other ZIP package family.
+
 ## Interpret the result
 
 - Package inspection retains decoded manifest XML, summary declarations,
@@ -141,9 +212,12 @@ and each upstream request and reply collected before the failure. Failed replies
 remain available even when their payload cannot be interpreted. Cancellation
 also stops target hashing before provider admission.
 
-These operations do not execute the APK or provide split APK/AAB handling,
-signature validation, full resource-table semantics, native-library analysis or
-Android runtime capture. An `.aab` suffix is a ZIP archive, not an APK, so
+These operations do not execute the APK or provide Android App Bundle
+(`.aab`)/split-APK _bundle_ handling (directory or `.apks` sets of separate
+split files), signature validation, full resource-table semantics,
+native-library analysis or Android runtime capture. XAPK containers are the
+supported multi-APK input, with the merge scope documented above. An `.aab`
+suffix is a ZIP archive, not an APK, so
 Android tools and the application graph do not treat it as a standalone APK.
 Existing artifact inventory/extraction tools can supply archive evidence.
 Inventory records an APK root only for ZIP bytes whose name ends in `.apk`.

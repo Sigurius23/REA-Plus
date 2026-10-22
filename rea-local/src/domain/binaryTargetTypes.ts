@@ -86,6 +86,15 @@ export type BinaryTarget =
       readonly architecture: "dalvik";
       readonly availableArchitectures: readonly "dalvik"[];
       readonly dex: DexMetadata;
+      /** Provenance of a DEX resolved from inside a ZIP-based container. */
+      readonly containerSelection?: {
+        /** Canonical container path the member was extracted from. */
+        readonly path: string;
+        /** SHA-256 of the whole container bytes at resolution time. */
+        readonly sha256: string;
+        /** Exact archive entry name of the selected member. */
+        readonly member: string;
+      };
       readonly executableRole?: never;
       readonly managed?: never;
     })
@@ -116,6 +125,7 @@ export type BinaryTarget =
           | "zip"
           | "ipa"
           | "apk"
+          | "xapk"
           | "msix"
           | "appx"
           | "hap"

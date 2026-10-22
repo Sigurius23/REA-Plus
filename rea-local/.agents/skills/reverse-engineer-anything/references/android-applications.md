@@ -5,11 +5,17 @@ Use the connected server's advertised Android tools. Repository main and npm
 older server.
 
 Start with `inspect_android_package` on the caller's APK path for package
-identity, manifest declarations, coverage, and inline Evidence. Use
+identity, manifest declarations, coverage, and inline Evidence. The same
+operations also admit whole `.xapk` containers (a ZIP with `manifest.json`,
+`base.apk` and split APKs): REA+ composes one analysis image from the base
+module plus every split's DEX entries, so class coverage spans all modules, but
+split resources and signatures are not merged — check the evidence limitations.
+Loose split-APK sets (directories or `.apks` bundles) are not supported yet.
+Use
 `search_android_classes` to find candidates, `inspect_android_class` for one
 class's members, `inspect_android_method` for decompilation, and
 `trace_android_references` for incoming static references. Each call takes its
-own APK path and explicit selectors; do not open a native session first.
+own package path and explicit selectors; do not open a native session first.
 Choose an `overload_index` from the class inventory when methods are ambiguous
 instead of guessing.
 

@@ -27,5 +27,5 @@ export const JADX_LIMITATIONS = [
   "Static decompiler observations do not establish runtime behavior; the APK is never executed.",
   "Method signatures use provider display types; exact DEX descriptors and instruction offsets are unavailable. Overload indices are local to this engine and artifact.",
   "Class inventories use parsed metadata before code generation, including synthetic members that may be omitted from decompiled source. Source positions remain unknown.",
-  "Manifest summary fields are extracted by the upstream engine; decoded XML is retained for verification. APK signatures, split APKs, native libraries and Android runtime capture are not verified by this provider.",
+  "Manifest summary fields are extracted by the upstream engine; decoded XML is retained for verification. APK signatures, split-APK resources, native libraries and Android runtime capture are not verified by this provider.",
 ] as const;

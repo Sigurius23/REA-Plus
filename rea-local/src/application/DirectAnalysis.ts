@@ -91,6 +91,7 @@ export const runDirectAnalysis = async (
     readonly signal?: AbortSignal;
     readonly providerId?: AnalysisProviderSelector;
     readonly formatHint?: ExecutableFormatHint;
+    readonly stagingDir?: string;
   } = {},
 ): Promise<JsonValue> =>
   withProcessCancellation(options.signal, (signal) =>
@@ -104,6 +105,9 @@ export const runDirectAnalysis = async (
       ...(options.providerId === undefined
         ? {}
         : { providerId: options.providerId }),
+      ...(options.stagingDir === undefined
+        ? {}
+        : { stagingDir: options.stagingDir }),
     }),
   );
 
@@ -187,6 +191,7 @@ const runAnalysis = async (
     readonly signal: AbortSignal;
     readonly providerId?: AnalysisProviderSelector;
     readonly formatHint?: ExecutableFormatHint;
+    readonly stagingDir?: string;
   },
 ): Promise<JsonValue> => {
   const { logger, signal, snapshotPath } = options;
@@ -203,6 +208,9 @@ const runAnalysis = async (
         ...(options.formatHint === undefined
           ? {}
           : { formatHint: options.formatHint }),
+        ...(options.stagingDir === undefined
+          ? {}
+          : { stagingDir: options.stagingDir }),
       });
       if (!prepared.ok) return cliError(prepared.error);
       const { snapshot } = prepared.value;
@@ -246,6 +254,9 @@ const runAnalysis = async (
         ...(options.formatHint === undefined
           ? {}
           : { formatHint: options.formatHint }),
+        ...(options.stagingDir === undefined
+          ? {}
+          : { stagingDir: options.stagingDir }),
         ...(snapshot === undefined ? {} : { snapshot }),
         ...(options.providerId === undefined
           ? {}
@@ -440,6 +451,7 @@ const withProcessCancellation = async <Value>(
 const prepareSnapshot = async (options: {
   readonly path: string;
   readonly formatHint?: ExecutableFormatHint;
+  readonly stagingDir?: string;
   readonly snapshotPath: string | undefined;
   readonly signal: AbortSignal;
 }): Promise<
@@ -458,6 +470,9 @@ const prepareSnapshot = async (options: {
     ...(options.formatHint === undefined
       ? {}
       : { formatHint: options.formatHint }),
+    ...(options.stagingDir === undefined
+      ? {}
+      : { stagingDir: options.stagingDir }),
   });
   if (!target.ok) return target;
   if (!snapshotMatchesTarget(loaded.value.target, target.value))

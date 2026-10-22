@@ -8,6 +8,7 @@ import {
   directAnalysisOptions,
   formatSelectionOption,
   providerSelectionOption,
+  stagingDirSelectionOption,
 } from "./options.js";
 import type { CliInstance } from "./types.js";
 
@@ -24,6 +25,7 @@ export const registerCoreNativeCommands = (
     args: z.object({ path: z.string().describe("Local executable path") }),
     options: z.object({
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -37,6 +39,7 @@ export const registerCoreNativeCommands = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -55,6 +58,7 @@ export const registerCoreNativeCommands = (
         .default(256)
         .describe("Requested byte count"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -68,6 +72,7 @@ export const registerCoreNativeCommands = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -80,6 +85,7 @@ export const registerCoreNativeCommands = (
     }),
     options: z.object({
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -93,6 +99,7 @@ export const registerCoreNativeCommands = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -155,6 +162,7 @@ export const registerCoreNativeCommands = (
         .default(1000)
         .describe("Maximum nodes on this page"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -177,6 +185,7 @@ export const registerCoreNativeCommands = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -190,6 +199,7 @@ export const registerCoreNativeCommands = (
       type: z.string().optional().describe("Exact database type category path"),
       address: z.string().optional().describe("Exact native address"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -208,6 +218,7 @@ export const registerCoreNativeCommands = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -227,6 +238,7 @@ export const registerCoreNativeCommands = (
       }),
       options: z.object({
         "target-format": formatSelectionOption,
+        "staging-dir": stagingDirSelectionOption,
         provider: providerSelectionOption,
       }),
       run: ({ args, options }) =>
@@ -240,6 +252,7 @@ export const registerCoreNativeCommands = (
               undefined,
               options.provider,
               options["target-format"],
+              options["staging-dir"],
             ),
           ),
         ),
@@ -274,6 +287,7 @@ const registerNativeDispatchMetadataCommand = (
         .optional()
         .describe("Load or update the local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: async ({ args, options }) =>
@@ -287,6 +301,7 @@ const registerNativeDispatchMetadataCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -333,6 +348,7 @@ const registerNativeUiActionCommand = (
         .default(500)
         .describe("Maximum returned graph edges"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: async ({ args, options }) =>
@@ -351,6 +367,7 @@ const registerNativeUiActionCommand = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -375,6 +392,7 @@ const registerNativeApiCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -388,6 +406,7 @@ const registerNativeApiCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -418,6 +437,7 @@ const registerAnnotationCommand = (
         .optional()
         .describe("Inline entry comment; empty text clears it"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -440,6 +460,7 @@ const registerAnnotationCommand = (
             undefined,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),

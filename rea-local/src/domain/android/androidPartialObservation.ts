@@ -3,6 +3,7 @@ import { z } from "zod";
 import { digestSchema } from "../digests.js";
 import { jsonObjectSchema, jsonValueSchema } from "../jsonValue.js";
 import { localPathStringSchema } from "../localPath.js";
+import { APK_CONTAINER_FORMATS } from "./androidContainerFormat.js";
 
 const operationSchema = z.enum([
   "inspect_android_package",
@@ -20,7 +21,7 @@ export const androidPartialObservationSchema = z.strictObject({
     selected_path: localPathStringSchema,
     path: localPathStringSchema,
     sha256: digestSchema,
-    format: z.literal("apk"),
+    format: z.enum(APK_CONTAINER_FORMATS),
   }),
   provider_facts: z.strictObject({
     jar_sha256: digestSchema.nullable(),

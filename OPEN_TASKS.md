@@ -30,8 +30,9 @@ Open work on `main` following PR #1 and the field tests.
    - [x] Make `list_strings`/`search_strings` cover the DEX string pool (post-analysis pool definition, `align` markers excluded);
    - [x] Document that Ghidra's DEX memory is loader-owned: `.dex` bytes read back, but file-offset mapping is explicitly rejected;
    - [x] Add a real-Ghidra test (`npm run verify:ghidra:dex`) and docs (`docs/ghidra-dex.md`).
-5. **DEX inside an APK** (not started):
-   - Support analyzing `classesN.dex` directly inside APK containers without manual pre-extraction.
+5. **DEX inside an APK** (implemented on `main`):
+   - [x] `container#member` fragment targeting (`/path/App.apk#classes2.dex`) at the generic binary/session layer (`parseBinaryTarget` → `ContainerDexTarget.ts`): ZIP container verification, top-level `.dex` member lookup, digest-reused staging beside the container (or MCP `staging_dir` / CLI `--staging-dir`), Dalvik classification, `container_selection` provenance on the resolved target.
+   - [x] Boundary tests in `tests/boundary/filesystem/binaryTarget.test.ts`; documented in `docs/android-analysis.md`, `docs/cli.md` and `docs/ghidra-dex.md`. The Android-specific `inspect_android_*` operations keep whole-APK semantics.
 
 ## REA+ gaps found in the WHOOP test
 
@@ -40,7 +41,24 @@ Open work on `main` following PR #1 and the field tests.
 7. **`inspect-android-class` / `inspect-android-method`:**
    - Show annotation values (e.g., Retrofit API paths) and static field initial values.
 8. **Android package formats and validation:**
-   - XAPK, split-APK bundles, and APK signature verification.
+   - XAPK: done. `.xapk` containers are admitted by all five Android
+     operations (`APK_CONTAINER_FORMATS`); `AndroidXapkBundle.ts` validates the
+     top-level `manifest.json` + `base.apk` shape, composes a stored-entry
+     4 GiB-capped `bundle.apk` (base entries verbatim, split `*.dex` entries
+     merged under `splits/<member>/<name>` colliding aliases), retires staged
+     members, and records the merge scope in Evidence limitations. Round-trip
+     tests: `tests/boundary/process/androidXapkBundle.test.ts`. A `.aab` and
+     loose split-APK sets (directories, `.apks`) remain unsupported forms.
+   - Split-APK bundles: documented-only for now. ADB `pull_adb_package` already
+     pulls the complete split set digested per file; a directory/`.apks`
+     admission flow would be the natural follow-up once a caller owns one.
+   - APK signature verification: not implemented, deliberately. v1/v2/v3
+     schemes mean real crypto (message digests, RSA/ECDSA, byte-range offsets
+     over signed regions up through the APK Signing Block) whose honest home is
+     a dedicated adapter with its own Evidence authority, not jadx's; today
+     `inspect_android_package` reports signing as `not_performed` and the
+     signature blocks stay visible to inventory/extraction. Recommend building
+     it only when a caller task actually needs tamper/lift detection.
 9. **Android string constants and bytecode searching:**
    - Support searching string constants and Dalvik bytecode across classes and methods.
 10. **`inspect-jvm-artifact` duplicate entry handling:**

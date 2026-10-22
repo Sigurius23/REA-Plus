@@ -11,6 +11,7 @@ import {
   directAnalysisOptions,
   formatSelectionOption,
   providerSelectionOption,
+  stagingDirSelectionOption,
 } from "./options.js";
 import type { CliInstance } from "./types.js";
 import { runCliJavaScriptApplicationAnalysis } from "./javascriptApplicationAnalysis.js";
@@ -44,6 +45,7 @@ const registerOverviewCommands = (
       .optional()
       .describe("Load and update a local analysis snapshot"),
     "target-format": formatSelectionOption,
+    "staging-dir": stagingDirSelectionOption,
     provider: providerSelectionOption,
   });
   cli.command(CLI_COMMANDS.analyze, {
@@ -80,6 +82,7 @@ const registerOverviewCommands = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       );
@@ -102,6 +105,7 @@ const registerOverviewCommands = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -137,6 +141,7 @@ const registerDecompileCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -157,6 +162,7 @@ const registerDecompileCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -216,6 +222,7 @@ const registerXrefsCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -236,6 +243,7 @@ const registerXrefsCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -271,6 +279,7 @@ const registerTraceCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -292,6 +301,7 @@ const registerTraceCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -327,6 +337,7 @@ const registerFunctionCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -347,6 +358,7 @@ const registerFunctionCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -382,6 +394,7 @@ const registerInstructionsCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -402,6 +415,7 @@ const registerInstructionsCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),
@@ -449,6 +463,7 @@ const registerSearchCommand = (
         .optional()
         .describe("Load and update a local analysis snapshot"),
       "target-format": formatSelectionOption,
+      "staging-dir": stagingDirSelectionOption,
       provider: providerSelectionOption,
     }),
     run: ({ args, options }) =>
@@ -473,6 +488,7 @@ const registerSearchCommand = (
             options.snapshot,
             options.provider,
             options["target-format"],
+            options["staging-dir"],
           ),
         ),
       ),

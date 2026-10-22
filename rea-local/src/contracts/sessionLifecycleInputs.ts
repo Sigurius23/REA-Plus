@@ -24,9 +24,20 @@ const binaryTargetPathSchema = localPathStringSchema
     "Absolute local filesystem path for the analysis target; relative paths are rejected.",
   );
 
+/** Caller-supplied staging root for container-member extraction; must be absolute. */
+const stagingDirSchema = localPathStringSchema
+  .refine(isAbsolute, {
+    message:
+      "staging_dir must be an absolute local directory path (for example /tmp/rea/staging or C:\\rea\\staging)",
+  })
+  .describe(
+    "Absolute local directory that receives container members extracted for member-target opens (path like /path/app.apk#classes.dex); omission stages beside the container.",
+  );
+
 /** Input contract for opening a target with an optional staged snapshot. */
 export const openBinaryInputSchema = z.strictObject({
   path: binaryTargetPathSchema,
+  staging_dir: stagingDirSchema.optional(),
   format: executableFormatHintSchema
     .optional()
     .describe(

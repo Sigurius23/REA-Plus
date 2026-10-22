@@ -22,6 +22,8 @@ export interface BinarySessionOpenOptions {
   readonly signal?: AbortSignal;
   readonly targetKind?: BinaryTarget["kind"];
   readonly formatHint?: ExecutableFormatHint;
+  /** Staging root for container-member extraction; unset stages beside the container. */
+  readonly stagingDir?: string;
   readonly snapshot?: AnalysisSnapshot;
   readonly providerId?: AnalysisProviderSelector;
 }
@@ -72,6 +74,9 @@ export const resolveSessionOpen = async (
     ...(options.formatHint === undefined
       ? {}
       : { formatHint: options.formatHint }),
+    ...(options.stagingDir === undefined
+      ? {}
+      : { stagingDir: options.stagingDir }),
     ...(options.signal === undefined ? {} : { signal: options.signal }),
   });
   if (!parsed.ok) return parsed;

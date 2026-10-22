@@ -19,6 +19,13 @@ import type { BinaryTarget } from "../domain/binaryTargetTypes.js";
 import { err, ok, type Result } from "../domain/result.js";
 import { readMipsElfAbiFlags } from "./MipsElfAbiFlags.js";
 import {
+  isExistingRegularFile,
+  extractContainerDexTarget,
+  splitContainerFragment,
+  validateMemberSelector,
+  type ContainerDexResolution,
+} from "./ContainerDexTarget.js";
+import {
   resolveAppBundleExecutable,
   type ResolvedAppBundle,
 } from "./AppBundleExecutable.js";
@@ -45,6 +52,8 @@ export interface BinaryTargetResolverOptions {
   readonly hostArchitecture?: NodeJS.Architecture;
   readonly targetKind?: BinaryTarget["kind"];
   readonly formatHint?: ExecutableFormatHint;
+  /** Staging root for container-member extraction; unset uses a sibling directory. */
+  readonly stagingDir?: string;
   readonly signal?: AbortSignal;
 }
 
@@ -62,6 +71,33 @@ export const parseBinaryTarget = async (
   const cwd = options.cwd ?? process.cwd();
   const hostArchitecture = options.hostArchitecture ?? process.arch;
   const { targetKind, formatHint, signal } = options;
+  const fragment = splitContainerFragment(input);
+  if (fragment !== null) {
+    const containerInput = isAbsolute(fragment.container)
+      ? fragment.container
+      : resolve(cwd, fragment.container);
+    if (await isExistingRegularFile(containerInput)) {
+      const member = validateMemberSelector(fragment.member, input);
+      if (!member.ok) return member;
+      // Container classification ignores targetKind/formatHint: the route
+      // needs a ZIP-package archive target, unrelated to the dex member.
+      const container = await parseBinaryTarget(containerInput, {
+        cwd,
+        hostArchitecture,
+        ...(signal === undefined ? {} : { signal }),
+      });
+      if (!container.ok) return container;
+      return resolveContainerDexTarget(container.value, {
+        inputPath: input,
+        member: fragment.member,
+        stagingDir: options.stagingDir,
+        hostArchitecture,
+        ...(signal === undefined ? {} : { signal }),
+      });
+    }
+    // No such container file: fall through so filenames containing `#`
+    // still resolve verbatim through the whole-string route.
+  }
   const candidate = isAbsolute(input) ? input : resolve(cwd, input);
   try {
     throwIfTargetResolutionCancelled(signal);
@@ -156,6 +192,42 @@ export const parseBinaryTarget = async (
       ),
     );
   }
+};
+
+/**
+ * Validate a resolved container target and extract the selected DEX member out
+ * of it. Only ZIP-package formats admit member selection; other container
+ * kinds return a typed rejection describing what member selection needs.
+ */
+const resolveContainerDexTarget = (
+  container: BinaryTarget,
+  rest: Pick<
+    ContainerDexResolution,
+    "inputPath" | "member" | "stagingDir" | "hostArchitecture" | "signal"
+  >,
+): Promise<
+  Result<BinaryTarget, BinaryTargetError | AnalysisCancelledError>
+> => {
+  if (container.kind !== "archive" || !isZipPackageFormat(container.format))
+    return Promise.resolve(
+      err(
+        new BinaryTargetError(
+          rest.inputPath,
+          `Container member selection requires a ZIP-based container; ${JSON.stringify(container.path)} is a ${container.kind} ${JSON.stringify(container.format)}.`,
+        ),
+      ),
+    );
+  return extractContainerDexTarget({
+    containerPath: container.path,
+    containerSha256: container.sha256,
+    format: container.format,
+    member: rest.member,
+    stagingDir: rest.stagingDir,
+    hostArchitecture: rest.hostArchitecture,
+    sourcePath: container.sourcePath ?? container.path,
+    inputPath: rest.inputPath,
+    ...(rest.signal === undefined ? {} : { signal: rest.signal }),
+  });
 };
 
 const filesystemErrorCode = (cause: Error): string | undefined => {

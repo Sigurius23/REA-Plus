@@ -23,6 +23,7 @@ import {
   snapshotAndroidEngine,
   snapshotAndroidTarget,
 } from "./AndroidTargetSnapshot.js";
+import { composeAndroidXapkBundle } from "./AndroidXapkBundle.js";
 import { hashStableFile } from "../filesystem/StableFileHash.js";
 import { RegularFileChangedError } from "../filesystem/RegularFile.js";
 import {
@@ -216,6 +217,8 @@ interface RetainedSession {
   readonly snapshot: string;
   readonly jarHash: string;
   readonly bridgeHash: string;
+  /** Admission-scope notes from composing an XAPK into one analysis image. */
+  readonly mergeLimitations: readonly string[];
 }
 
 /** One serialized, immutable APK session per REA+ instance, retired on idle or shutdown. */
@@ -328,11 +331,11 @@ export class JadxProvider implements AndroidAnalysisPort {
     let root: PrivateRuntimeRoot | undefined;
     let session: JadxSession | undefined;
     try {
-      if (target.format !== "apk")
+      if (target.format !== "apk" && target.format !== "xapk")
         throw new AnalysisCapabilityUnavailableError(
           "jadx",
           request.operation,
-          `Target ${target.path} is ${target.format}; provide one standalone APK.`,
+          `Target ${target.path} is ${target.format}; provide one standalone APK or XAPK container.`,
         );
       const configuration = await resolveJadxConfigurationInputs(
         this.environment,
@@ -397,13 +400,29 @@ export class JadxProvider implements AndroidAnalysisPort {
           request.operation,
           signal,
         );
-        const snapshot = await snapshotAndroidTarget(
-          target.path,
-          target.sha256,
-          root.path,
-          request.operation,
-          signal,
-        );
+        let mergeLimitations: readonly string[] = [];
+        let snapshot: string;
+        if (target.format === "xapk") {
+          // jadx only admits one APK, so XAPK admission composes the merged
+          // analysis image inside this session's private runtime root; the
+          // container digest keeps the session key distinct from plain APKs.
+          const bundle = await composeAndroidXapkBundle(
+            target,
+            root.path,
+            request.operation,
+            signal,
+          );
+          snapshot = bundle.path;
+          mergeLimitations = bundle.limitations;
+        } else {
+          snapshot = await snapshotAndroidTarget(
+            target.path,
+            target.sha256,
+            root.path,
+            request.operation,
+            signal,
+          );
+        }
         const bridge = join(root.path, "ReaJadxBridge.java");
         await copyFile(BRIDGE_SOURCE, bridge);
         await chmod(bridge, 0o400);
@@ -441,6 +460,7 @@ export class JadxProvider implements AndroidAnalysisPort {
           snapshot,
           jarHash: engine.sha256,
           bridgeHash,
+          mergeLimitations,
         };
       }
       root = retained.root;
@@ -454,6 +474,7 @@ export class JadxProvider implements AndroidAnalysisPort {
           jarHash: retained.jarHash,
           bridgeHash: retained.bridgeHash,
           signal,
+          limitations: retained.mergeLimitations,
         }),
       );
       signal.throwIfAborted();

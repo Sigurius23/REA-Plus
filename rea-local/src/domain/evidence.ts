@@ -47,6 +47,7 @@ const subjectSchema = z.object({
     "zip",
     "ipa",
     "apk",
+    "xapk",
     "msix",
     "appx",
     "hap",

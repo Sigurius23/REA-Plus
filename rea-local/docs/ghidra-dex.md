@@ -3,7 +3,11 @@
 REA+ admits Android DEX files as Dalvik binary targets and analyzes them through
 the bring-your-own Ghidra adapter. The real-Ghidra lane exercises actual
 disassembly and inventory operations on a small DEX built from Java source with
-`javac` and `d8`; no Android SDK runtime is required.
+`javac` and `d8`; no Android SDK runtime is required. A DEX member inside an APK
+can also be opened directly through the `container#member` fragment
+(`/path/App.apk#classes2.dex`); REA+ stages the member beside the container (or
+under MCP `staging_dir` / CLI `--staging-dir`) and imports the staged bytes. See
+[Android DEX member targeting](android-analysis.md#open-one-dex-member-inside-an-apk-container).
 
 ## Forced import
 

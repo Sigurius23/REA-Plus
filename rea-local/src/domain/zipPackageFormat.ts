@@ -3,6 +3,7 @@ export const ZIP_PACKAGE_FORMATS = [
   "zip",
   "ipa",
   "apk",
+  "xapk",
   "msix",
   "appx",
   "hap",
@@ -45,6 +46,9 @@ export const zipPackageFormatForPath = (
   if (lower.endsWith(".ipa")) return "ipa";
   // An Android App Bundle is a ZIP archive, not a standalone APK.
   if (lower.endsWith(".apk")) return "apk";
+  // An XAPK bundles a base APK with split APKs; admitting it as an APK would
+  // hide the merge step the Android provider performs on its members.
+  if (lower.endsWith(".xapk")) return "xapk";
   if (lower.endsWith(".msix") || lower.endsWith(".msixbundle")) return "msix";
   if (lower.endsWith(".appx") || lower.endsWith(".appxbundle")) return "appx";
   if (lower.endsWith(".hap")) return "hap";
