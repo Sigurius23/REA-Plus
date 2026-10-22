@@ -101,6 +101,8 @@ export interface GhidraHeadlessLauncherOptions {
   /** Select the admitted 16-bit real-mode MZ import instead of auto-detection. */
   readonly dosMz?: true;
   readonly dosCom?: true;
+  /** Forced Dalvik language committed by the DEX-header analysis profile. */
+  readonly dex?: string;
   /** Explicit import language committed by the analysis profile. */
   readonly languageOverride?: GhidraLanguageOverride;
   /** Caller seeds committed by the analysis profile, applied before analysis. */
@@ -201,6 +203,7 @@ export class GhidraHeadlessLauncher implements GhidraLauncher {
         ...(this.options.dosMz === undefined
           ? {}
           : { dosMz: this.options.dosMz }),
+        ...(this.options.dex === undefined ? {} : { dex: this.options.dex }),
         ...(this.options.languageOverride === undefined
           ? {}
           : { languageOverride: this.options.languageOverride }),
@@ -411,6 +414,8 @@ export interface GhidraHeadlessArgumentOptions {
   readonly psp?: true;
   readonly dosMz?: true;
   readonly dosCom?: true;
+  /** Forced Dalvik language id for a DEX import, committed from the header version. */
+  readonly dex?: string;
   readonly languageOverride?: GhidraLanguageOverride;
   /** Canonical seed snapshot passed to the pre-analysis seed script. */
   readonly seedPath?: string;
@@ -437,10 +442,19 @@ export const ghidraHeadlessArguments = (
     );
   if (
     override !== undefined &&
-    (options.dosMz === true || options.dosCom === true)
+    (options.dosMz === true ||
+      options.dosCom === true ||
+      options.dex !== undefined)
   )
     throw new Error(
-      "A Ghidra language override cannot be combined with a DOS import.",
+      "A Ghidra language override cannot be combined with a DOS or DEX import.",
+    );
+  if (
+    options.dex !== undefined &&
+    (options.psp === true || options.dosMz === true || options.dosCom === true)
+  )
+    throw new Error(
+      "A DEX import cannot be combined with a PSP or DOS import.",
     );
   return [
     options.projectRoot,
@@ -476,15 +490,24 @@ export const ghidraHeadlessArguments = (
               "-cspec",
               "default",
             ]
-          : override !== undefined
+          : options.dex !== undefined
             ? [
+                "-loader",
+                "DexLoader",
                 "-processor",
-                override.languageId,
-                ...(override.compilerSpecId === undefined
-                  ? []
-                  : ["-cspec", override.compilerSpecId]),
+                options.dex,
+                "-cspec",
+                "default",
               ]
-            : []),
+            : override !== undefined
+              ? [
+                  "-processor",
+                  override.languageId,
+                  ...(override.compilerSpecId === undefined
+                    ? []
+                    : ["-cspec", override.compilerSpecId]),
+                ]
+              : []),
     "-readOnly",
     "-deleteProject",
     "-log",
@@ -506,6 +529,15 @@ export const ghidraHeadlessArguments = (
           "-preScript",
           scriptPath.join(bridgeDirectory, GHIDRA_SEED_SCRIPT),
           options.seedPath,
+        ]),
+    // Ghidra creates Dalvik methods during auto-analysis; redefining the
+    // string pool before analysis would erase its function discovery. Pool
+    // definition therefore runs after analysis, before the session serves.
+    ...(options.dex === undefined
+      ? []
+      : [
+          "-postScript",
+          scriptPath.join(bridgeDirectory, "ReaGhidraPrepareDex.java"),
         ]),
     ...((options.platform ?? process.platform) === "win32"
       ? []

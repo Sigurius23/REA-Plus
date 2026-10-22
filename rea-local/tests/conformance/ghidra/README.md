@@ -1,7 +1,10 @@
 # Ghidra conformance corpus
 
 These source-owned fixtures are compiled at verification time; generated
-binaries and Ghidra projects are never committed.
+binaries and Ghidra projects are never committed. The DEX lane is the
+exception: `tests/fixtures/dex/` commits its source (`Fixture.java`) next to
+its compiled `classes.dex` output, and `npm run verify:ghidra:dex` imports the
+committed bytes so the lane needs no toolchain beyond Ghidra and its JDK.
 
 - `inventory.c` produces separate x86-64 debug and stripped ELF executables.
   It covers imports, an external `puts` function, linker thunks, source symbols,

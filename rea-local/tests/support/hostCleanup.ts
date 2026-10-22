@@ -46,12 +46,15 @@ const expectHostCleanupReport = (report: {
   expect(typeof reason).toBe("string");
   if (typeof reason !== "string")
     throw new Error("cleanup report omitted reason");
+  // Darwin additionally permits a transient kernel refusal of the
+  // KERN_PROCARGS2 read for a live candidate (errno, e.g. EINVAL 22 while the
+  // process is being replaced); Linux permits only the named environment
+  // errno strings. These are the same class of host-side read flake.
   const category =
     process.platform === "linux"
       ? "environment_errno_(?:EACCES|EPERM)"
-      : "environment_unavailable";
-  const candidate =
-    "[1-9][0-9]*=(?:environment_unavailable|environment_errno_(?:EACCES|EPERM))";
+      : "(?:environment_unavailable|sysctl_errno_[0-9]+)";
+  const candidate = `[1-9][0-9]*=${category}`;
   expect(reason).toMatch(
     new RegExp(
       `^process ownership token could not be read for [1-9][0-9]* live process\\(es\\): ` +

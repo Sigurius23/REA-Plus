@@ -28,12 +28,17 @@ verification coverage. Calls use one worker and provider deadlines; optional
 and no emulator is required.
 
 For the bytecode itself, extract a `classesN.dex` member and open it with the
-[radare2 provider](https://github.com/morluto/rea/blob/main/docs/radare2-provider.md). DEX targets use
+[radare2 provider](https://github.com/morluto/rea/blob/main/docs/radare2-provider.md), or use
+`open_binary` with `provider_id: "ghidra"` for full Ghidra DEX decompilation
+([Ghidra DEX guide](https://github.com/morluto/rea/blob/main/docs/ghidra-dex.md)). DEX targets use
 the `aa` analysis level by default, name methods from their class and
 signature, report Dalvik registers rather than stack locals, and expose
 addresses that are offsets in that one DEX file. They are not comparable with
 Ghidra's DEX addresses or another `classesN.dex` of the same APK. A DEX inside
-an APK has to be extracted first.
+an APK has to be extracted first. Ghidra DEX additionally decompiles to C-like
+pseudocode and reports function bodies as address ranges; it imports the
+snapshot with Ghidra's `DexLoader` and rejects other binary formats under that
+profile.
 
 Manifest entries and decompiled text are static observations, not execution or
 policy enforcement. Incoming references are recovered static relationships;

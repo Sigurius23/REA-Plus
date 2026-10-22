@@ -134,17 +134,24 @@ const fixturePid = async (root: string): Promise<number> => {
   return pid;
 };
 
-const waitForFinalization = async (root: string): Promise<number> => {
+const waitForFinalization = async (
+  root: string,
+  deadlineMs = 7_500,
+): Promise<number> => {
   // The fixture writes the PID before it can receive SIGTERM, so once the
   // marker exists the PID file is complete.
-  await waitFor("the finalization fixture to receive SIGTERM", async () => {
-    try {
-      await access(join(root, "sigterm-received"));
-      return true;
-    } catch {
-      return false;
-    }
-  });
+  await waitFor(
+    "the finalization fixture to receive SIGTERM",
+    async () => {
+      try {
+        await access(join(root, "sigterm-received"));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    deadlineMs,
+  );
   return fixturePid(root);
 };
 
@@ -488,7 +495,10 @@ captureTest(
       if (cli.exitCode === null && cli.signalCode === null) cli.kill("SIGKILL");
       await cliClosed;
     });
-    const cliFixturePid = await waitForFinalization(cliRoot);
+    // Compiled-CLI startup is load-sensitive under parallel suite runs;
+    // only the grace-latency assertions below are timing commitments, so
+    // give the startup wait its own larger deadline.
+    const cliFixturePid = await waitForFinalization(cliRoot, 15_000);
     const cliStarted = Date.now();
     cli.kill("SIGINT");
     const cliExit = await cliClosed;
@@ -539,7 +549,10 @@ captureTest(
       },
       { signal: controller.signal },
     );
-    const mcpFixturePid = await waitForFinalization(mcpRoot);
+    // Compiled-CLI and server startup is load-sensitive under parallel
+    // suite runs; only the grace-latency assertions below are timing
+    // commitments, so give the startup wait its own larger deadline.
+    const mcpFixturePid = await waitForFinalization(mcpRoot, 15_000);
     const mcpStarted = Date.now();
     controller.abort(new Error("cancel finalization acceptance fixture"));
     await expect(
@@ -556,5 +569,7 @@ captureTest(
       "MCP cancellation does not wait for the grace interval",
     ).toBeLessThan(8_000);
   },
-  20_000,
+  // Two compiled workflows plus a shared longer startup budget under
+  // parallel suite load; grace-latency commitments remain bounded separately.
+  30_000,
 );

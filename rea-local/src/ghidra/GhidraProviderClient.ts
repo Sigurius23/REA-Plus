@@ -53,6 +53,7 @@ import {
   isGhidraPspTarget,
   GHIDRA_PSP_LIMITATIONS,
 } from "./GhidraPspProfile.js";
+import { dalvikLanguageForDex } from "./GhidraDexProfile.js";
 import { ghidraPspExtensionSchema } from "./GhidraPspExtension.js";
 import { unverifiedGhidraBuildLimitation } from "./GhidraInstallationPolicy.js";
 import { GhidraHeadlessLauncher } from "./GhidraLauncher.js";
@@ -474,6 +475,9 @@ export const createGhidraProviderClient = (input: {
         : {}),
       ...(target.format === "dos-mz" ? { dosMz: true } : {}),
       ...(target.format === "dos-com" ? { dosCom: true } : {}),
+      ...(target.format === "dex"
+        ? { dex: dalvikLanguageForDex(target.dex) }
+        : {}),
       ...(languageOverride === undefined ? {} : { languageOverride }),
       ...(seeds === undefined ? {} : { analysisSeeds: seeds }),
       platform: installation.platform,
@@ -495,14 +499,19 @@ export const createGhidraProviderClient = (input: {
           expectedLanguageId: "x86:LE:16:Real Mode",
           expectedCompilerSpecId: "default",
         }
-      : languageOverride === undefined
-        ? {}
-        : {
-            expectedLanguageId: languageOverride.languageId,
-            ...(languageOverride.compilerSpecId === undefined
-              ? {}
-              : { expectedCompilerSpecId: languageOverride.compilerSpecId }),
-          }),
+      : target.format === "dex"
+        ? {
+            expectedLanguageId: dalvikLanguageForDex(target.dex),
+            expectedCompilerSpecId: "default",
+          }
+        : languageOverride === undefined
+          ? {}
+          : {
+              expectedLanguageId: languageOverride.languageId,
+              ...(languageOverride.compilerSpecId === undefined
+                ? {}
+                : { expectedCompilerSpecId: languageOverride.compilerSpecId }),
+            }),
     ...(psp
       ? {
           expectedLanguageId: "Allegrex:LE:32:default",

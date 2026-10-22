@@ -13,6 +13,11 @@ import { ProviderAdapterError } from "../domain/providerAdapterError.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
 import { err, ok, type Result } from "../domain/result.js";
 import type { GhidraInstallationInspection } from "./GhidraInstallation.js";
+import {
+  DALVIK_COMPILER_SPEC_ID,
+  GHIDRA_DEX_LOADER,
+  dalvikLanguageForDex,
+} from "./GhidraDexProfile.js";
 import { ghidraMipsProfileParameters } from "./GhidraMipsProfile.js";
 
 import {
@@ -72,6 +77,17 @@ export const resolveGhidraAnalysisProfile = async (
   const dosMz = target.format === "dos-mz";
   const dosCom = target.format === "dos-com";
   const dos = dosMz || dosCom;
+  const dex = target.format === "dex" ? target : null;
+  if (dex !== null && languageOverride !== undefined)
+    return Promise.resolve(
+      err(
+        new AnalysisUnsupportedTargetError(
+          "resolve_analysis_profile",
+          target.path,
+          "REA_GHIDRA_LANGUAGE_ID cannot override the DEX-header Dalvik import.",
+        ),
+      ),
+    );
   // DOS imports already force an admitted loader, language, and context.
   if (dos && languageOverride !== undefined)
     return Promise.resolve(
@@ -136,18 +152,30 @@ export const resolveGhidraAnalysisProfile = async (
           ? "MzLoader"
           : dosCom
             ? "BinaryLoader"
-            : "auto-from-header",
+            : dex !== null
+              ? GHIDRA_DEX_LOADER
+              : "auto-from-header",
         language_id: dos
           ? "x86:LE:16:Real Mode"
-          : (languageOverride?.languageId ?? "auto-from-header"),
-        compiler_spec_id: dos
-          ? "default"
-          : languageOverride === undefined
-            ? "auto-default"
-            : (languageOverride.compilerSpecId ?? "language-default"),
+          : dex !== null
+            ? dalvikLanguageForDex(dex.dex)
+            : (languageOverride?.languageId ?? "auto-from-header"),
+        compiler_spec_id:
+          dos || dex !== null
+            ? DALVIK_COMPILER_SPEC_ID
+            : languageOverride === undefined
+              ? "auto-default"
+              : (languageOverride.compilerSpecId ?? "language-default"),
         ...(languageOverride === undefined
           ? {}
           : { language_selection: "configured-v1" }),
+        ...(dex !== null
+          ? {
+              dalvik_dex_version: dex.dex.version,
+              dalvik_language_source: "dex-header-version-v1",
+              string_inventory_evidence: "dex-string-pool-defined-data-v1",
+            }
+          : {}),
         ...(dos
           ? {
               load_segment: "0x1000",

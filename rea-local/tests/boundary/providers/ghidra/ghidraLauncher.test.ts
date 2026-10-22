@@ -205,7 +205,17 @@ describe("Ghidra configured import language and seeds", () => {
         dosMz: true,
         languageOverride: { languageId: "x86:LE:32:default" },
       }),
-    ).toThrow(/cannot be combined with a DOS import/u);
+    ).toThrow(/cannot be combined with a DOS or DEX import/u);
+  });
+
+  it("never combines a configured language with a DEX import", () => {
+    expect(() =>
+      ghidraHeadlessArguments({
+        ...base,
+        dex: "Dalvik:LE:32:dalvik_default_target",
+        languageOverride: { languageId: "x86:LE:32:default" },
+      }),
+    ).toThrow(/cannot be combined with a DOS or DEX import/u);
   });
 
   it.each(["darwin", "win32"] as const)(

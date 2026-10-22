@@ -1743,15 +1743,23 @@ public final class ReaGhidraBridge extends HeadlessScript {
     private List<InventoryItem> strings() throws Exception {
         if (stringInventory != null) {
             return stringInventory;
-        }
-        List<InventoryItem> result = new ArrayList<>();
-        DataIterator dataItems = currentProgram.getListing().getDefinedData(true);
-        while (dataItems.hasNext()) {
-            monitor.checkCancelled();
-            Data data = dataItems.next();
-            if (!data.hasStringValue()) {
-                continue;
-            }
+        }		List<InventoryItem> result = new ArrayList<>();
+		// Ghidra's DEX loader defines pseudo-string "align" markers inside the
+		// method_bytecode block. Pool strings are the only admitted DEX strings;
+		// ReaGhidraPrepareDex defines them in the .dex block.
+		MemoryBlock dexBlock = currentProgram.getMemory().getBlock(".dex");
+		boolean restrictToDex = dexBlock != null
+			&& currentProgram.getLanguageID().getIdAsString().startsWith("Dalvik:");
+		DataIterator dataItems = currentProgram.getListing().getDefinedData(true);
+		while (dataItems.hasNext()) {
+			monitor.checkCancelled();
+			Data data = dataItems.next();
+			if (!data.hasStringValue()) {
+				continue;
+			}
+			if (restrictToDex && !dexBlock.contains(data.getAddress())) {
+				continue;
+			}
             StringDataInstance instance = StringDataInstance.getStringDataInstance(data);
             String value = instance.getStringValue();
             if (value == null) {

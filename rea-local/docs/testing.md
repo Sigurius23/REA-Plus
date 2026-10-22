@@ -789,6 +789,18 @@ truncation constraint, while leading-zero coordinates still resolve correctly.
 It has the same Ghidra/JDK prerequisites as the MZ lane. Neither lane claims DOS
 runtime or PC-98 device execution.
 
+## DEX Ghidra analysis
+
+`npm run verify:ghidra:dex` imports the committed source-built DEX fixture
+(`tests/fixtures/dex/`, one class produced from `Fixture.java` with `javac
+--release 17` and `d8 --release --min-api 21`) through the compiled module and
+the resident bridge. It checks the profile-committed Dalvik language from the
+DEX header version, one-function-per-method discovery, real decompilation,
+the string-pool preparation's defined-data coverage, DEX header byte reads
+from the loader-mapped `.dex` block, and honest rejection of file-offset
+mapping for a DEX import, with CLI/MCP parity and owned cleanup. Windows P0
+remains outside this lane; see [Ghidra DEX analysis](ghidra-dex.md).
+
 ## Apple Interface Builder archives
 
 `npm run verify:interface-builder` compiles the source-owned AppKit XIB into a

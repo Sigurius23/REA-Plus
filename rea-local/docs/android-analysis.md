@@ -196,6 +196,12 @@ particular DEX file: they do not match Ghidra's DEX addresses or another
 appear as imports. Opening a DEX inside an APK is not supported yet; extract
 the member first.
 
+The same DEX file also imports into the [Ghidra provider](ghidra-dex.md): REA+
+forces Ghidra's `DexLoader` with the Dalvik language selected from the DEX
+header version. Ghidra's Dalvik addresses differ from these radare2 offsets,
+and Ghidra's DEX memory is not backed by the admitted file, so byte reads and
+file offsets stay unavailable there.
+
 ## Resource and lifecycle limits
 
 REA+ retains one serialized session with private, immutable APK, engine JAR and

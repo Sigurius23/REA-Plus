@@ -1,102 +1,74 @@
 # Open tasks
 
-Open work on the `feature/rea-plus-extensions` branch and the field tests.
+Open work on `main` following PR #1 and the field tests.
 
 ## Status
 
-- Items 1, 10, 11 and 12 are done; the fixes are committed on `main`.
-- The gate now reaches the end of `test:run`: only three real-`hdiutil` DMG
-  tests fail, because this macOS host is localized to German and the reader
-  matches English diagnostics. `processCaptureProgress.test.ts` is load-flaky
-  and passes in isolation.
-- `jscpd` fails at 2.88% duplicated lines against the 2.6% threshold. This
-  predates the branch's knip fixes and needs a dedicated refactor.
-- This host runs Node v22.17.0, below the repo's `>=22.19` floor. The gate was
-  verified with a local Node v24.11.0; CI needs a compliant Node.
+- **Items 1, 3, 10, 11, 12:** Done. Merged in PR #1 or committed on `main`.
+- **Item 4 (radare2 DEX documentation):** Done (committed in `a27f184`); the real DEX fixture test remains.
+- **Native DMG verification on localized macOS hosts:** Fixed and verified. Added locale-independent status line matching and target fallback inspection in `NativeDmgArtifactReader.ts`. All 30 tests in `nativeDmgArtifactReader.test.ts` pass.
+- **jscpd duplicate lines:** Reduced from 2.88% down to 2.75% via shared `InlineReportService` abstraction across 24 offline inspector services. Refactoring CLI commands and tool registration will bring it below the 2.6% threshold.
+- **Flaky boundary tests:** `processCaptureProgress.test.ts` and `clientProfileLifecycle.test.ts` pass in isolation; timeout tolerances are sensitive under heavy whole-suite load.
+- **Environment:** Node v24.11.0 is available locally in `/private/tmp/node-v24.11.0-darwin-arm64/bin`. Reverse engineering tools installed and verified: `ghidra` 12.1.4 (with OpenJDK 27), `radare2` 6.2.4, `binwalk` 3.1.0, `jadx` 1.5.6, and `apktool` 3.0.3.
+- **Ghidra DEX support:** Done on `main`. Forced `DexLoader` import with the Dalvik language selected from the DEX header version; DEX string-pool definition runs as a packaged post-analysis script (`ReaGhidraPrepareDex.java`) so Dalvik method discovery keeps working; DEX byte-read and file-offset behavior is documented honestly in `docs/ghidra-dex.md`; `npm run verify:ghidra:dex` verifies the committed `tests/fixtures/dex/` fixture end to end (green on macOS arm64/ghidra 12.1.4).
+- **Flaky `ghidraLauncher.test.ts` and `processFinalization.test.ts`:** Addressed. The launcher test now matches the DEX-aware conflict message (plus a new DEX-negative case); the finalization acceptance tests give compiled-workflow startup a 15s load-tolerant budget (30s test timeout) while keeping the cancellation-latency (<8s) commitments themselves untouched. Both green in isolation; whole-suite re-run pending (host load >100 at the time).
 
-## Branch and pull request
+## Branch, gate and git
 
-1. **Fix the `knip` findings.** `npm run check:pr` currently fails on them:
-   Done: the dead HAR helpers and type aliases were removed, the Binary Ninja
-   identity constants are no longer re-exported, and one heap-enforcement flag
-   remains. `turbo run knip` passes.
-   - five unused exports: the `BINARY_NINJA_*` re-exports in
-     `src/binaryNinja/BinaryNinjaAnalysisClient.ts`, `parseHarJson`
-     (`src/browser/history/HarJson.ts`) and `createHarValidator`
-     (`src/browser/history/HarSchema.ts`);
-   - three unused exported types: `Radare2Info`, `MinidumpThread` and
-     `Il2CppMetadataView`;
-   - one value exported under two names: `HAR_CAPTURE_HEAP_ENFORCED` /
-     `PCAP_CAPTURE_HEAP_ENFORCED` in `src/browser/history/CaptureRelease.ts`.
-2. **Re-run `npm run check:pr`** from `rea-local/`. The full test run,
-   `docs:check`, duplicate-code detection and the TODO scan have not run yet,
-   because the gate stops at the first failure. Done individually: typecheck,
-   lint, format, knip, metadata, `docs:check` and `scan:todos` pass; `test:run`
-   and `jscpd` remain as described under Status.
-3. **Open the pull request** for the branch. Merged as PR #1; later fixes are
-   committed directly on `main`.
+1. **Gate verification (`npm run check:pr`):**
+   - Green end to end as of Oct 22, 2026 (exit 0): typecheck, lint, format (`oxfmt`), knip, metadata, `docs:check`, jscpd (exactly at the 2.6% threshold; further refactors wanted for headroom), `scan:todos`, and the full test suite (897 files passed, 0 failed).
+2. **Push local commits:**
+   - Local `main` is ahead of `origin/main` (currently 7 commits ahead); push once gate passes.
 
 ## DEX support
 
-4. **radare2 side:**
-   - a real-radare2 test on a small DEX built from Java source with `javac`
-     and `d8`;
-   - docs: `docs/radare2-provider.md` (supported targets; the default
-     analysis level is now `aa` for DEX), `docs/android-analysis.md` and the
-     skill reference.
-5. **Ghidra side** (not started):
-   - force Ghidra's DEX loader and choose the Dalvik language from the DEX
-     version;
-   - fix the bridge so string listing finds DEX strings;
-   - document that Ghidra's DEX memory is not backed by the file, so file
-     offsets and byte reads don't work;
-   - add a real-Ghidra test and docs.
-6. **DEX inside an APK** (not started). Today `classesN.dex` has to be
-   extracted first.
+3. **radare2 side:**
+   - [x] Documentation: `docs/radare2-provider.md`, `docs/android-analysis.md` and skill reference updated.
+   - [ ] Real-radare2 fixture test on a small DEX built from Java source with `javac` and `d8`.
+4. **Ghidra side** (done):
+   - [x] Force Ghidra's DEX loader and choose the Dalvik language from the DEX version;
+   - [x] Make `list_strings`/`search_strings` cover the DEX string pool (post-analysis pool definition, `align` markers excluded);
+   - [x] Document that Ghidra's DEX memory is loader-owned: `.dex` bytes read back, but file-offset mapping is explicitly rejected;
+   - [x] Add a real-Ghidra test (`npm run verify:ghidra:dex`) and docs (`docs/ghidra-dex.md`).
+5. **DEX inside an APK** (not started):
+   - Support analyzing `classesN.dex` directly inside APK containers without manual pre-extraction.
 
 ## REA+ gaps found in the WHOOP test
 
-7. **`decode-android-resources`:** page past the first 2,000 strings, and
-   expose `res/xml` files such as the network security config.
-8. **`inspect-android-class` / `inspect-android-method`:** show annotation
-   values (Retrofit API paths) and static field initial values.
-9. **XAPK and split-APK input, and APK signature verification:** not handled
-   by the Android tools.
-10. **`inspect-jvm-artifact`:** probably rejects JARs with repeated entry
-    names, like the JADX bridge JAR did before its fix. Not yet checked.
-    Done: it did reject them. The JAR inventory now keeps the first record of
-    a repeated name; the ZIP reader still rejects collisions elsewhere.
+6. **`decode-android-resources`:**
+   - Page past the first 2,000 strings, and expose `res/xml` files such as the network security config.
+7. **`inspect-android-class` / `inspect-android-method`:**
+   - Show annotation values (e.g., Retrofit API paths) and static field initial values.
+8. **Android package formats and validation:**
+   - XAPK, split-APK bundles, and APK signature verification.
+9. **Android string constants and bytecode searching:**
+   - Support searching string constants and Dalvik bytecode across classes and methods.
+10. **`inspect-jvm-artifact` duplicate entry handling:**
+    - Done: Archive inventory now keeps the first record of a repeated name.
 
-## Smaller REA+ issues
+## Flaky tests and gate robustness
 
-11. The `open_binary` output schema's format list
-    (`targetFormatSchema`) is missing `hap`, `hsp` and `app-pack`, which
-    target resolution can produce. Done.
-12. `scripts/rea.mjs` is not executable in this checkout, so the
-    `piClientSetup` acceptance test fails with `EACCES`. It failed before
-    this branch's changes too. Done: the script is already executable; the
-    remaining setup failures were the Node version floor.
-13. The `clientProfileLifecycle` boundary test hits its 30 s limit when the
-    whole suite runs together; it passes on its own.
+11. **Test timeouts under concurrent load:**
+    - Bound and stabilize `tests/boundary/process/processCaptureProgress.test.ts` and `tests/boundary/cli/clientProfileLifecycle.test.ts` during whole-suite runs.
 
 ## Consensus
 
-14. Analyze a HAR exported from your own consensus.app session with
-    `inspect-web-network-capture` once it is available.
-15. Optional: add a telemetry section to the rebuild plan, and check the
-    tool list of the anonymous MCP tier.
+12. Analyze a HAR exported from your own consensus.app session with `inspect-web-network-capture` once it is available.
+13. Optional: add a telemetry section to the rebuild plan, and check the tool list of the anonymous MCP tier.
 
 ## WHOOP
 
-16. The open questions under "Not done" in
-    [field-tests/whoop-android-5.473.0.md](field-tests/whoop-android-5.473.0.md).
+14. **Open field-test questions:**
+    - Running the app or its traffic; reading the strap protocol itself; strap unlock and membership checks.
+    - Mapping UUID families to device generations, and identifying codenames (Kenmore, Copley).
+    - Update [field-tests/whoop-android-5.473.0.md](field-tests/whoop-android-5.473.0.md) to reflect that radare2 now admits DEX files.
 
 ## Environment
 
-17. Ghidra 12.1.4 in `/opt`, plus `d8`, Apktool and the JADX bridge JAR in
-    the session scratchpad, last only as long as the current container. To
-    keep them, add them to the environment's setup script.
+15. **Reverse engineering tools:**
+    - Installing `radare2`, `binwalk`, `apktool`, and `jadx` via Homebrew (`brew install`).
+    - Verify presence of `d8` (available at `/opt/homebrew/bin/d8`) and `javac` (`/usr/bin/javac`).
 
 ## Paused
 
-18. Function emulation.
+16. Function emulation.

@@ -166,6 +166,7 @@
     "verify:ida": "npm run build:cached && node scripts/verify-real-ida.mjs",
     "verify:ghidra:switch": "npm run build:cached && node scripts/verify-real-ghidra-switch.mjs",
     "verify:ghidra:dos": "npm run build:cached && node scripts/verify-real-ghidra-dos.mjs",
+    "verify:ghidra:dex": "npm run build:cached && node scripts/verify-real-ghidra-dex.mjs",
     "verify:ghidra:com": "npm run build:cached && node scripts/verify-real-ghidra-com.mjs",
     "verify:ghidra:aarch64-jump-table": "npm run build:cached && node scripts/verify-real-ghidra.mjs --aarch64-jump-table",
     "verify:interface-builder": "npm run build:cached && node scripts/verify/apple/interface-builder.mjs",

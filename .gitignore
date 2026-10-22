@@ -30,3 +30,4 @@ venv/
 env/
 .config/
 
+report/jscpd-report.json
