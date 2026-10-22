@@ -129,6 +129,47 @@ register("get_method_body", ({ method_name, overload_index }) =>
             : `void ${method_name}() { /* overload ${overload_index} */ }`,
   }),
 );
+register(
+  "get_annotation_values",
+  ({ class_name, method_name, overload_index }) => {
+    const result = {
+      class_name,
+      method_name: method_name ?? null,
+      annotations: [{ class: 5 }],
+      truncated: false,
+      ...(method_name === undefined ? { static_inits: [] } : {}),
+    };
+    if (mode !== "malformed-values") {
+      result.annotations = [
+        {
+          class: "retrofit2/http/GET",
+          visibility: "runtime",
+          values: {
+            value: {
+              kind: method_name === undefined ? "string" : "type",
+              value:
+                method_name === undefined ? "/v1/fixture" : "java.lang.String",
+            },
+          },
+        },
+      ];
+    }
+    if (method_name === undefined) {
+      if (mode !== "malformed-values")
+        result.static_inits = [
+          {
+            name: "SERVICE",
+            reported_type: "java.lang.String",
+            constant: { kind: "string", value: "0000" },
+          },
+        ];
+    } else {
+      result.overload_index = overload_index;
+      result.overload_count = method_name === "choose" ? 2 : 1;
+    }
+    return json(result);
+  },
+);
 for (const name of ["get_xrefs_to_class", "get_xrefs_to_method"])
   register(name, ({ class_name, method_name }) =>
     json({

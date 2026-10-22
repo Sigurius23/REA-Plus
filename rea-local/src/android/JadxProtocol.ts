@@ -70,6 +70,19 @@ export const jadxMethodSchema = z.object({
   markers: z.array(z.string()),
   body: z.string(),
 });
+export const jadxAnnotationValuesSchema = z.object({
+  class_name: z.string(),
+  method_name: z.string().nullable(),
+  overload_index: count.optional(),
+  overload_count: count.optional(),
+  annotations: z
+    .array(z.unknown())
+    .describe(
+      "Encoded annotations for the selected class or method; ordering is not stable across identities",
+    ),
+  static_inits: z.array(z.unknown()).optional(),
+  truncated: z.boolean(),
+});
 export const jadxXrefsSchema = z.object({
   target: z.string(),
   total: count,

@@ -115,6 +115,16 @@ selected overload. Native/abstract methods with no decompiled body report
   after method decompilation within the retained session.
   Exact DEX descriptors are unknown. Overload indices are tied to this artifact
   and engine, not stable identities across different builds.
+- Class and method inspection also project the declared dex annotations and (for
+  classes) encoded static field initial values into `annotations` and
+  `static_inits`, with `value_coverage: "partial"` whenever a projection limit
+  cut something. Values are parsed dex data, not runtime loading: Retrofit
+  endpoint strings, BLE UUID-like constants and other encoded values appear as
+  typed `{kind, value}` records. Field, enum and method references keep only
+  their identity strings; type references are descriptors such as
+  `Lretrofit2/http/GET;`. Annotation visibility is reported as build, runtime or
+  system. Integer and float encoded values are JSON numbers, but a `long` beyond
+  the safe JSON integer range is reported as its decimal string.
 - Method inspection reports Java or smali, fallback markers and complete/partial
   returned text. Decompiled source is a derived representation. A complete text
   result does not establish complete semantics or a byte-identical reconstruction.

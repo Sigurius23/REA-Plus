@@ -41,7 +41,7 @@ export const ANDROID_TOOL_CONTRACTS = [
     name: "inspect_android_class",
     ...toolContractMetadata("inspect_android_class"),
     description:
-      "Inspect one exact Android class's parsed methods, fields and inner classes, including synthetic members. Returns display signatures and explicit unknown DEX descriptors without generating source. Overload indices remain consistent within the artifact and engine session.",
+      "Inspect one exact Android class's parsed methods, fields and inner classes, including synthetic members. Also projects declared dex annotations and encoded static field initial values (field, enum, method and nested annotation refs are identity strings) into annotations, static_inits and value_coverage. Returns display signatures and explicit unknown DEX descriptors without generating source or loading any class. Overload indices remain consistent within the artifact and engine session.",
     kind: "android-provider",
     inputSchema: androidInputSchemas.inspect_android_class,
     outputSchema: evidenceResultOf(androidResultSchemas.inspect_android_class),
@@ -56,7 +56,7 @@ export const ANDROID_TOOL_CONTRACTS = [
     name: "inspect_android_method",
     ...toolContractMetadata("inspect_android_method"),
     description:
-      "Decompile one Android method with smali fallback. Requires explicit overload_index when multiple methods share a name. Reports representation, fallback markers and source truncation; never treats display signatures as exact DEX identities.",
+      "Decompile one Android method with smali fallback. Requires explicit overload_index when multiple methods share a name. Also projects the method's declared dex annotations with encoded values. Reports representation, fallback markers and source truncation; never treats display signatures as exact DEX identities.",
     kind: "android-provider",
     inputSchema: androidInputSchemas.inspect_android_method,
     outputSchema: evidenceResultOf(androidResultSchemas.inspect_android_method),

@@ -80,6 +80,7 @@ it("reuses immutable engine state while keeping each Evidence observation separa
     calls: [
       expect.objectContaining({ operation: "rea_jvm_status" }),
       expect.objectContaining({ operation: "get_class_summary" }),
+      expect.objectContaining({ operation: "get_annotation_values" }),
     ],
   });
   expect(
@@ -338,6 +339,69 @@ it("exposes overload candidates and executes only an explicitly selected ambiguo
   await provider.close();
   await verifyCleanup(launches);
 });
+
+it("projects declared annotations and encoded static field inits as parsed dex data", async () => {
+  const { service, apk, launches, provider } = await setup();
+  const outcome = await service.execute("inspect_android_class", {
+    path: apk,
+    class_name: "fixture.Target",
+  });
+  if (!outcome.ok) throw outcome.error;
+  const result = androidResultSchemas.inspect_android_class.parse(
+    outcome.value.normalized_result,
+  );
+  expect(result.annotations).toEqual([
+    {
+      class: "retrofit2/http/GET",
+      visibility: "runtime",
+      values: { value: { kind: "string", value: "/v1/fixture" } },
+    },
+  ]);
+  expect(result.static_inits).toEqual([
+    {
+      name: "SERVICE",
+      reported_type: "java.lang.String",
+      constant: { kind: "string", value: "0000" },
+    },
+  ]);
+  expect(result.value_coverage).toBe("complete");
+  const method = await service.execute("inspect_android_method", {
+    path: apk,
+    class_name: "fixture.Target",
+    method_name: "onCreate",
+  });
+  if (!method.ok) throw method.error;
+  const methodResult = androidResultSchemas.inspect_android_method.parse(
+    method.value.normalized_result,
+  );
+  expect(methodResult.annotations).toEqual([
+    {
+      class: "retrofit2/http/GET",
+      visibility: "runtime",
+      values: { value: { kind: "type", value: "java.lang.String" } },
+    },
+  ]);
+  expect(methodResult.value_coverage).toBe("complete");
+  await provider.close();
+  await verifyCleanup(launches);
+});
+
+it.each(["malformed-values"])(
+  "rejects %s projection output instead of presenting invalid encoded values",
+  async (mode) => {
+    const { service, apk, launches, provider } = await setup(mode);
+    const outcome = await service.execute("inspect_android_class", {
+      path: apk,
+      class_name: "fixture.Target",
+    });
+    expect(outcome).toMatchObject({
+      ok: false,
+      error: { _tag: "AnalysisOutputError" },
+    });
+    await provider.close();
+    await verifyCleanup(launches);
+  },
+);
 
 it.each([
   "wrong-apk",

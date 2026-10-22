@@ -3,6 +3,13 @@ import com.google.gson.*;
 import io.modelcontextprotocol.kotlin.sdk.server.*;
 import io.modelcontextprotocol.kotlin.sdk.types.*;
 import jadx.api.*;
+import jadx.api.plugins.input.data.IFieldRef;
+import jadx.api.plugins.input.data.IMethodRef;
+import jadx.api.plugins.input.data.annotations.EncodedType;
+import jadx.api.plugins.input.data.annotations.EncodedValue;
+import jadx.api.plugins.input.data.annotations.IAnnotation;
+import jadx.api.plugins.input.data.attributes.JadxAttrType;
+import jadx.api.plugins.input.data.attributes.types.AnnotationsAttr;
 import jadx.core.dex.nodes.*;
 import java.io.PrintStream;
 import java.util.*;
@@ -18,6 +25,16 @@ import kotlinx.serialization.json.JsonObject;
 /** REA+-owned metadata boundary for the unmodified jadx-headless-mcp 0.7.1 JAR. */
 class ReaJadxBridge {
   private static final Gson JSON = new Gson();
+
+  /**
+   * Annotation and constant-value scopes mirror the dex sections the input
+   * readers parse; none of them load or execute code.
+   */
+  private static final int ANNOTATION_LIMIT = 64;
+  private static final int INIT_FIELD_LIMIT = 256;
+  private static final int ARRAY_VALUE_LIMIT = 64;
+  private static final int VALUE_DEPTH_LIMIT = 8;
+  private static final long SAFE_NUMBER_LIMIT = 9_007_199_254_740_991L;
   private final SessionHolder holder;
   private JadxSession indexedSession;
   private Map<String, List<ClassSnapshot>> classes = Map.of();
@@ -42,6 +59,14 @@ class ReaJadxBridge {
     JsonElement value = JsonParser.parseString(args.toString()).getAsJsonObject().get(name);
     if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString())
       throw new IllegalArgumentException(name + " must be a string");
+    return value.getAsString();
+  }
+
+  private static String optionalString(JsonObject args, String name) {
+    JsonElement value = JsonParser.parseString(args.toString()).getAsJsonObject().get(name);
+    if (value == null) return null;
+    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString())
+      throw new IllegalArgumentException(name + " must be a string, when present");
     return value.getAsString();
   }
 
@@ -126,6 +151,162 @@ class ReaJadxBridge {
     return result;
   }
 
+  private static final class Truncation {
+    boolean hit;
+  }
+
+  /**
+   * Project parsed dex annotations and encoded values into portable JSON.
+   * Enumerated field and method references keep only identity strings; no
+   * class loading ever resolves them.
+   */
+  private static final class ValueEncoder {
+    private static final String KIND = "kind";
+    private static final String VALUE = "value";
+    private final Truncation truncation;
+
+    private ValueEncoder(Truncation truncation) { this.truncation = truncation; }
+
+    private static String lower(EncodedType type) {
+      String name = type.name();
+      return name.substring("ENCODED_".length()).toLowerCase(Locale.ROOT);
+    }
+
+    private void overLimit() { truncation.hit = true; }
+
+    private List<IAnnotation> annotations(AnnotationsAttr attr) {
+      if (attr == null) return List.of();
+      List<String> keys = attr.getAll().stream()
+          .map(IAnnotation::getAnnotationClass).distinct().sorted().toList();
+      List<IAnnotation> selected = new ArrayList<>();
+      for (String key : keys) {
+        IAnnotation ann = attr.get(key);
+        if (ann == null) continue;
+        if (selected.size() >= ANNOTATION_LIMIT) { overLimit(); break; }
+        selected.add(ann);
+      }
+      return selected;
+    }
+
+    private Map<String, Object> annotation(IAnnotation ann, int depth) {
+      Map<String, Object> values = new LinkedHashMap<>();
+      for (Map.Entry<String, EncodedValue> entry
+          : ((Map<String, EncodedValue>) ann.getValues()).entrySet().stream()
+              .sorted(Map.Entry.comparingByKey()).collect(Collectors.toList()))
+        values.put(entry.getKey(), value(entry.getValue(), depth + 1));
+      return object("class", ann.getAnnotationClass(),
+          "visibility", String.valueOf(ann.getVisibility()).toLowerCase(Locale.ROOT),
+          "values", values);
+    }
+
+    private Map<String, Object> value(EncodedValue encoded, int depth) {
+      EncodedType type = encoded.getType();
+      Object raw = encoded.getValue();
+      switch (type) {
+        case ENCODED_NULL:
+          return object(KIND, "null", VALUE, null);
+        case ENCODED_LONG: {
+          long longValue = ((Number) raw).longValue();
+          boolean safe = Math.abs(longValue) <= SAFE_NUMBER_LIMIT;
+          return object(KIND, "long",
+              VALUE, safe ? (Object) Long.valueOf(longValue) : String.valueOf(longValue));
+        }
+        case ENCODED_BOOLEAN, ENCODED_BYTE, ENCODED_SHORT, ENCODED_INT:
+          return object(KIND, lower(type), VALUE, raw);
+        case ENCODED_CHAR, ENCODED_STRING, ENCODED_TYPE:
+          return object(KIND, lower(type), VALUE, String.valueOf(raw));
+        case ENCODED_FLOAT, ENCODED_DOUBLE: {
+          double number = ((Number) raw).doubleValue();
+          return object(KIND, lower(type),
+              VALUE, Double.isFinite(number) ? (Object) Double.valueOf(number) : String.valueOf(raw));
+        }
+        case ENCODED_ENUM, ENCODED_FIELD: {
+          IFieldRef ref = (IFieldRef) raw;
+          return object(KIND, "field", VALUE, object(
+              "class", ref.getParentClassType(), "name", ref.getName(), "type", ref.getType()));
+        }
+        case ENCODED_METHOD:
+          IMethodRef ref = (IMethodRef) raw;
+          return object(KIND, "method", VALUE, object(
+              "class", ref.getParentClassType(), "name", ref.getName(),
+              "params", List.copyOf(ref.getArgTypes()), "return", ref.getReturnType()));
+        case ENCODED_ARRAY: {
+          if (depth > VALUE_DEPTH_LIMIT) {
+            overLimit();
+            return object(KIND, "other", VALUE, String.valueOf(raw));
+          }
+          List<EncodedValue> items = (List<EncodedValue>) raw;
+          if (items.size() > ARRAY_VALUE_LIMIT) overLimit();
+          List<Object> values = new ArrayList<>();
+          for (EncodedValue item : items.stream().limit(ARRAY_VALUE_LIMIT).toList())
+            values.add(value(item, depth + 1));
+          return object(KIND, "array", VALUE, values);
+        }
+        case ENCODED_ANNOTATION: {
+          if (depth > VALUE_DEPTH_LIMIT) {
+            overLimit();
+            return object(KIND, "other", VALUE, String.valueOf(raw));
+          }
+          return object(KIND, "annotation", VALUE, annotation((IAnnotation) raw, depth));
+        }
+        default:
+          overLimit();
+          return object(KIND, "other", VALUE, String.valueOf(raw));
+      }
+    }
+  }
+
+  private static Map<String, Object> object(Object... fields) {
+    Map<String, Object> map = new LinkedHashMap<>();
+    for (int index = 0; index < fields.length; index += 2)
+      map.put((String) fields[index], fields[index + 1]);
+    return map;
+  }
+
+  private Map<String, Object> annotationValues(ClassSnapshot cls, JsonObject args) {
+    String methodName = optionalString(args, "method_name");
+    Truncation truncation = new Truncation();
+    ValueEncoder encoder = new ValueEncoder(truncation);
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("class_name", cls.summary().get("full_name"));
+    if (methodName == null) {
+      result.put("method_name", null);
+      List<IAnnotation> annotations = encoder.annotations(
+          cls.node().getClassNode().get(JadxAttrType.ANNOTATION_LIST));
+      List<FieldNode> fields = cls.node().getClassNode().getFields().stream()
+          .filter(field -> field.get(JadxAttrType.CONSTANT_VALUE) != null)
+          .sorted(Comparator.comparing(FieldNode::getAlias)).toList();
+      if (fields.size() > INIT_FIELD_LIMIT) truncation.hit = true;
+      List<Object> inits = new ArrayList<>();
+      for (FieldNode field : fields.stream().limit(INIT_FIELD_LIMIT).toList())
+        inits.add(object("name", field.getAlias(),
+            "reported_type", field.getType().toString(),
+            "constant", encoder.value(field.get(JadxAttrType.CONSTANT_VALUE), 0)));
+      result.put("annotations", encodedAnnotations(annotations, encoder));
+      result.put("static_inits", inits);
+    } else {
+      List<MethodSnapshot> overloads = methods(cls, args);
+      int index = integer(args, "overload_index", 0);
+      if (index >= overloads.size()) throw new InputFailure("overload_index",
+          "overload_index out of range: " + index);
+      MethodNode node = method(cls, overloads.get(index)).getMethodNode();
+      List<IAnnotation> annotations = encoder.annotations(node.get(JadxAttrType.ANNOTATION_LIST));
+      result.put("method_name", methodName);
+      result.put("overload_index", index);
+      result.put("overload_count", overloads.size());
+      result.put("annotations", encodedAnnotations(annotations, encoder));
+    }
+    result.put("truncated", truncation.hit);
+    return result;
+  }
+
+  private List<Object> encodedAnnotations(List<IAnnotation> annotations, ValueEncoder encoder) {
+    List<Object> items = new ArrayList<>();
+    for (IAnnotation annotation : annotations)
+      items.add(encoder.annotation(annotation, 0));
+    return items;
+  }
+
   private CallToolResult handle(String name, JsonObject args) {
     if (name.equals("rea_jvm_status")) return json(Map.of(
         "engine_reported_version", BuildInfo.VERSION,
@@ -144,6 +325,7 @@ class ReaJadxBridge {
           "items", names.subList(start, end)));
     }
     ClassSnapshot cls = selected(args);
+    if (name.equals("get_annotation_values")) return json(annotationValues(cls, args));
     if (name.equals("get_class_summary")) return json(cls.summary());
     if (name.equals("get_method_body")) {
       List<MethodSnapshot> overloads = methods(cls, args);
@@ -223,6 +405,21 @@ class ReaJadxBridge {
         catch (IllegalArgumentException error) { return text(error.getMessage(), true); }
       });
     }
+    Map<String, kotlinx.serialization.json.JsonElement> annotationSchema = new LinkedHashMap<>();
+    annotationSchema.put("class_name", kotlinx.serialization.json.JsonElementKt.JsonPrimitive("string"));
+    annotationSchema.put("method_name", kotlinx.serialization.json.JsonElementKt.JsonPrimitive("string"));
+    annotationSchema.put("overload_index", kotlinx.serialization.json.JsonElementKt.JsonPrimitive("integer"));
+    java.util.List<String> required = List.of("class_name");
+    Tool annotationTool = new Tool("get_annotation_values",
+        new ToolSchema(null, new JsonObject(annotationSchema), required, null),
+        "Declared dex annotations for one exact class, plus encoded static field initial values; with method_name, the annotations of one overload instead. Values are parsed without loading or executing classes.",
+        null, null, null, null, null, null);
+    server.addTool(annotationTool, (connection, request, continuation) -> {
+      try { return bridge.handle("get_annotation_values", request.getArguments()); }
+      catch (InputFailure error) { return text(JSON.toJson(Map.of(
+          "kind", "invalid-input", "field", error.field, "message", error.getMessage())), true); }
+      catch (IllegalArgumentException error) { return text(error.getMessage(), true); }
+    });
     CountDownLatch done = new CountDownLatch(1);
     server.onClose(() -> { done.countDown(); return Unit.INSTANCE; });
     StdioServerTransport transport = new StdioServerTransport(

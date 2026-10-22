@@ -84,6 +84,11 @@ const textCoverage = z.strictObject({
   text: z.string(),
   reported_total_bytes: z.number().int().nonnegative().nullable(),
 });
+const valueCoverage = z
+  .enum(["complete", "partial"])
+  .describe(
+    "partial when a projection limit cut annotations, values, or field inits",
+  );
 const method = z.strictObject({
   name: z.string(),
   reported_signature: z.string(),
@@ -100,6 +105,106 @@ const engine = z.strictObject({
   heap_limit_mib: z.number().int().positive().nullable(),
 });
 const common = { engine };
+
+/** Encoded dex annotation values, projected without resolving any class. */
+export type AndroidEncodedValue =
+  | { readonly kind: "null"; readonly value: null }
+  | {
+      readonly kind: "boolean" | "byte" | "short" | "int";
+      readonly value: number;
+    }
+  | { readonly kind: "long"; readonly value: number | string }
+  | { readonly kind: "float" | "double"; readonly value: number | string }
+  | {
+      readonly kind: "string" | "char" | "type" | "other";
+      readonly value: string;
+    }
+  | {
+      readonly kind: "field";
+      readonly value: {
+        readonly class: string;
+        readonly name: string;
+        readonly type: string;
+      };
+    }
+  | {
+      readonly kind: "method";
+      readonly value: {
+        readonly class: string;
+        readonly name: string;
+        readonly params: string[];
+        readonly return: string;
+      };
+    }
+  | { readonly kind: "array"; readonly value: AndroidEncodedValue[] }
+  | { readonly kind: "annotation"; readonly value: AndroidAnnotation };
+
+/** One declared dex annotation with its encoded named values. */
+export type AndroidAnnotation = {
+  readonly class: string;
+  readonly visibility: "build" | "runtime" | "system";
+  values: Record<string, AndroidEncodedValue>;
+};
+
+const encodedValueSchema: z.ZodType<AndroidEncodedValue> = z.lazy(() =>
+  z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("null"), value: z.null() }),
+    z.strictObject({
+      kind: z.enum(["boolean", "byte", "short", "int"]),
+      value: z.number().int().safe(),
+    }),
+    z.strictObject({
+      kind: z.literal("long"),
+      value: z.union([z.number(), z.string()]),
+    }),
+    z.strictObject({
+      kind: z.enum(["float", "double"]),
+      value: z.union([z.number(), z.string()]),
+    }),
+    z.strictObject({
+      kind: z.enum(["string", "char", "type", "other"]),
+      value: z.string(),
+    }),
+    z.strictObject({
+      kind: z.literal("field"),
+      value: z.strictObject({
+        class: z.string().min(1),
+        name: z.string().min(1),
+        type: z.string().min(1),
+      }),
+    }),
+    z.strictObject({
+      kind: z.literal("method"),
+      value: z.strictObject({
+        class: z.string().min(1),
+        name: z.string().min(1),
+        params: z.array(z.string()),
+        return: z.string().min(1),
+      }),
+    }),
+    z.strictObject({
+      kind: z.literal("array"),
+      value: z.array(encodedValueSchema),
+    }),
+    z.strictObject({ kind: z.literal("annotation"), value: annotationSchema }),
+  ]),
+);
+
+const annotationSchema: z.ZodType<AndroidAnnotation> = z.lazy(() =>
+  z.strictObject({
+    class: z.string().min(1),
+    visibility: z.enum(["build", "runtime", "system"]),
+    values: z.record(z.string(), encodedValueSchema),
+  }),
+);
+
+/** Parsed annotation schemas and encoded initial values are named for adapters. */
+export const androidAnnotationSchema = annotationSchema;
+export const androidStaticInitSchema = z.strictObject({
+  name: z.string().min(1),
+  reported_type: z.string(),
+  constant: encodedValueSchema,
+});
 
 /** Portable observations with explicit decompiler and identity limitations. */
 export const androidResultSchemas = {
@@ -136,6 +241,9 @@ export const androidResultSchemas = {
       z.strictObject({ name: z.string(), reported_type: z.string() }),
     ),
     inner_classes: z.array(z.string()),
+    annotations: z.array(annotationSchema),
+    static_inits: z.array(androidStaticInitSchema),
+    value_coverage: valueCoverage,
   }),
   inspect_android_method: z.strictObject({
     ...common,
@@ -147,6 +255,8 @@ export const androidResultSchemas = {
     fell_back: z.boolean(),
     markers: z.array(z.string()),
     source: textCoverage,
+    annotations: z.array(annotationSchema),
+    value_coverage: valueCoverage,
   }),
   trace_android_references: z.strictObject({
     ...common,

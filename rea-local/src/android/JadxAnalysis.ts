@@ -1,6 +1,10 @@
-import type { z } from "zod";
+import { z } from "zod";
 import type { AndroidRequest } from "../domain/android/androidAnalysis.js";
-import { androidResultSchemas } from "../domain/android/androidAnalysis.js";
+import {
+  androidAnnotationSchema,
+  androidResultSchemas,
+  androidStaticInitSchema,
+} from "../domain/android/androidAnalysis.js";
 import {
   AnalysisCapabilityUnavailableError,
   AnalysisInputError,
@@ -8,6 +12,7 @@ import {
 } from "../domain/analysisErrorCore.js";
 import type { JsonValue } from "../domain/jsonValue.js";
 import {
+  jadxAnnotationValuesSchema,
   jadxAppSchema,
   jadxClassPageSchema,
   jadxClassSchema,
@@ -104,6 +109,102 @@ const classSummary = async (
       "JADX class member counts do not match the returned inventory",
     );
   return value;
+};
+
+const annotationValues = async (
+  tools: JadxToolPort,
+  request: Exclude<
+    AndroidRequest,
+    { operation: "inspect_android_package" | "search_android_classes" }
+  >,
+  className: string,
+  selection?: {
+    method_name: string;
+    overload_index: number;
+    overload_count: number;
+  },
+): Promise<
+  { annotations: unknown[]; value_coverage: "complete" | "partial" } & (
+    | { static_inits: unknown[] }
+    | {}
+  )
+> => {
+  const raw = await tools.json("get_annotation_values", {
+    class_name: className,
+    ...(selection === undefined
+      ? {}
+      : {
+          method_name: selection.method_name,
+          overload_index: selection.overload_index,
+        }),
+  });
+  if (
+    raw !== null &&
+    typeof raw === "object" &&
+    "kind" in raw &&
+    (raw as { kind: unknown }).kind === "invalid-input"
+  ) {
+    const failure = raw as { kind: string; field?: unknown; message?: unknown };
+    inputFailure(
+      request,
+      typeof failure.field === "string" &&
+        ["class_name", "method_name", "overload_index"].includes(failure.field)
+        ? failure.field
+        : "class_name",
+      typeof failure.message === "string"
+        ? failure.message
+        : "JADX rejected the annotation selector",
+    );
+  }
+  const parsed = jadxAnnotationValuesSchema.safeParse(raw);
+  if (!parsed.success)
+    throw new AnalysisOutputError(
+      request.operation,
+      "JADX annotation values are incomplete or malformed",
+      { cause: parsed.error },
+    );
+  const values = parsed.data;
+  if (
+    values.class_name !== className ||
+    (selection === undefined
+      ? values.method_name !== null
+      : values.method_name !== selection.method_name ||
+        values.overload_index !== selection.overload_index ||
+        values.overload_count !== selection.overload_count)
+  )
+    throw new AnalysisOutputError(
+      request.operation,
+      "JADX reported annotations for a different class, method, or overload",
+    );
+  const annotations = z
+    .array(androidAnnotationSchema)
+    .safeParse(values.annotations);
+  if (!annotations.success)
+    throw new AnalysisOutputError(
+      request.operation,
+      "JADX annotation values are malformed",
+      { cause: annotations.error },
+    );
+  if (selection === undefined) {
+    const inits = z
+      .array(androidStaticInitSchema)
+      .safeParse(values.static_inits);
+    if (!inits.success)
+      throw new AnalysisOutputError(
+        request.operation,
+        "JADX static field inits are malformed",
+        { cause: inits.error },
+      );
+    return {
+      annotations: annotations.data,
+      static_inits: inits.data,
+      value_coverage: values.truncated ? "partial" : "complete",
+    };
+  }
+  return {
+    annotations: annotations.data,
+    value_coverage: values.truncated ? "partial" : "complete",
+  };
 };
 
 const inspectPackage = async (
@@ -259,6 +360,11 @@ const inspectMethod = async (
       request.operation,
       `JADX ${JADX_RELEASE.version} smali fallback joins all same-name overloads for ${summary.full_name}.${request.input.method_name}; it cannot establish source for only overload ${index}.`,
     );
+  const values = await annotationValues(tools, request, summary.full_name, {
+    method_name: request.input.method_name,
+    overload_index: index,
+    overload_count: candidates.length,
+  });
   return androidResultSchemas.inspect_android_method.parse({
     engine,
     class_name: summary.full_name,
@@ -274,6 +380,7 @@ const inspectMethod = async (
     fell_back: body.fell_back,
     markers: body.markers,
     source: normalizeJadxText(body.body),
+    ...values,
   });
 };
 
@@ -289,7 +396,8 @@ export const analyzeJadxRequest = async (
   if (request.operation === "search_android_classes")
     return searchClasses(tools, request, loaded, engine);
   const summary = await classSummary(tools, request);
-  if (request.operation === "inspect_android_class")
+  if (request.operation === "inspect_android_class") {
+    const values = await annotationValues(tools, request, summary.full_name);
     return androidResultSchemas.inspect_android_class.parse({
       engine,
       class_name: summary.full_name,
@@ -299,7 +407,9 @@ export const analyzeJadxRequest = async (
         reported_type: field.type,
       })),
       inner_classes: summary.inner_classes,
+      ...values,
     });
+  }
   if (request.operation === "inspect_android_method")
     return inspectMethod(tools, request, summary, engine);
   return traceReferences(tools, request, summary, engine);
