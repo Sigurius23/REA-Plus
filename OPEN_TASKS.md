@@ -36,11 +36,11 @@ Open work on `main` following PR #1 and the field tests.
 
 ## REA+ gaps found in the WHOOP test
 
-6. **`decode-android-resources`:**
-   - Page past the first 2,000 strings, and expose `res/xml` files such as the network security config.
-7. **`inspect-android-class` / `inspect-android-method`:**
-   - Show annotation values (e.g., Retrofit API paths) and static field initial values.
-8. **Android package formats and validation:**
+6. **`decode-android-resources`:** (done in `f5f036a`)
+   - Page past the first 2,000 strings (`strings_offset`, `strings_limit`), and expose `res/xml` files such as the network security config (`include_xml_resources`).
+7. **`inspect-android-class` / `inspect-android-method`:** (done in `eb83e19`)
+   - Show annotation values (e.g., Retrofit API paths) and static field initial values via JADX bridge without runtime class loading.
+8. **Android package formats and validation:** (done in `7795b12`)
    - XAPK: done. `.xapk` containers are admitted by all five Android
      operations (`APK_CONTAINER_FORMATS`); `AndroidXapkBundle.ts` validates the
      top-level `manifest.json` + `base.apk` shape, composes a stored-entry
