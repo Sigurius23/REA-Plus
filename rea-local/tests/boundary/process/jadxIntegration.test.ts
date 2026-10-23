@@ -202,6 +202,79 @@ it("completes large class inventories with exact case-sensitive search semantics
   await provider.close();
 });
 
+it("searches string constants with an exact query echo and complete coverage", async () => {
+  const { service, apk, provider } = await setup();
+  const outcome = await service.execute("search_android_strings", {
+    path: apk,
+    query: "api.example.com",
+  });
+  if (!outcome.ok) throw outcome.error;
+  const result = androidResultSchemas.search_android_strings.parse(
+    outcome.value.normalized_result,
+  );
+  expect(result.query).toBe("api.example.com");
+  expect(result.matches).toHaveLength(1);
+  expect(result.matches[0]).toMatchObject({
+    class_name: "fixture.Target",
+    method_name: "onCreate",
+    overload_index: 0,
+    overload_count: 1,
+    representation: "java",
+  });
+  expect(result.coverage).toBe("complete");
+  await provider.close();
+});
+
+it("reports an empty string-constant result without implying absence", async () => {
+  const { service, apk, provider } = await setup();
+  const outcome = await service.execute("search_android_strings", {
+    path: apk,
+    query: "absent",
+  });
+  if (!outcome.ok) throw outcome.error;
+  const result = androidResultSchemas.search_android_strings.parse(
+    outcome.value.normalized_result,
+  );
+  expect(result.matches).toEqual([]);
+  expect(result.coverage).toBe("complete");
+  await provider.close();
+});
+
+it("carries partial coverage when a scan budget truncated the result", async () => {
+  const { service, apk, provider } = await setup("partial-scan");
+  const outcome = await service.execute("search_android_strings", {
+    path: apk,
+    query: "api.example.com",
+  });
+  if (!outcome.ok) throw outcome.error;
+  const result = androidResultSchemas.search_android_strings.parse(
+    outcome.value.normalized_result,
+  );
+  expect(result.matches).toHaveLength(1);
+  expect(result.coverage).toBe("partial");
+  await provider.close();
+});
+
+it("rejects a different string-constant query echo", async () => {
+  const { service, apk, provider } = await setup("wrong-string-query");
+  const outcome = await service.execute("search_android_strings", {
+    path: apk,
+    query: "absent",
+  });
+  expect(outcome).toMatchObject({ ok: false });
+  await provider.close();
+});
+
+it("rejects incoherent string-constant coverage reporting", async () => {
+  const { service, apk, provider } = await setup("coverage-disagree");
+  const outcome = await service.execute("search_android_strings", {
+    path: apk,
+    query: "api.example.com",
+  });
+  expect(outcome).toMatchObject({ ok: false });
+  await provider.close();
+});
+
 it("lists class names JADX gives to several classes once and reports them", async () => {
   const { service, apk, provider } = await setup("shared-names");
   const outcome = await service.execute("search_android_classes", {

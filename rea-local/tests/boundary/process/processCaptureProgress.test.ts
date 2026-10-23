@@ -18,6 +18,16 @@ import { itWithCaptureCapability } from "./processCaptureCapability.js";
 
 const PROGRESS_INTERVAL_MS = 100;
 
+/**
+ * Load-tolerant test-orchestration budget for one cross-process chain
+ * (compiled CLI spawn → session → scenario child → first progress tick).
+ * Whole-suite parallel load spreads host cores across many simultaneous
+ * spawns, so the appearance window must stay generous; the reporter's own
+ * send-interval commitments stay owned by the reporter's controlled-clock
+ * tests and are unaffected by this budget.
+ */
+const RUNNING_APPEARANCE_MS = 15_000;
+
 const progressLineSchema = z.object({
   rea_progress: z.object({
     phase: z.string(),
@@ -138,7 +148,7 @@ const runCaptureCli = async (
     const appeared = await Promise.race([
       running.then(() => true),
       new Promise<boolean>((resolve) => {
-        timer = setTimeout(() => resolve(false), 8_000);
+        timer = setTimeout(() => resolve(false), RUNNING_APPEARANCE_MS);
       }),
     ]).finally(() => {
       clearTimeout(timer);
@@ -520,7 +530,7 @@ itWithCaptureCapability(
     // Prepare the SDK's full output-schema cache before timing capture control.
     await cancelling.client.callTool({ name: "binary_session", arguments: {} });
     const controller = new AbortController();
-    const stall = setTimeout(() => controller.abort(), 5_000);
+    const stall = setTimeout(() => controller.abort(), 20_000);
     onTestFinished(() => clearTimeout(stall));
     const call = cancelling.client.callTool(
       {
@@ -528,8 +538,8 @@ itWithCaptureCapability(
         arguments: {
           executable: process.execPath,
           arguments: childScript("setInterval(() => undefined, 1000);"),
-          timeout_ms: 15_000,
-          idle_timeout_ms: 15_000,
+          timeout_ms: 30_000,
+          idle_timeout_ms: 30_000,
         },
         _meta: { progressToken: "capture-cancel" },
       },
@@ -544,7 +554,7 @@ itWithCaptureCapability(
         .poll(
           () =>
             cancelling.notifications.some((note) => note.includes("running:")),
-          { timeout: 4_000 },
+          { timeout: 10_000, interval: 250 },
         )
         .toBe(true);
       controller.abort();
@@ -560,7 +570,10 @@ itWithCaptureCapability(
       await completion;
     }
     await expect
-      .poll(() => cancelling.notifications.join("\n"))
+      .poll(() => cancelling.notifications.join("\n"), {
+        timeout: 15_000,
+        interval: 250,
+      })
       .toContain("disposition=cancelled");
     expect(cancelling.notifications.join("\n")).toContain(
       "owned_process_group=cleaned",

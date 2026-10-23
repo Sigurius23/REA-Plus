@@ -7,13 +7,13 @@ import { promisify } from "node:util";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { parseEvidence } from "../../../dist/domain/evidence.js";
-import { hashAndroidFile } from "../../../dist/android/AndroidTargetSnapshot.js";
+import { hashStableFile } from "../../../dist/filesystem/StableFileHash.js";
 import { JADX_RELEASE } from "../../../dist/android/JadxRelease.js";
 import fixture from "../../fixtures/android/apidemos.json" with { type: "json" };
 import { verifyAndroidCliCancellation } from "./cli-cancellation.mjs";
 import { verifyAndroidMetadata } from "./metadata.mjs";
 import { verifyAndroidFailureRecovery } from "./failure-recovery.mjs";
-import { resolveJadxConfiguration } from "../../../dist/android/JadxConfiguration.js";
+import { resolveJadxConfigurationInputs } from "../../../dist/android/JadxConfiguration.js";
 import { verifyWindowsAndroidLifecycle } from "./windows-lifecycle.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -26,16 +26,16 @@ if (apk === undefined || jar === undefined)
 await access(apk);
 await access(jar);
 assert.equal(
-  await hashAndroidFile(apk),
+  (await hashStableFile(apk)).sha256,
   fixture.sha256,
   "Real Android lane requires the fixed ApiDemos release fixture",
 );
 assert.equal(
-  await hashAndroidFile(jar),
+  (await hashStableFile(jar)).sha256,
   JADX_RELEASE.sha256,
   "Real Android lane requires the audited headless JADX release JAR",
 );
-const { java, jvmArguments } = await resolveJadxConfiguration(
+const { java, jvmArguments } = await resolveJadxConfigurationInputs(
   process.env,
   "inspect_android_package",
 );
@@ -64,6 +64,19 @@ const tasks = [
     name: "search_android_classes",
     args: ["search-android-classes", path, "ApiDemos"],
     input: { path, query: "ApiDemos" },
+  },
+  {
+    name: "search_android_strings",
+    // ApiDemos orders androidx.* ahead of the app's own package, so the scan
+    // budget must cover the whole APK to surface the fixture's const-strings.
+    args: [
+      "search-android-strings",
+      path,
+      "io.appium.android.apis.Path",
+      "--class-limit",
+      "8192",
+    ],
+    input: { path, query: "io.appium.android.apis.Path", class_limit: 8192 },
   },
   {
     name: "inspect_android_class",
@@ -184,6 +197,17 @@ assert.ok(
     .get("search_android_classes")
     .normalized_result.matches.includes(fixture.class_name),
 );
+const stringsScan = cliResults.get("search_android_strings").normalized_result;
+// With the whole-APK budget the scanned universe is complete and honest.
+assert.equal(stringsScan.coverage, "complete");
+assert.ok(stringsScan.matches.length > 0);
+assert.ok(
+  stringsScan.matches.every(
+    (match) =>
+      match.value.includes("io.appium.android.apis") &&
+      match.class_name.includes(fixture.package),
+  ),
+);
 const classResult = cliResults.get("inspect_android_class").normalized_result;
 assert.ok(
   classResult.methods.some((method) => method.name === fixture.method_name),
@@ -227,7 +251,7 @@ await verifyAndroidFailureRecovery({
   fixture,
 });
 assert.equal(
-  await hashAndroidFile(apk),
+  (await hashStableFile(apk)).sha256,
   fixture.sha256,
   "Original APK must remain unchanged",
 );

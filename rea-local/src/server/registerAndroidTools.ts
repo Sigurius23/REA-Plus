@@ -34,6 +34,12 @@ export const registerAndroidTools = (
     toolRegistrationOptions(searchContract),
     handler(searchContract),
   );
+  const stringsContract = toolContract("search_android_strings");
+  server.registerTool(
+    stringsContract.name,
+    toolRegistrationOptions(stringsContract),
+    handler(stringsContract),
+  );
   const classContract = toolContract("inspect_android_class");
   server.registerTool(
     classContract.name,

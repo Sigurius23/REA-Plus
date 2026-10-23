@@ -125,6 +125,9 @@ it("publishes and executes all APK contracts with inline Evidence and no active 
       ...(contract.name === "search_android_classes"
         ? { query: "Target" }
         : {}),
+      ...(contract.name === "search_android_strings"
+        ? { query: "api.example.com" }
+        : {}),
       ...(contract.name === "inspect_android_class" ||
       contract.name === "inspect_android_method" ||
       contract.name === "trace_android_references"

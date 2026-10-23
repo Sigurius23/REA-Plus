@@ -1,5 +1,6 @@
 import com.atxx.jhmcp.*;
 import com.google.gson.*;
+import com.google.gson.GsonBuilder;
 import io.modelcontextprotocol.kotlin.sdk.server.*;
 import io.modelcontextprotocol.kotlin.sdk.types.*;
 import jadx.api.*;
@@ -14,6 +15,8 @@ import jadx.core.dex.nodes.*;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import kotlin.Unit;
 import kotlin.coroutines.EmptyCoroutineContext;
@@ -24,7 +27,8 @@ import kotlinx.serialization.json.JsonObject;
 
 /** REA+-owned metadata boundary for the unmodified jadx-headless-mcp 0.7.1 JAR. */
 class ReaJadxBridge {
-  private static final Gson JSON = new Gson();
+  /** Gson omits null map values by default; the protocol requires explicit nulls. */
+  private static final Gson JSON = new GsonBuilder().serializeNulls().create();
 
   /**
    * Annotation and constant-value scopes mirror the dex sections the input
@@ -35,12 +39,31 @@ class ReaJadxBridge {
   private static final int ARRAY_VALUE_LIMIT = 64;
   private static final int VALUE_DEPTH_LIMIT = 8;
   private static final long SAFE_NUMBER_LIMIT = 9_007_199_254_740_991L;
+  /** String-constant scan sanctions bodies through the get_method_body path. */
+  private static final int SCAN_CLASS_DEFAULT = 256;
+  /**
+   * The scan universe is whole dex class identities; 8192 admits every class
+   * of a small consumer APK in one honest, explicitly requested scan.
+   */
+  private static final int SCAN_CLASS_LIMIT = 8_192;
+  private static final int SCAN_RESULT_DEFAULT = 200;
+  private static final int SCAN_RESULT_LIMIT = 1_000;
+  /**
+   * Bounds the decompile cost of one pathological class; 4096 methods admits
+   * every real class of a small consumer APK while still capping the worst case.
+   */
+  private static final int SCAN_METHOD_LIMIT = 4_096;
+  private static final Pattern SMALI_STRING =
+      Pattern.compile("const-string(?:/jumbo)?\\s+v\\d+,\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+  private static final Pattern JAVA_STRING =
+      Pattern.compile("\"((?:[^\"\\r\\n\\\\]|\\\\.)*)\"");
   private final SessionHolder holder;
   private JadxSession indexedSession;
   private Map<String, List<ClassSnapshot>> classes = Map.of();
 
   private record MethodSnapshot(String name, String shortId, Map<String, Object> summary) {}
-  private record ClassSnapshot(JavaClass node, List<MethodSnapshot> methods, Map<String, Object> summary) {}
+  private record ClassSnapshot(JavaClass node, List<MethodSnapshot> methods, Map<String, Object> summary,
+      List<Object> classAnnotations, List<Object> staticInits, boolean valuesTruncated) {}
 
   private static final class InputFailure extends IllegalArgumentException {
     final String field;
@@ -90,14 +113,16 @@ class ReaJadxBridge {
     return current;
   }
 
-  private ClassSnapshot selected(JsonObject args) {
+  private Map<String, List<ClassSnapshot>> index() {
     JadxSession current = session();
     if (indexedSession != current) {
-      Map<String, List<ClassSnapshot>> index = new LinkedHashMap<>();
+      Map<String, List<ClassSnapshot>> built = new LinkedHashMap<>();
       if (!current.getClasses().isEmpty()) {
         JadxDecompiler decompiler = current.getClasses().get(0).getClassNode().root().getDecompiler();
         // JavaClass.getMethods/getFields/getInnerClasses all load code. Raw nodes do not.
         // Snapshot every identity before code generation can rewrite aliases or members.
+        // Constant initial values and class annotations live on raw nodes too, but
+        // forced code generation clears them, so they are captured here as well.
         for (JavaClass cls : decompiler.getClassesWithInners()) {
           ClassNode node = cls.getClassNode();
           List<MethodNode> ordered = new ArrayList<>(node.getMethods());
@@ -121,15 +146,34 @@ class ReaJadxBridge {
               "method_count", methods.size(), "field_count", fields.size(),
               "inner_class_count", inner.size(), "inner_classes", inner,
               "methods", methods.stream().map(MethodSnapshot::summary).toList(), "fields", fields);
-          index.computeIfAbsent(cls.getFullName(), ignored -> new ArrayList<>())
-              .add(new ClassSnapshot(cls, methods, summary));
+          Truncation valueTruncation = new Truncation();
+          ValueEncoder valueEncoder = new ValueEncoder(valueTruncation);
+          List<Object> annotations = encodedAnnotations(
+              valueEncoder.annotations(node.get(JadxAttrType.ANNOTATION_LIST)), valueEncoder);
+          List<FieldNode> constantFields = node.getFields().stream()
+              .filter(field -> field.get(JadxAttrType.CONSTANT_VALUE) != null)
+              .sorted(Comparator.comparing(FieldNode::getAlias)).toList();
+          if (constantFields.size() > INIT_FIELD_LIMIT) valueTruncation.hit = true;
+          List<Object> staticInits = new ArrayList<>();
+          for (FieldNode field : constantFields.stream().limit(INIT_FIELD_LIMIT).toList())
+            staticInits.add(object("name", field.getAlias(),
+                "reported_type", field.getType().toString(),
+                "constant", valueEncoder.value(field.get(JadxAttrType.CONSTANT_VALUE), 0)));
+          built.computeIfAbsent(cls.getFullName(), ignored -> new ArrayList<>())
+              .add(new ClassSnapshot(cls, methods, summary, annotations, staticInits,
+                  valueTruncation.hit));
         }
       }
-      classes = Collections.unmodifiableMap(index);
+      classes = Collections.unmodifiableMap(built);
       indexedSession = current;
     }
+    return classes;
+  }
+
+  private ClassSnapshot selected(JsonObject args) {
+    Map<String, List<ClassSnapshot>> index = index();
     String name = string(args, "class_name");
-    List<ClassSnapshot> candidates = classes.get(name);
+    List<ClassSnapshot> candidates = index.get(name);
     if (candidates == null) throw new InputFailure("class_name", "Exact class not found: " + name
         + "; use search_android_classes to discover fully qualified names.");
     if (candidates.size() != 1) throw new InputFailure("class_name", "Ambiguous metadata class identity: " + name
@@ -148,6 +192,135 @@ class ReaJadxBridge {
   private JavaMethod method(ClassSnapshot cls, MethodSnapshot selected) {
     JavaMethod result = cls.node().searchMethodByShortId(selected.shortId());
     if (result == null) throw new IllegalArgumentException("Method identity no longer available: " + selected.shortId());
+    return result;
+  }
+
+  private static String unescape(String raw) {
+    StringBuilder out = new StringBuilder(raw.length());
+    for (int index = 0; index < raw.length(); index++) {
+      char character = raw.charAt(index);
+      if (character != '\\' || index + 1 >= raw.length()) {
+        out.append(character);
+        continue;
+      }
+      char next = raw.charAt(++index);
+      switch (next) {
+        case 'n': out.append('\n'); break;
+        case 'r': out.append('\r'); break;
+        case 't': out.append('\t'); break;
+        case 'b': out.append('\b'); break;
+        case 'f': out.append('\f'); break;
+        case 'u': {
+          if (index + 4 < raw.length()) {
+            try {
+              out.append((char) Integer.parseInt(raw.substring(index + 1, index + 5), 16));
+              index += 4;
+            } catch (RuntimeException ignored) {
+              out.append('u');
+            }
+          } else out.append('u');
+          break;
+        }
+        default: out.append(next); break;
+      }
+    }
+    return out.toString();
+  }
+
+  /** Count same-name overloads the way the TS projector orders them. */
+  private static int overloadCountOf(ClassSnapshot cls, String name) {
+    int count = 0;
+    for (MethodSnapshot snapshot : cls.methods())
+      if (snapshot.name().equals(name)) count++;
+    return count;
+  }
+
+  private void harvestStringConstants(
+      List<Map<String, Object>> items,
+      ClassSnapshot cls,
+      MethodSnapshot snapshot,
+      int overloadIndex,
+      String body,
+      String kind,
+      boolean fellBack,
+      String query) {
+    String representation = kind.equals("smali") ? "smali" : "java";
+    Matcher matches = representation.equals("smali")
+        ? SMALI_STRING.matcher(body) : JAVA_STRING.matcher(body);
+    while (matches.find()) {
+      String value = unescape(matches.group(1));
+      if (value.contains(query)) items.add(object(
+          "class_name", cls.node().getFullName(),
+          "method_name", snapshot.name(),
+          "overload_index", overloadIndex,
+          "overload_count", overloadCountOf(cls, snapshot.name()),
+          "value", value,
+          "representation", representation,
+          "fell_back", fellBack));
+    }
+  }
+
+  /**
+   * Case-sensitive substring scan over harvested string constants. Method
+   * bodies come from the same decompile-or-smali path as get_method_body, so a
+   * body that cannot be produced is skipped and reported, not denied.
+   */
+  private Map<String, Object> searchStringConstants(JsonObject args) {
+    Map<String, List<ClassSnapshot>> index = index();
+    String query = string(args, "query");
+    int classLimit = Math.min(integer(args, "class_limit", SCAN_CLASS_DEFAULT), SCAN_CLASS_LIMIT);
+    int resultLimit = Math.min(integer(args, "results_limit", SCAN_RESULT_DEFAULT), SCAN_RESULT_LIMIT);
+    JadxSession current = session();
+    int totalClasses = 0;
+    for (List<ClassSnapshot> group : index.values()) totalClasses += group.size();
+    List<Map<String, Object>> items = new ArrayList<>();
+    int scannedClasses = 0;
+    int scannedMethods = 0;
+    int skippedMethods = 0;
+    boolean truncated = false;
+    scan: for (List<ClassSnapshot> group : index.values()) {
+      for (ClassSnapshot cls : group) {
+        if (scannedClasses >= classLimit || items.size() >= resultLimit) {
+          truncated = true;
+          break scan;
+        }
+        scannedClasses++;
+        Map<String, Integer> overloadsSeen = new HashMap<>();
+        int methodsScanned = 0;
+        for (MethodSnapshot snapshot : cls.methods()) {
+          if (items.size() >= resultLimit) {
+            truncated = true;
+            break scan;
+          }
+          if (methodsScanned >= SCAN_METHOD_LIMIT) {
+            truncated = true;
+            break;
+          }
+          methodsScanned++;
+          scannedMethods++;
+          int overloadsOfName = overloadsSeen.merge(snapshot.name(), 1, Integer::sum) - 1;
+          try {
+            JadxSession.SmartCode code = current.getMethodBodySmart(
+                method(cls, snapshot), current.getMaxSourceBytes(), true);
+            harvestStringConstants(items, cls, snapshot, overloadsOfName,
+                code.getText(), code.getKind(), code.getFellBack(), query);
+          } catch (Throwable failure) {
+            // Decompile, smali and source-generation failures skip one method;
+            // the scan itself stays alive and reports the skip count.
+            skippedMethods++;
+          }
+        }
+      }
+    }
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("query", query);
+    result.put("total_classes", totalClasses);
+    result.put("scanned_classes", scannedClasses);
+    result.put("scanned_methods", scannedMethods);
+    result.put("skipped_methods", skippedMethods);
+    result.put("truncated", truncated);
+    result.put("coverage", truncated ? "partial" : "complete");
+    result.put("items", items);
     return result;
   }
 
@@ -271,19 +444,10 @@ class ReaJadxBridge {
     result.put("class_name", cls.summary().get("full_name"));
     if (methodName == null) {
       result.put("method_name", null);
-      List<IAnnotation> annotations = encoder.annotations(
-          cls.node().getClassNode().get(JadxAttrType.ANNOTATION_LIST));
-      List<FieldNode> fields = cls.node().getClassNode().getFields().stream()
-          .filter(field -> field.get(JadxAttrType.CONSTANT_VALUE) != null)
-          .sorted(Comparator.comparing(FieldNode::getAlias)).toList();
-      if (fields.size() > INIT_FIELD_LIMIT) truncation.hit = true;
-      List<Object> inits = new ArrayList<>();
-      for (FieldNode field : fields.stream().limit(INIT_FIELD_LIMIT).toList())
-        inits.add(object("name", field.getAlias(),
-            "reported_type", field.getType().toString(),
-            "constant", encoder.value(field.get(JadxAttrType.CONSTANT_VALUE), 0)));
-      result.put("annotations", encodedAnnotations(annotations, encoder));
-      result.put("static_inits", inits);
+      // Served from the pre-codegen snapshot; forced decomposition clears live attrs.
+      result.put("annotations", cls.classAnnotations());
+      result.put("static_inits", cls.staticInits());
+      truncation.hit = cls.valuesTruncated();
     } else {
       List<MethodSnapshot> overloads = methods(cls, args);
       int index = integer(args, "overload_index", 0);
@@ -324,6 +488,7 @@ class ReaJadxBridge {
       return json(Map.of("total", names.size(), "offset", offset, "limit", limit,
           "items", names.subList(start, end)));
     }
+    if (name.equals("search_string_constants")) return json(searchStringConstants(args));
     ClassSnapshot cls = selected(args);
     if (name.equals("get_annotation_values")) return json(annotationValues(cls, args));
     if (name.equals("get_class_summary")) return json(cls.summary());
@@ -358,7 +523,11 @@ class ReaJadxBridge {
     PrintStream protocolOut = System.out;
     System.setOut(System.err);
     SessionHolder holder = new SessionHolder(new SessionConfig(
-        1048576, 0, 90000L, 1, List.of(), List.of(), 64, ResourceMode.FULL));
+        // Decompiles are cached across the whole-APK scan budget; the engine
+        // unloads least-recent classes below this, which strips pass-derived
+        // attributes (override markers, constant values) and degrades any body
+        // re-rendered after a large scan.
+        1048576, 0, 90000L, 1, List.of(), List.of(), SCAN_CLASS_LIMIT, ResourceMode.FULL));
     ServerCapabilities capabilities = new ServerCapabilities(
         new ServerCapabilities.Tools(null), null, null, null, null, null, null, Map.of());
     Server server = new Server(new Implementation("rea-jadx-bridge", "1", null, null, null),
@@ -416,6 +585,20 @@ class ReaJadxBridge {
         null, null, null, null, null, null);
     server.addTool(annotationTool, (connection, request, continuation) -> {
       try { return bridge.handle("get_annotation_values", request.getArguments()); }
+      catch (InputFailure error) { return text(JSON.toJson(Map.of(
+          "kind", "invalid-input", "field", error.field, "message", error.getMessage())), true); }
+      catch (IllegalArgumentException error) { return text(error.getMessage(), true); }
+    });
+    Map<String, kotlinx.serialization.json.JsonElement> searchSchema = new LinkedHashMap<>();
+    searchSchema.put("query", kotlinx.serialization.json.JsonElementKt.JsonPrimitive("string"));
+    searchSchema.put("class_limit", kotlinx.serialization.json.JsonElementKt.JsonPrimitive("integer"));
+    searchSchema.put("results_limit", kotlinx.serialization.json.JsonElementKt.JsonPrimitive("integer"));
+    Tool searchTool = new Tool("search_string_constants",
+        new ToolSchema(null, new JsonObject(searchSchema), List.of("query"), null),
+        "Case-sensitive dex string-constant search over every parsed class snapshot, harvested from each scanned method's decompiled Java or smali body. Bounded by class_limit (default 256, cap 8192), results_limit (default 200, cap 1000) and a per-class method budget; bodies that cannot be produced are skipped and counted.",
+        null, null, null, null, null, null);
+    server.addTool(searchTool, (connection, request, continuation) -> {
+      try { return bridge.handle("search_string_constants", request.getArguments()); }
       catch (InputFailure error) { return text(JSON.toJson(Map.of(
           "kind", "invalid-input", "field", error.field, "message", error.getMessage())), true); }
       catch (IllegalArgumentException error) { return text(error.getMessage(), true); }

@@ -38,6 +38,21 @@ export const ANDROID_TOOL_CONTRACTS = [
     ],
   },
   {
+    name: "search_android_strings",
+    ...toolContractMetadata("search_android_strings"),
+    description:
+      "Search dex string constants in an explicit local APK by case-sensitive substring, harvested from each scanned method's decompiled Java or smali body. Reports per-class scan budgets, skipped method bodies and whether a coverage budget truncated the scan; an empty result does not prove absence. Requires a caller-supplied JADX MCP JAR and JDK; no APK execution.",
+    kind: "android-provider",
+    inputSchema: androidInputSchemas.search_android_strings,
+    outputSchema: evidenceResultOf(androidResultSchemas.search_android_strings),
+    examples: [
+      {
+        title: "Find a string constant",
+        input: { path: "/tmp/Example.apk", query: "authorization" },
+      },
+    ],
+  },
+  {
     name: "inspect_android_class",
     ...toolContractMetadata("inspect_android_class"),
     description:

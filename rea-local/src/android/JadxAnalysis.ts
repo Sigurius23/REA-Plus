@@ -18,6 +18,7 @@ import {
   jadxClassSchema,
   jadxLoadSchema,
   jadxMethodSchema,
+  jadxStringConstantsSchema,
   jadxXrefsSchema,
   normalizeJadxText,
 } from "./JadxProtocol.js";
@@ -69,7 +70,12 @@ const classSummary = async (
   tools: JadxToolPort,
   request: Exclude<
     AndroidRequest,
-    { operation: "inspect_android_package" | "search_android_classes" }
+    {
+      operation:
+        | "inspect_android_package"
+        | "search_android_classes"
+        | "search_android_strings";
+    }
   >,
 ): Promise<ClassSummary> => {
   const raw = await tools.json("get_class_summary", {
@@ -115,7 +121,12 @@ const annotationValues = async (
   tools: JadxToolPort,
   request: Exclude<
     AndroidRequest,
-    { operation: "inspect_android_package" | "search_android_classes" }
+    {
+      operation:
+        | "inspect_android_package"
+        | "search_android_classes"
+        | "search_android_strings";
+    }
   >,
   className: string,
   selection?: {
@@ -291,6 +302,47 @@ const searchClasses = async (
   });
 };
 
+const searchStrings = async (
+  tools: JadxToolPort,
+  request: Extract<AndroidRequest, { operation: "search_android_strings" }>,
+  engine: Engine,
+): Promise<JsonValue> => {
+  const raw = await tools.json("search_string_constants", {
+    query: request.input.query,
+    ...(request.input.class_limit === undefined
+      ? {}
+      : { class_limit: request.input.class_limit }),
+  });
+  const parsed = jadxStringConstantsSchema.safeParse(raw);
+  if (!parsed.success)
+    throw new AnalysisOutputError(
+      request.operation,
+      "JADX string-constant scan is malformed",
+      { cause: parsed.error },
+    );
+  const scan = parsed.data;
+  if (scan.query !== request.input.query)
+    throw new AnalysisOutputError(
+      request.operation,
+      "JADX searched a different query",
+    );
+  if ((scan.coverage === "partial") !== scan.truncated)
+    throw new AnalysisOutputError(
+      request.operation,
+      "JADX coverage and truncation disagree",
+    );
+  return androidResultSchemas.search_android_strings.parse({
+    engine,
+    query: scan.query,
+    total_classes: scan.total_classes,
+    scanned_classes: scan.scanned_classes,
+    scanned_methods: scan.scanned_methods,
+    skipped_methods: scan.skipped_methods,
+    matches: scan.items,
+    coverage: scan.coverage,
+  });
+};
+
 const matchingMethods = (
   summary: ClassSummary,
   request: Extract<
@@ -395,6 +447,8 @@ export const analyzeJadxRequest = async (
     return inspectPackage(tools, loaded, engine);
   if (request.operation === "search_android_classes")
     return searchClasses(tools, request, loaded, engine);
+  if (request.operation === "search_android_strings")
+    return searchStrings(tools, request, engine);
   const summary = await classSummary(tools, request);
   if (request.operation === "inspect_android_class") {
     const values = await annotationValues(tools, request, summary.full_name);

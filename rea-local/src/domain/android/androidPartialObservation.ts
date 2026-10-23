@@ -8,6 +8,7 @@ import { APK_CONTAINER_FORMATS } from "./androidContainerFormat.js";
 const operationSchema = z.enum([
   "inspect_android_package",
   "search_android_classes",
+  "search_android_strings",
   "inspect_android_class",
   "inspect_android_method",
   "trace_android_references",

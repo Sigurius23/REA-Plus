@@ -105,6 +105,35 @@ register("get_class_summary", () =>
     ...(mode === "summary-error" ? { error: "summary timed out" } : {}),
   }),
 );
+register("search_string_constants", ({ query }) => {
+  if (mode === "string-tool-error")
+    return { ...text("string scan aborted"), isError: true };
+  if (mode === "wrong-string-query") query = "not-what-you-asked";
+  const items = [
+    {
+      class_name: "fixture.Target",
+      method_name: "onCreate",
+      full_name: "fixture.Target.onCreate",
+      overload_index: 0,
+      overload_count: 1,
+      value: "https://api.example.com/v1/fixture",
+      representation: "java",
+      fell_back: false,
+    },
+  ].filter((match) => match.value.includes(query));
+  const truncated = mode === "partial-scan";
+  return json({
+    query,
+    total_classes: classes.length,
+    scanned_classes: items.length === 0 ? 0 : 2,
+    scanned_methods: items.length === 0 ? 0 : 3,
+    skipped_methods: 0,
+    truncated,
+    coverage:
+      mode === "coverage-disagree" || truncated ? "partial" : "complete",
+    items,
+  });
+});
 register("get_method_body", ({ method_name, overload_index }) =>
   json({
     class_name: "fixture.Target",

@@ -96,6 +96,7 @@ export const CLI_COMMANDS = Object.freeze({
   startAdbActivity: "start-adb-activity",
   stopAdbApp: "stop-adb-app",
   searchAndroidClasses: "search-android-classes",
+  searchAndroidStrings: "search-android-strings",
   inspectAndroidClass: "inspect-android-class",
   inspectAndroidMethod: "inspect-android-method",
   traceAndroidReferences: "trace-android-references",

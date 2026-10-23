@@ -7,8 +7,8 @@ Open work on `main` following PR #1 and the field tests.
 - **Items 1, 3, 10, 11, 12:** Done. Merged in PR #1 or committed on `main`.
 - **Item 4 (radare2 DEX documentation):** Done (committed in `a27f184`); the real DEX fixture test remains.
 - **Native DMG verification on localized macOS hosts:** Fixed and verified. Added locale-independent status line matching and target fallback inspection in `NativeDmgArtifactReader.ts`. All 30 tests in `nativeDmgArtifactReader.test.ts` pass.
-- **jscpd duplicate lines:** Reduced from 2.88% down to 2.75% via shared `InlineReportService` abstraction across 24 offline inspector services. Refactoring CLI commands and tool registration will bring it below the 2.6% threshold.
-- **Flaky boundary tests:** `processCaptureProgress.test.ts` and `clientProfileLifecycle.test.ts` pass in isolation; timeout tolerances are sensitive under heavy whole-suite load.
+- **jscpd duplicate lines:** Reduced from 2.88% down to 2.50% duplicated lines. Beyond the shared `InlineReportService` sweep, the concentrated hotspots were extracted: `cli/coreBinaryCommands.ts` now uses shared option constants and one parameterized procedure-selector registration; `processTrace.fixture.ts` carries the trace capture/specification shared by the domain unit test and the MCP parity test; and the `webCaptureDiff` / `interfaceBuilderBundle` test suites use extracted capture helpers. 0.1 pts of headroom under the 2.6% threshold; consider lowering the threshold (the `.jscpd.json` comment calls for it) as remaining duplication is removed.
+- **Flaky boundary tests:** Done. Both `processCaptureProgress.test.ts` and `clientProfileLifecycle.test.ts` now use load-tolerant budgets (test orchestration only; the <\\_s cancellation-latency commitments themselves are untouched), and both pass under the v24.11.0 Node in isolation. The capability-skip path in `processCaptureProgress.test.ts` is mutation-backed: flipping `available: true` → `false` in `ProcessCaptureCapability.ts` flips the suite's assertions to the named-skip path as intended. A whole-suite re-run to confirm the budgets hold under full parallel load is still pending (host was busy during this pass). Runtime note: this host's default `node` is v22.17.0, which the CLI's own version gate refuses; tests that shell out to the CLI proxy fail with exit 1 unless vitest runs under the v24.11.0 Node in `/private/tmp/node-v24.11.0-darwin-arm64/bin`.
 - **Environment:** Node v24.11.0 is available locally in `/private/tmp/node-v24.11.0-darwin-arm64/bin`. Reverse engineering tools installed and verified: `ghidra` 12.1.4 (with OpenJDK 27), `radare2` 6.2.4, `binwalk` 3.1.0, `jadx` 1.5.6, and `apktool` 3.0.3.
 - **Ghidra DEX support:** Done on `main`. Forced `DexLoader` import with the Dalvik language selected from the DEX header version; DEX string-pool definition runs as a packaged post-analysis script (`ReaGhidraPrepareDex.java`) so Dalvik method discovery keeps working; DEX byte-read and file-offset behavior is documented honestly in `docs/ghidra-dex.md`; `npm run verify:ghidra:dex` verifies the committed `tests/fixtures/dex/` fixture end to end (green on macOS arm64/ghidra 12.1.4).
 - **Flaky `ghidraLauncher.test.ts` and `processFinalization.test.ts`:** Addressed. The launcher test now matches the DEX-aware conflict message (plus a new DEX-negative case); the finalization acceptance tests give compiled-workflow startup a 15s load-tolerant budget (30s test timeout) while keeping the cancellation-latency (<8s) commitments themselves untouched. Both green in isolation; whole-suite re-run pending (host load >100 at the time).
@@ -59,15 +59,22 @@ Open work on `main` following PR #1 and the field tests.
      `inspect_android_package` reports signing as `not_performed` and the
      signature blocks stay visible to inventory/extraction. Recommend building
      it only when a caller task actually needs tamper/lift detection.
-9. **Android string constants and bytecode searching:**
-   - Support searching string constants and Dalvik bytecode across classes and methods.
+9. **Android string constants and bytecode searching:** (done in working tree)
+   - `search-android-strings` / `search_android_strings`: scans string constants across decompiled method bodies (Java/smali), supporting `class_limit` (up to 8,192 classes), reporting `matches`, `scanned_classes`, `scanned_methods`, `skipped_methods`, and `coverage`.
+   - Scan-inspect ordering defect resolved: method bodies and `static_inits` stay byte-identical before and after whole-APK scans.
+   - Known boundaries documented:
+     1. Large-APK memory behavior (>8,192 classes or memory pressure near 4 GiB heap) remains unmeasured in production.
+     2. APKs exceeding 8,192 classes hit third-party JAR LRU cache eviction if rescanned.
+     3. Per-class method-cap skips are reflected in partial coverage, while `skipped_methods` counts engine decompile failures.
+     4. Verified on macOS arm64; Windows lifecycle verifier remains unexercised locally.
+     5. Engine scan-skip counts show small non-deterministic variance (12-23 across runs) on malformed/unparseable method bodies.
 10. **`inspect-jvm-artifact` duplicate entry handling:**
     - Done: Archive inventory now keeps the first record of a repeated name.
 
 ## Flaky tests and gate robustness
 
 11. **Test timeouts under concurrent load:**
-    - Bound and stabilize `tests/boundary/process/processCaptureProgress.test.ts` and `tests/boundary/cli/clientProfileLifecycle.test.ts` during whole-suite runs.
+    - Done on `main`: both suites' budgets and the capability-skip path are stabilized and mutation-checked as described in the status note above. Remaining follow-up: one whole-suite `npm run check:pr` re-run under the v24.11.0 Node to confirm the budgets hold under full parallel load.
 
 ## Consensus
 

@@ -20,6 +20,22 @@ export const androidInputSchemas = {
       .string()
       .describe("Case-sensitive class-name substring; empty lists all classes"),
   }),
+  search_android_strings: z.strictObject({
+    ...target,
+    query: z
+      .string()
+      .min(1)
+      .describe("Case-sensitive substring to find in dex string constants"),
+    class_limit: z
+      .number()
+      .int()
+      .positive()
+      .max(8192)
+      .optional()
+      .describe(
+        "Class identities to scan (default 256, cap 8192); raise to cover a whole small APK",
+      ),
+  }),
   inspect_android_class: z.strictObject(classTarget),
   inspect_android_method: z.strictObject({
     ...classTarget,
@@ -64,6 +80,10 @@ export const androidRequestSchema = z.discriminatedUnion("operation", [
   z.strictObject({
     operation: z.literal("search_android_classes"),
     input: androidInputSchemas.search_android_classes,
+  }),
+  z.strictObject({
+    operation: z.literal("search_android_strings"),
+    input: androidInputSchemas.search_android_strings,
   }),
   z.strictObject({
     operation: z.literal("inspect_android_class"),
@@ -233,6 +253,36 @@ export const androidResultSchemas = {
         "Matches that JADX gives to more than one class, such as obfuscated classes renamed from Kotlin metadata. inspect_android_class reports their raw identities as ambiguous.",
       ),
     coverage: z.literal("complete"),
+  }),
+  search_android_strings: z.strictObject({
+    ...common,
+    query: z.string(),
+    total_classes: z.number().int().nonnegative(),
+    scanned_classes: z.number().int().nonnegative(),
+    scanned_methods: z.number().int().nonnegative(),
+    skipped_methods: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe(
+        "Method bodies the engine could not produce; they are skipped, not denied",
+      ),
+    matches: z.array(
+      z.strictObject({
+        class_name: z.string().min(1),
+        method_name: z.string().min(1),
+        overload_index: z.number().int().nonnegative(),
+        overload_count: z.number().int().positive(),
+        value: z.string(),
+        representation: z.enum(["java", "smali"]),
+        fell_back: z.boolean(),
+      }),
+    ),
+    coverage: z
+      .enum(["complete", "partial"])
+      .describe(
+        "partial when a scan budget stopped the search; a complete empty result still does not prove absence, because only scanned method bodies in decompiled or smali form are searched",
+      ),
   }),
   inspect_android_class: z.strictObject({
     ...common,

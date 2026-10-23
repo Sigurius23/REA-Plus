@@ -70,6 +70,26 @@ export const jadxMethodSchema = z.object({
   markers: z.array(z.string()),
   body: z.string(),
 });
+export const jadxStringConstantsSchema = z.object({
+  query: z.string(),
+  total_classes: count,
+  scanned_classes: count,
+  scanned_methods: count,
+  skipped_methods: count,
+  truncated: z.boolean(),
+  coverage: z.enum(["complete", "partial"]),
+  items: z.array(
+    z.object({
+      class_name: z.string(),
+      method_name: z.string(),
+      overload_index: count,
+      overload_count: count,
+      value: z.string(),
+      representation: z.enum(["java", "smali"]),
+      fell_back: z.boolean(),
+    }),
+  ),
+});
 export const jadxAnnotationValuesSchema = z.object({
   class_name: z.string(),
   method_name: z.string().nullable(),

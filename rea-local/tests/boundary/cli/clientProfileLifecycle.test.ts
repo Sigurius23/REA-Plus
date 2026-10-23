@@ -104,7 +104,10 @@ for (const group of groups) {
           arguments: arguments_,
           cwd: home,
           environment,
-          timeoutMs: 20_000,
+          // Per-invocation budget: one slow compiled-CLI spawn under parallel
+          // whole-suite load must not fail the whole lifecycle walk. The 120s
+          // test budget still bounds the full serial sequence.
+          timeoutMs: 60_000,
         });
       for (const { client, config, skillDirectory } of profiles) {
         const planned = await run([

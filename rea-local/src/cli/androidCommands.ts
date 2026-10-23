@@ -64,6 +64,35 @@ export const registerAndroidCommands = (
         args,
       ),
   });
+  cli.command(CLI_COMMANDS.searchAndroidStrings, {
+    description: "Search APK string constants by case-sensitive substring",
+    args: z.object({
+      path,
+      query: z
+        .string()
+        .min(1)
+        .describe("Case-sensitive substring to find in dex string constants"),
+    }),
+    options: z.object({
+      classLimit: z
+        .number()
+        .int()
+        .positive()
+        .max(8192)
+        .optional()
+        .describe(
+          "Class identities to scan (default 256, cap 8192); raise to cover a whole small APK",
+        ),
+    }),
+    run: ({ args, options }) =>
+      execute(CLI_COMMANDS.searchAndroidStrings, "search_android_strings", {
+        path: args.path,
+        query: args.query,
+        ...(options.classLimit === undefined
+          ? {}
+          : { class_limit: options.classLimit }),
+      }),
+  });
   cli.command(CLI_COMMANDS.inspectAndroidClass, {
     description: "Inspect one exact APK class's member inventory",
     args: z.object({ path, className }),

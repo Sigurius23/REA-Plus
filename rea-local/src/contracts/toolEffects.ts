@@ -311,6 +311,11 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
     launchesProcess: true,
     writesFilesystem: true,
   }),
+  search_android_strings: effects({
+    mutatesSession: true,
+    launchesProcess: true,
+    writesFilesystem: true,
+  }),
   inspect_android_class: effects({
     mutatesSession: true,
     launchesProcess: true,
