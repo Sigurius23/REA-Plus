@@ -59,7 +59,7 @@ Open work on `main` following PR #1 and the field tests.
      `inspect_android_package` reports signing as `not_performed` and the
      signature blocks stay visible to inventory/extraction. Recommend building
      it only when a caller task actually needs tamper/lift detection.
-9. **Android string constants and bytecode searching:** (done in working tree)
+9. **Android string constants and bytecode searching:** (done in `1c1333e`)
    - `search-android-strings` / `search_android_strings`: scans string constants across decompiled method bodies (Java/smali), supporting `class_limit` (up to 8,192 classes), reporting `matches`, `scanned_classes`, `scanned_methods`, `skipped_methods`, and `coverage`.
    - Scan-inspect ordering defect resolved: method bodies and `static_inits` stay byte-identical before and after whole-APK scans.
    - Known boundaries documented:
