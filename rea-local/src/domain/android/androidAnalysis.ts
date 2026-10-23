@@ -106,104 +106,105 @@ const engine = z.strictObject({
 });
 const common = { engine };
 
-/** Encoded dex annotation values, projected without resolving any class. */
-export type AndroidEncodedValue =
-  | { readonly kind: "null"; readonly value: null }
-  | {
-      readonly kind: "boolean" | "byte" | "short" | "int";
-      readonly value: number;
-    }
-  | { readonly kind: "long"; readonly value: number | string }
-  | { readonly kind: "float" | "double"; readonly value: number | string }
-  | {
-      readonly kind: "string" | "char" | "type" | "other";
-      readonly value: string;
-    }
-  | {
-      readonly kind: "field";
-      readonly value: {
-        readonly class: string;
-        readonly name: string;
-        readonly type: string;
-      };
-    }
-  | {
-      readonly kind: "method";
-      readonly value: {
-        readonly class: string;
-        readonly name: string;
-        readonly params: string[];
-        readonly return: string;
-      };
-    }
-  | { readonly kind: "array"; readonly value: AndroidEncodedValue[] }
-  | { readonly kind: "annotation"; readonly value: AndroidAnnotation };
+/**
+ * Encoded dex annotation values, projected without resolving any class.
+ *
+ * The advertised encoding shape is depth-bounded, not recursive: the JADX
+ * bridge degrades array/annotation components beyond its own depth limit into
+ * `other` identity strings (see bridge/android ReaJadxBridge
+ * VALUE_DEPTH_LIMIT = 8), so a finite level schema covers every value the
+ * bridge can emit and tool output schemas stay free of recursive references.
+ */
 
-/** One declared dex annotation with its encoded named values. */
-export type AndroidAnnotation = {
-  readonly class: string;
-  readonly visibility: "build" | "runtime" | "system";
-  values: Record<string, AndroidEncodedValue>;
-};
+/**
+ * Non-composite encoded values; valid at every application depth.
+ *
+ * The level chain bottoms out at depth 9 (one past the bridge's own
+ * VALUE_DEPTH_LIMIT of 8) so every depth the bridge can emit is covered
+ * before the degradation tier, which contains only these variants.
+ */
+const scalarValueOptions = [
+  z.strictObject({ kind: z.literal("null"), value: z.null() }),
+  z.strictObject({
+    kind: z.enum(["boolean", "byte", "short", "int"]),
+    value: z.number().int().safe(),
+  }),
+  z.strictObject({
+    kind: z.literal("long"),
+    value: z.union([z.number(), z.string()]),
+  }),
+  z.strictObject({
+    kind: z.enum(["float", "double"]),
+    value: z.union([z.number(), z.string()]),
+  }),
+  z.strictObject({
+    kind: z.enum(["string", "char", "type", "other"]),
+    value: z.string(),
+  }),
+  z.strictObject({
+    kind: z.literal("field"),
+    value: z.strictObject({
+      class: z.string().min(1),
+      name: z.string().min(1),
+      type: z.string().min(1),
+    }),
+  }),
+  z.strictObject({
+    kind: z.literal("method"),
+    value: z.strictObject({
+      class: z.string().min(1),
+      name: z.string().min(1),
+      params: z.array(z.string()),
+      return: z.string().min(1),
+    }),
+  }),
+] as const;
 
-const encodedValueSchema: z.ZodType<AndroidEncodedValue> = z.lazy(() =>
-  z.discriminatedUnion("kind", [
-    z.strictObject({ kind: z.literal("null"), value: z.null() }),
-    z.strictObject({
-      kind: z.enum(["boolean", "byte", "short", "int"]),
-      value: z.number().int().safe(),
-    }),
-    z.strictObject({
-      kind: z.literal("long"),
-      value: z.union([z.number(), z.string()]),
-    }),
-    z.strictObject({
-      kind: z.enum(["float", "double"]),
-      value: z.union([z.number(), z.string()]),
-    }),
-    z.strictObject({
-      kind: z.enum(["string", "char", "type", "other"]),
-      value: z.string(),
-    }),
-    z.strictObject({
-      kind: z.literal("field"),
-      value: z.strictObject({
-        class: z.string().min(1),
-        name: z.string().min(1),
-        type: z.string().min(1),
-      }),
-    }),
-    z.strictObject({
-      kind: z.literal("method"),
-      value: z.strictObject({
-        class: z.string().min(1),
-        name: z.string().min(1),
-        params: z.array(z.string()),
-        return: z.string().min(1),
-      }),
-    }),
-    z.strictObject({
-      kind: z.literal("array"),
-      value: z.array(encodedValueSchema),
-    }),
-    z.strictObject({ kind: z.literal("annotation"), value: annotationSchema }),
-  ]),
-);
-
-const annotationSchema: z.ZodType<AndroidAnnotation> = z.lazy(() =>
+/** Annotation record whose encoded values carry the next depth. */
+const annotationRecordAt = <Value extends z.ZodTypeAny>(value: Value) =>
   z.strictObject({
     class: z.string().min(1),
     visibility: z.enum(["build", "runtime", "system"]),
-    values: z.record(z.string(), encodedValueSchema),
-  }),
-);
+    values: z.record(z.string(), value),
+  });
+
+/** Level above the child depth: scalar variants plus bounded composites. */
+const encodedLevelAbove = <Child extends z.ZodTypeAny>(child: Child) =>
+  z.discriminatedUnion("kind", [
+    ...scalarValueOptions,
+    z.strictObject({ kind: z.literal("array"), value: z.array(child) }),
+    z.strictObject({
+      kind: z.literal("annotation"),
+      value: annotationRecordAt(child),
+    }),
+  ]);
+
+/**
+ * Explicit depth levels mirroring the bridge guarantee: composites may nest
+ * through the depth limit; past it every component degrades to the
+ * non-composite variants (identity strings). Top-level annotation records sit
+ * at bridge depth 0, so their values and static-init constants start at
+ * depth 1 and static-init constants accept composites from depth 0.
+ */
+const encodedValueDepth9 = z.discriminatedUnion("kind", [
+  ...scalarValueOptions,
+]);
+const encodedValueDepth8 = encodedLevelAbove(encodedValueDepth9);
+const encodedValueDepth7 = encodedLevelAbove(encodedValueDepth8);
+const encodedValueDepth6 = encodedLevelAbove(encodedValueDepth7);
+const encodedValueDepth5 = encodedLevelAbove(encodedValueDepth6);
+const encodedValueDepth4 = encodedLevelAbove(encodedValueDepth5);
+const encodedValueDepth3 = encodedLevelAbove(encodedValueDepth4);
+const encodedValueDepth2 = encodedLevelAbove(encodedValueDepth3);
+const encodedValueDepth1 = encodedLevelAbove(encodedValueDepth2);
+const encodedValueDepth0 = encodedLevelAbove(encodedValueDepth1);
 
 /** Parsed annotation schemas and encoded initial values are named for adapters. */
-export const androidAnnotationSchema = annotationSchema;
+export const androidAnnotationSchema = annotationRecordAt(encodedValueDepth1);
 export const androidStaticInitSchema = z.strictObject({
   name: z.string().min(1),
   reported_type: z.string(),
-  constant: encodedValueSchema,
+  constant: encodedValueDepth0,
 });
 
 /** Portable observations with explicit decompiler and identity limitations. */
@@ -241,7 +242,7 @@ export const androidResultSchemas = {
       z.strictObject({ name: z.string(), reported_type: z.string() }),
     ),
     inner_classes: z.array(z.string()),
-    annotations: z.array(annotationSchema),
+    annotations: z.array(androidAnnotationSchema),
     static_inits: z.array(androidStaticInitSchema),
     value_coverage: valueCoverage,
   }),
@@ -255,7 +256,7 @@ export const androidResultSchemas = {
     fell_back: z.boolean(),
     markers: z.array(z.string()),
     source: textCoverage,
-    annotations: z.array(annotationSchema),
+    annotations: z.array(androidAnnotationSchema),
     value_coverage: valueCoverage,
   }),
   trace_android_references: z.strictObject({
