@@ -223,8 +223,9 @@ const readMacho = (bytes: Buffer): ImageLayout => {
         if (type === 0x1 || type === 0xc || type === 0x12) continue;
         const offset = bytes.readUInt32LE(s + 48);
         const length = Number(bytes.readBigUInt64LE(s + 40));
+        const name = bytes.toString("latin1", s, s + 16).replace(/\0+$/u, "");
         sections.push({
-          name: `${segment},${bytes.toString("latin1", s, s + 16).replace(/\0+$/u, "")}`,
+          name: `${segment},${name}`,
           fileOffset: offset,
           size: Math.min(length, Math.max(0, bytes.length - offset)),
           address: bytes.readBigUInt64LE(s + 32),

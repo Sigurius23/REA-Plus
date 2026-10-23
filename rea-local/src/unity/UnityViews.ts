@@ -13,6 +13,7 @@ import {
   type ObjectRecord,
   type Pointer,
 } from "./UnityObjects.js";
+import { compositeKey } from "../domain/unicodeCodePointOrder.js";
 
 export const basename = (path: string): string =>
   path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1);
@@ -171,7 +172,7 @@ export const scriptsOf = (
 ): UnityScript[] => {
   const scripts = new Map<string, UnityScript & { behaviours: number }>();
   const localKey = (file: string, pathId: string) =>
-    `local\0${file}\0${pathId}`;
+    compositeKey([file, pathId]);
   for (const file of files)
     for (const record of file.records)
       if (record.object.classId === 115) {
@@ -192,7 +193,7 @@ export const scriptsOf = (
     const key =
       script.file === null
         ? localKey(object.file, script.path_id)
-        : `external\0${script.file}\0${script.path_id}`;
+        : compositeKey(["external", script.file, script.path_id]);
     const resolved =
       scripts.get(key) ??
       [...scripts.values()].find(

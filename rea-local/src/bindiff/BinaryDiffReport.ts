@@ -11,6 +11,7 @@ import type { FunctionInventory } from "./BinaryDiffCollector.js";
 import type { FunctionFeatures } from "./BinaryDiffFeatures.js";
 import { editScript } from "./BinaryDiffEdits.js";
 import type { FunctionMatch, matchFunctions } from "./BinaryDiffMatcher.js";
+import { compositeKey } from "../domain/unicodeCodePointOrder.js";
 
 /** Items listed per added or removed call, string or constant. */
 const LIST_LIMIT = 16;
@@ -37,8 +38,8 @@ const unmatchedCounts = (left: readonly string[], right: readonly string[]) => {
 
 const isIdentical = ({ left, right }: FunctionMatch) =>
   left.exactHash === right.exactHash &&
-  left.strings.join("\0") === right.strings.join("\0") &&
-  left.calleeNames.join("\0") === right.calleeNames.join("\0");
+  compositeKey(left.strings) === compositeKey(right.strings) &&
+  compositeKey(left.calleeNames) === compositeKey(right.calleeNames);
 
 const ref = ({ address, name }: FunctionFeatures) => ({ address, name });
 

@@ -5,6 +5,7 @@ import {
   RPG_MAKER_TABLES,
   type RpgMakerTable,
 } from "../domain/rpgmaker/rpgMakerProject.js";
+import { compositeKey } from "../domain/unicodeCodePointOrder.js";
 import {
   ProjectReader,
   RpgMakerFormatError,
@@ -223,6 +224,6 @@ export const dataDigest = (files: readonly ReadFile[]): string => {
   for (const file of [...files].sort((left, right) =>
     left.path < right.path ? -1 : 1,
   ))
-    hash.update(`${file.path}\0${file.sha256}\n`);
+    hash.update(compositeKey([file.path, file.sha256]));
   return hash.digest("hex");
 };

@@ -5,6 +5,7 @@ import {
   AnalysisOutputError,
 } from "../domain/analysisErrorCore.js";
 import type { JsonValue } from "../domain/jsonValue.js";
+import { compositeKey } from "../domain/unicodeCodePointOrder.js";
 import {
   RADARE2_PROVIDER_IDENTITY,
   type Radare2Operation,
@@ -325,7 +326,10 @@ export class Radare2OperationRunner {
     const add = (address: bigint, name: string): void => {
       if (name.length === 0 || address === RADARE2_INVALID_ADDRESS) return;
       if (filter === undefined || address === filter)
-        unique.set(`${address.toString(16)}\0${name}`, { address, name });
+        unique.set(compositeKey([address.toString(16), name]), {
+          address,
+          name,
+        });
     };
     for (const symbol of await this.#inventory.symbols(operation, signal))
       if (symbol.type !== "FILE" && symbol.type !== "SECTION")

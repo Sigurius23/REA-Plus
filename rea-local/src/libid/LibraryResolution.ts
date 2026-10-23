@@ -1,6 +1,7 @@
 import { bytesAt, type TargetImage } from "./TargetImage.js";
 import type { Hit, Signature } from "./LibrarySignatures.js";
 import type { ObjectReference } from "./ObjectFiles.js";
+import { compositeKey } from "../domain/unicodeCodePointOrder.js";
 
 /**
  * Turn raw signature hits into identified functions. A hit inside a longer
@@ -85,7 +86,7 @@ const tally = (
 };
 
 const origin = (signature: Signature) =>
-  `${signature.section}\0${String(signature.offset)}`;
+  compositeKey([signature.section, signature.offset]);
 
 /** Drop hits that start inside a longer hit at another address. */
 const outermost = (hits: readonly Hit[]): Group[] => {

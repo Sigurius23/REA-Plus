@@ -3,6 +3,7 @@ import { basename } from "node:path";
 import { archiveMembers, isArchive } from "./ArchiveMembers.js";
 import { readRelocatableObject, type ObjectReference } from "./ObjectFiles.js";
 import type { TargetImage } from "./TargetImage.js";
+import { compositeKey } from "../domain/unicodeCodePointOrder.js";
 
 /**
  * A library function's whole body as a byte pattern: every byte the linker
@@ -92,7 +93,7 @@ export const librarySignatures = (
         local: fn.local,
         library: path,
         member: member.name,
-        section: `${path}\0${member.name}\0${String(fn.section)}`,
+        section: compositeKey([path, member.name, String(fn.section)]),
         offset: fn.offset,
         bytes: fn.bytes,
         mask,
