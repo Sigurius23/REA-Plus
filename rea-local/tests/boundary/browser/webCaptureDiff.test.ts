@@ -22,21 +22,35 @@ afterEach(async () => {
   await Promise.all(browsers.splice(0).map(async (browser) => browser.close()));
 });
 
+/** Capture the replay page before tests reshape it, tracking cleanup. */
+const captureReplayPage = async (options?: {
+  readonly includeWebsocketShapes?: boolean;
+}): Promise<{
+  browser: FakeCdpBrowser;
+  captured: WebPageInspection;
+}> => {
+  const browser = await startFakeCdpBrowser();
+  browsers.push(browser);
+  const captured = await new CdpBrowserProvider().inspectPage(
+    inspectWebPageInputSchema.parse({
+      cdp_endpoint: browser.endpoint,
+      allowed_origins: [browser.allowedOrigin],
+      target_id: "allowed-page",
+      observation_ms: 0,
+      ...(options?.includeWebsocketShapes
+        ? { include_websocket_shapes: true }
+        : {}),
+    }),
+  );
+  if (!captured.ok) throw captured.error;
+  return { browser, captured: captured.value };
+};
+
 describe("web capture diff", () => {
   it("reports stable observed changes while preserving unknown dimensions", async () => {
-    const browser = await startFakeCdpBrowser();
-    browsers.push(browser);
-    const captured = await new CdpBrowserProvider().inspectPage(
-      inspectWebPageInputSchema.parse({
-        cdp_endpoint: browser.endpoint,
-        allowed_origins: [browser.allowedOrigin],
-        target_id: "allowed-page",
-        observation_ms: 0,
-      }),
-    );
-    if (!captured.ok) throw captured.error;
-    markSectionsComplete(captured.value, ["scripts"]);
-    const after = structuredClone(captured.value);
+    const { browser, captured } = await captureReplayPage();
+    markSectionsComplete(captured, ["scripts"]);
+    const after = structuredClone(captured);
     after.scripts.items = [];
     const request = after.network.requests[0];
     if (request !== undefined) {
@@ -58,7 +72,7 @@ describe("web capture diff", () => {
 
     const result = compareWebCaptures(
       compareWebCapturesInputSchema.parse({
-        before: { inspection: captured.value },
+        before: { inspection: captured },
         after: { inspection: after },
       }),
     );
@@ -103,24 +117,14 @@ describe("web capture diff", () => {
   });
 
   it("does not claim unchanged when a relevant section is incomplete", async () => {
-    const browser = await startFakeCdpBrowser();
-    browsers.push(browser);
-    const captured = await new CdpBrowserProvider().inspectPage(
-      inspectWebPageInputSchema.parse({
-        cdp_endpoint: browser.endpoint,
-        allowed_origins: [browser.allowedOrigin],
-        target_id: "allowed-page",
-        observation_ms: 0,
-      }),
-    );
-    if (!captured.ok) throw captured.error;
-    const incomplete = structuredClone(captured.value);
+    const { captured } = await captureReplayPage();
+    const incomplete = structuredClone(captured);
     incomplete.completeness.truncated_sections.push("dom");
 
     const result = compareWebCaptures(
       compareWebCapturesInputSchema.parse({
         before: { inspection: incomplete },
-        after: { inspection: captured.value },
+        after: { inspection: captured },
       }),
     );
 
@@ -334,19 +338,10 @@ describe("web capture WebSocket shape comparison", () => {
 
 describe("web capture WebSocket shape coverage", () => {
   it("keeps unchanged unknown when selected WebSocket shapes are unavailable", async () => {
-    const browser = await startFakeCdpBrowser();
-    browsers.push(browser);
-    const captured = await new CdpBrowserProvider().inspectPage(
-      inspectWebPageInputSchema.parse({
-        cdp_endpoint: browser.endpoint,
-        allowed_origins: [browser.allowedOrigin],
-        target_id: "allowed-page",
-        observation_ms: 0,
-        include_websocket_shapes: true,
-      }),
-    );
-    if (!captured.ok) throw captured.error;
-    const unavailable = structuredClone(captured.value);
+    const { captured } = await captureReplayPage({
+      includeWebsocketShapes: true,
+    });
+    const unavailable = structuredClone(captured);
     markSectionsComplete(unavailable, [
       "network_requests",
       "websocket_connections",
@@ -447,18 +442,8 @@ describe("web capture WebSocket payload byte coverage", () => {
 
 describe("web capture diff", () => {
   it("ignores transient request IDs and capture-approval state", async () => {
-    const browser = await startFakeCdpBrowser();
-    browsers.push(browser);
-    const captured = await new CdpBrowserProvider().inspectPage(
-      inspectWebPageInputSchema.parse({
-        cdp_endpoint: browser.endpoint,
-        allowed_origins: [browser.allowedOrigin],
-        target_id: "allowed-page",
-        observation_ms: 0,
-      }),
-    );
-    if (!captured.ok) throw captured.error;
-    const after = structuredClone(captured.value);
+    const { captured } = await captureReplayPage();
+    const after = structuredClone(captured);
     const request = after.network.requests[0];
     if (request !== undefined) request.request_id = "different-cdp-request-id";
     const response = after.metadata.responses[0];
@@ -467,12 +452,12 @@ describe("web capture diff", () => {
     const script = after.scripts.items[0];
     if (script !== undefined && !script.source.included)
       script.source.reason = "different approval explanation";
-    markSectionsComplete(captured.value, ["scripts", "metadata"]);
+    markSectionsComplete(captured, ["scripts", "metadata"]);
     markSectionsComplete(after, ["scripts", "metadata"]);
 
     const result = compareWebCaptures(
       compareWebCapturesInputSchema.parse({
-        before: { inspection: captured.value },
+        before: { inspection: captured },
         after: { inspection: after },
       }),
     );
@@ -486,18 +471,8 @@ describe("web capture diff", () => {
 
 describe("web capture redirect comparison", () => {
   it("ignores redirect event times but compares redirect semantics", async () => {
-    const browser = await startFakeCdpBrowser();
-    browsers.push(browser);
-    const captured = await new CdpBrowserProvider().inspectPage(
-      inspectWebPageInputSchema.parse({
-        cdp_endpoint: browser.endpoint,
-        allowed_origins: [browser.allowedOrigin],
-        target_id: "allowed-page",
-        observation_ms: 0,
-      }),
-    );
-    if (!captured.ok) throw captured.error;
-    const before = structuredClone(captured.value);
+    const { browser, captured } = await captureReplayPage();
+    const before = structuredClone(captured);
     const beforeRequest = before.network.requests[0];
     if (beforeRequest === undefined) throw new Error("Missing network request");
     beforeRequest.redirects = [
@@ -554,18 +529,8 @@ describe("web capture diff incomplete inventories", () => {
   it.each(["truncated_sections", "unavailable_sections"] as const)(
     "does not infer script additions or removals from %s",
     async (section) => {
-      const browser = await startFakeCdpBrowser();
-      browsers.push(browser);
-      const captured = await new CdpBrowserProvider().inspectPage(
-        inspectWebPageInputSchema.parse({
-          cdp_endpoint: browser.endpoint,
-          allowed_origins: [browser.allowedOrigin],
-          target_id: "allowed-page",
-          observation_ms: 0,
-        }),
-      );
-      if (!captured.ok) throw captured.error;
-      const complete = structuredClone(captured.value);
+      const { captured } = await captureReplayPage();
+      const complete = structuredClone(captured);
       markSectionsComplete(complete, ["scripts"]);
       expect(complete.scripts.items).toHaveLength(1);
       const incomplete = structuredClone(complete);

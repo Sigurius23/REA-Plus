@@ -25,6 +25,17 @@ import { cliTest } from "../../support/cli/cliFixture.js";
 
 const compile = promisify(execFile);
 
+/** Create an Example.app skeleton whose Contents/Resources already exists. */
+const createExampleAppBundle = async (
+  resourcesPath: readonly string[] = ["Contents", "Resources"],
+): Promise<{ root: string; bundle: string; resources: string }> => {
+  const root = await createTestTempDirectory("rea-ib-test-");
+  const bundle = join(root, "Example.app");
+  const resources = join(bundle, ...resourcesPath);
+  await mkdir(resources, { recursive: true });
+  return { root, bundle, resources };
+};
+
 type PlistValue =
   | string
   | number
@@ -247,10 +258,7 @@ describe("compiled Interface Builder bundle reader", () => {
   });
 
   it("projects compiled AppKit actions from the control to their target", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle();
     // NSNibControlConnector archives the sending control as NSSource and its
     // target as NSDestination; a nil target is the first responder.
     await writeFile(
@@ -327,10 +335,7 @@ describe("compiled Interface Builder bundle reader", () => {
 
 describe("keyed archive hierarchy coverage", () => {
   it("projects a deep keyed-archive hierarchy through NSArray wrappers", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle();
     const nodes = Array.from({ length: 40 }, (_, index) => ({
       id: `view-${index}`,
       children: index === 39 ? [] : [index + 1],
@@ -360,10 +365,7 @@ describe("keyed archive hierarchy coverage", () => {
   });
 
   it("preserves source order for children in an archived collection", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle();
     await writeFile(
       join(resources, "Branching.nib"),
       keyedArchiveHierarchy([
@@ -400,10 +402,7 @@ describe("keyed archive hierarchy coverage", () => {
   it.skipIf(process.platform !== "darwin")(
     "projects a deep NSView archive produced by Foundation NSKeyedArchiver",
     async () => {
-      const root = await createTestTempDirectory("rea-ib-test-");
-      const bundle = join(root, "Example.app");
-      const resources = join(bundle, "Contents", "Resources");
-      await mkdir(resources, { recursive: true });
+      const { bundle, resources } = await createExampleAppBundle();
       const archive = join(resources, "Foundation.nib");
       await compile("/usr/bin/xcrun", [
         "swift",
@@ -451,10 +450,11 @@ describe("compiled Interface Builder bundle reader cancellation", () => {
 
 describe("flat Interface Builder plist values", () => {
   it("decodes flat nib archives that hold data and date values", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources", "English.lproj");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle([
+      "Contents",
+      "Resources",
+      "English.lproj",
+    ]);
     await writeFile(
       join(resources, "Binary.nib"),
       buildBinary({
@@ -791,10 +791,7 @@ describe("binary Interface Builder archive omissions", () => {
     expect(encoded.indexOf(placeholder, start + placeholder.length)).toBe(-1);
     Buffer.from("__proto__").copy(encoded, start);
 
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle();
     await writeFile(join(resources, "Prototype.nib"), encoded);
     const result = await analyzeInterfaceBuilderBundle({
       bundlePath: bundle,
@@ -861,10 +858,7 @@ describe("aggregate Interface Builder archive retention budget", () => {
 
 describe("bounded Interface Builder archive decoding", () => {
   it("counts malformed archives against the document limit", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle();
     await writeFile(join(resources, "BadOne.nib"), Buffer.from("bplist00bad"));
     await writeFile(join(resources, "BadTwo.nib"), Buffer.from("bplist00bad"));
 
@@ -886,10 +880,7 @@ describe("bounded Interface Builder archive decoding", () => {
   });
 
   it("marks archive decoding partial when __proto__ entries are omitted", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    const resources = join(bundle, "Contents", "Resources");
-    await mkdir(resources, { recursive: true });
+    const { bundle, resources } = await createExampleAppBundle();
     await writeFile(
       join(resources, "Prototype.nib"),
       '<?xml version="1.0"?><plist version="1.0"><dict><key>$archiver</key><string>NSKeyedArchiver</string><key>__proto__</key><string>hidden</string><key>$objects</key><array><string>$null</string></array><key>$top</key><dict/></dict></plist>',
@@ -994,9 +985,7 @@ describe("bounded Interface Builder archive decoding", () => {
 
 describe("compiled UIKit NIB connections", () => {
   it("projects UIKit runtime outlet and event connections", async () => {
-    const root = await createTestTempDirectory("rea-ib-test-");
-    const bundle = join(root, "Example.app");
-    await mkdir(bundle, { recursive: true });
+    const { bundle } = await createExampleAppBundle([]);
     await writeFile(
       join(bundle, "Cell.nib"),
       encodeNibArchiveFixture({
