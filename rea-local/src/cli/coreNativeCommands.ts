@@ -34,13 +34,11 @@ export const registerCoreNativeCommands = (
           args.path,
           "inspect_native_load_image",
           {},
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -67,13 +65,11 @@ export const registerCoreNativeCommands = (
           args.path,
           "read_bytes",
           { address: args.address, length: options.length },
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -94,13 +90,11 @@ export const registerCoreNativeCommands = (
           args.path,
           "address_to_file_offset",
           { address: args.address },
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -180,13 +174,11 @@ export const registerCoreNativeCommands = (
             offset: options.offset,
             limit: options.limit,
           },
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -213,13 +205,11 @@ export const registerCoreNativeCommands = (
               ? {}
               : { address: options.address }),
           },
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -247,13 +237,11 @@ export const registerCoreNativeCommands = (
             args.path,
             operation,
             { address: args.address },
-            directAnalysisOptions(
-              logger,
-              undefined,
-              options.provider,
-              options["target-format"],
-              options["staging-dir"],
-            ),
+            directAnalysisOptions(logger, {
+              providerId: options.provider,
+              formatHint: options["target-format"],
+              stagingDir: options["staging-dir"],
+            }),
           ),
         ),
     });
@@ -296,13 +284,12 @@ const registerNativeDispatchMetadataCommand = (
           args.path,
           "inspect_native_dispatch_metadata",
           { max_records: options.maxRecords },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            snapshotPath: options.snapshot,
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -362,13 +349,11 @@ const registerNativeUiActionCommand = (
             max_nodes: options.maxNodes,
             max_edges: options.maxEdges,
           },
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -401,13 +386,12 @@ const registerNativeApiCommand = (
           args.path,
           "inspect_native_api",
           { procedure: args.address },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            snapshotPath: options.snapshot,
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });
@@ -455,13 +439,11 @@ const registerAnnotationCommand = (
               ? {}
               : { inline_comment: options["inline-comment"] }),
           },
-          directAnalysisOptions(
-            logger,
-            undefined,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directAnalysisOptions(logger, {
+            providerId: options.provider,
+            formatHint: options["target-format"],
+            stagingDir: options["staging-dir"],
+          }),
         ),
       ),
   });

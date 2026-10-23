@@ -1,5 +1,4 @@
 import { isAbsolute } from "node:path";
-import { z } from "incur";
 import {
   executableFormatHintSchema,
   type ExecutableFormatHint,
@@ -28,18 +27,32 @@ export const stagingDirSelectionOption = localPathStringSchema
   .describe(
     "Absolute directory that receives container members extracted for member-target opens (path like /path/app.apk#classes.dex); default stages beside the container",
   )
-  .optional();
+  .optional()
+  .describe(
+    "Absolute directory that receives container members extracted for member-target opens (path like /path/app.apk#classes.dex); default stages beside the container",
+  );
+
+/** Execution settings shared by direct-analysis CLI commands. */
+export type directAnalysisSettings = {
+  readonly snapshotPath?: string | undefined;
+  readonly providerId?: AnalysisProviderSelector | undefined;
+  readonly formatHint?: ExecutableFormatHint | undefined;
+  readonly stagingDir?: string | undefined;
+};
 
 export const directAnalysisOptions = (
   logger: Logger,
-  snapshotPath: string | undefined,
-  providerId: AnalysisProviderSelector | undefined,
-  formatHint?: ExecutableFormatHint,
-  stagingDir?: string,
+  settings: directAnalysisSettings = {},
 ) => ({
   logger,
-  snapshotPath,
-  ...(formatHint === undefined ? {} : { formatHint }),
-  ...(providerId === undefined ? {} : { providerId }),
-  ...(stagingDir === undefined ? {} : { stagingDir }),
+  snapshotPath: settings.snapshotPath,
+  ...(settings.formatHint === undefined
+    ? {}
+    : { formatHint: settings.formatHint }),
+  ...(settings.providerId === undefined
+    ? {}
+    : { providerId: settings.providerId }),
+  ...(settings.stagingDir === undefined
+    ? {}
+    : { stagingDir: settings.stagingDir }),
 });

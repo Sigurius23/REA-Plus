@@ -7,6 +7,8 @@ import type { DirectAnalysis } from "../composition/directAnalysis.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
 import type { Logger } from "pino";
+import type { ExecutableFormatHint } from "../domain/dosCom.js";
+import type { AnalysisProviderSelector } from "../contracts/providerSelection.js";
 import {
   directAnalysisOptions,
   formatSelectionOption,
@@ -18,6 +20,92 @@ import { runCliJavaScriptApplicationAnalysis } from "./javascriptApplicationAnal
 import { withCommandCancellation } from "./commandCancellation.js";
 import { javascriptApplicationOptions } from "../cliObservationOptions.js";
 
+const snapshotOption = z
+  .string()
+  .min(1)
+  .optional()
+  .describe("Load and update a local analysis snapshot");
+
+const procedureOption = z
+  .string()
+  .min(1)
+  .optional()
+  .describe(
+    "Procedure name or address; use --procedure=<value> for leading dashes",
+  );
+
+/** Options shared by every provider-neutral direct-analysis command. */
+const standardAnalysisOptions = {
+  snapshot: snapshotOption,
+  "target-format": formatSelectionOption,
+  "staging-dir": stagingDirSelectionOption,
+  provider: providerSelectionOption,
+};
+
+/** Route parsed standard options into direct-analysis execution options. */
+const directOptions = (
+  logger: Logger,
+  options: {
+    readonly snapshot?: string | undefined;
+    readonly "target-format"?: ExecutableFormatHint | undefined;
+    readonly provider?: AnalysisProviderSelector | undefined;
+    readonly "staging-dir"?: string | undefined;
+  },
+): ReturnType<typeof directAnalysisOptions> =>
+  directAnalysisOptions(logger, {
+    snapshotPath: options.snapshot,
+    providerId: options.provider,
+    formatHint: options["target-format"],
+    stagingDir: options["staging-dir"],
+  });
+
+/** Resolved via --procedure for the procedure selector commands. */
+const registerProcedureSelectorCommand = (
+  cli: CliInstance,
+  logger: Logger,
+  runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
+  registration: {
+    readonly command: string;
+    readonly description: string;
+    readonly operation:
+      | "procedure_pseudo_code"
+      | "analyze_function"
+      | "read_function_instructions";
+  },
+): void => {
+  cli.command(registration.command, {
+    description: registration.description,
+    args: z.object({
+      path: z.string().describe("App or program path"),
+      address: z
+        .string()
+        .min(1)
+        .optional()
+        .describe("Procedure name or address"),
+    }),
+    options: z.object({
+      procedure: procedureOption,
+      ...standardAnalysisOptions,
+    }),
+    run: ({ args, options }) =>
+      logCliCommand(logger, registration.command, () =>
+        runDirectAnalysis(
+          args.path,
+          registration.operation,
+          {
+            procedure: resolveCliAnalysisSelector(
+              args.address,
+              options.procedure,
+              "procedure",
+              registration.operation,
+            ),
+          },
+          directOptions(logger, options),
+        ),
+      ),
+  });
+};
+
 /** Register provider-neutral binary overview and procedure CLI commands. */
 export const registerCoreBinaryCommands = (
   cli: CliInstance,
@@ -25,9 +113,21 @@ export const registerCoreBinaryCommands = (
   runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
 ): void => {
   registerOverviewCommands(cli, logger, runDirectAnalysis);
-  registerDecompileCommand(cli, logger, runDirectAnalysis);
-  registerFunctionCommand(cli, logger, runDirectAnalysis);
-  registerInstructionsCommand(cli, logger, runDirectAnalysis);
+  registerProcedureSelectorCommand(cli, logger, runDirectAnalysis, {
+    command: CLI_COMMANDS.decompile,
+    description: "Read one part of an app as code",
+    operation: "procedure_pseudo_code",
+  });
+  registerProcedureSelectorCommand(cli, logger, runDirectAnalysis, {
+    command: CLI_COMMANDS.function,
+    description: "Analyze one complete function with evidence",
+    operation: "analyze_function",
+  });
+  registerProcedureSelectorCommand(cli, logger, runDirectAnalysis, {
+    command: CLI_COMMANDS.instructions,
+    description: "Read every raw instruction without decompiling",
+    operation: "read_function_instructions",
+  });
   registerSearchCommand(cli, logger, runDirectAnalysis);
   registerXrefsCommand(cli, logger, runDirectAnalysis);
   registerTraceCommand(cli, logger, runDirectAnalysis);
@@ -38,16 +138,7 @@ const registerOverviewCommands = (
   logger: Logger,
   runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
 ): void => {
-  const overviewOptions = z.object({
-    snapshot: z
-      .string()
-      .min(1)
-      .optional()
-      .describe("Load and update a local analysis snapshot"),
-    "target-format": formatSelectionOption,
-    "staging-dir": stagingDirSelectionOption,
-    provider: providerSelectionOption,
-  });
+  const overviewOptions = z.object({ ...standardAnalysisOptions });
   cli.command(CLI_COMMANDS.analyze, {
     description: "Get an overview of an app",
     args: z.object({
@@ -77,13 +168,7 @@ const registerOverviewCommands = (
           args.path,
           "binary_overview",
           {},
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directOptions(logger, options),
         ),
       );
     },
@@ -100,70 +185,7 @@ const registerOverviewCommands = (
           args.path,
           "binary_overview",
           {},
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
-        ),
-      ),
-  });
-};
-
-const registerDecompileCommand = (
-  cli: CliInstance,
-  logger: Logger,
-  runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
-): void => {
-  cli.command(CLI_COMMANDS.decompile, {
-    description: "Read one part of an app as code",
-    args: z.object({
-      path: z.string().describe("App or program path"),
-      address: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Procedure name or address"),
-    }),
-    options: z.object({
-      procedure: z
-        .string()
-        .min(1)
-        .optional()
-        .describe(
-          "Procedure name or address; use --procedure=<value> for leading dashes",
-        ),
-      snapshot: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Load and update a local analysis snapshot"),
-      "target-format": formatSelectionOption,
-      "staging-dir": stagingDirSelectionOption,
-      provider: providerSelectionOption,
-    }),
-    run: ({ args, options }) =>
-      logCliCommand(logger, "decompile", () =>
-        runDirectAnalysis(
-          args.path,
-          "procedure_pseudo_code",
-          {
-            procedure: resolveCliAnalysisSelector(
-              args.address,
-              options.procedure,
-              "procedure",
-              "procedure_pseudo_code",
-            ),
-          },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directOptions(logger, options),
         ),
       ),
   });
@@ -216,14 +238,7 @@ const registerXrefsCommand = (
         .describe(
           "Address or symbol name; use --address=<value> for leading dashes",
         ),
-      snapshot: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Load and update a local analysis snapshot"),
-      "target-format": formatSelectionOption,
-      "staging-dir": stagingDirSelectionOption,
-      provider: providerSelectionOption,
+      ...standardAnalysisOptions,
     }),
     run: ({ args, options }) =>
       logCliCommand(logger, "xrefs", () =>
@@ -238,13 +253,7 @@ const registerXrefsCommand = (
               "xrefs",
             ),
           },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directOptions(logger, options),
         ),
       ),
   });
@@ -273,14 +282,7 @@ const registerTraceCommand = (
         .boolean()
         .default(false)
         .describe("Match the query with exact letter case"),
-      snapshot: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Load and update a local analysis snapshot"),
-      "target-format": formatSelectionOption,
-      "staging-dir": stagingDirSelectionOption,
-      provider: providerSelectionOption,
+      ...standardAnalysisOptions,
     }),
     run: ({ args, options }) =>
       logCliCommand(logger, "trace", () =>
@@ -296,127 +298,7 @@ const registerTraceCommand = (
             ),
             case_sensitive: options.caseSensitive,
           },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
-        ),
-      ),
-  });
-};
-
-const registerFunctionCommand = (
-  cli: CliInstance,
-  logger: Logger,
-  runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
-): void => {
-  cli.command(CLI_COMMANDS.function, {
-    description: "Analyze one complete function with evidence",
-    args: z.object({
-      path: z.string().describe("App or program path"),
-      address: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Procedure name or address"),
-    }),
-    options: z.object({
-      procedure: z
-        .string()
-        .min(1)
-        .optional()
-        .describe(
-          "Procedure name or address; use --procedure=<value> for leading dashes",
-        ),
-      snapshot: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Load and update a local analysis snapshot"),
-      "target-format": formatSelectionOption,
-      "staging-dir": stagingDirSelectionOption,
-      provider: providerSelectionOption,
-    }),
-    run: ({ args, options }) =>
-      logCliCommand(logger, "function", () =>
-        runDirectAnalysis(
-          args.path,
-          "analyze_function",
-          {
-            procedure: resolveCliAnalysisSelector(
-              args.address,
-              options.procedure,
-              "procedure",
-              "analyze_function",
-            ),
-          },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
-        ),
-      ),
-  });
-};
-
-const registerInstructionsCommand = (
-  cli: CliInstance,
-  logger: Logger,
-  runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
-): void => {
-  cli.command(CLI_COMMANDS.instructions, {
-    description: "Read every raw instruction without decompiling",
-    args: z.object({
-      path: z.string().describe("App or program path"),
-      address: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Procedure name or address"),
-    }),
-    options: z.object({
-      procedure: z
-        .string()
-        .min(1)
-        .optional()
-        .describe(
-          "Procedure name or address; use --procedure=<value> for leading dashes",
-        ),
-      snapshot: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Load and update a local analysis snapshot"),
-      "target-format": formatSelectionOption,
-      "staging-dir": stagingDirSelectionOption,
-      provider: providerSelectionOption,
-    }),
-    run: ({ args, options }) =>
-      logCliCommand(logger, CLI_COMMANDS.instructions, () =>
-        runDirectAnalysis(
-          args.path,
-          "read_function_instructions",
-          {
-            procedure: resolveCliAnalysisSelector(
-              args.address,
-              options.procedure,
-              "procedure",
-              "read_function_instructions",
-            ),
-          },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directOptions(logger, options),
         ),
       ),
   });
@@ -457,14 +339,7 @@ const registerSearchCommand = (
         .boolean()
         .default(false)
         .describe("Match the pattern with exact letter case"),
-      snapshot: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Load and update a local analysis snapshot"),
-      "target-format": formatSelectionOption,
-      "staging-dir": stagingDirSelectionOption,
-      provider: providerSelectionOption,
+      ...standardAnalysisOptions,
     }),
     run: ({ args, options }) =>
       logCliCommand(logger, "search", () =>
@@ -483,13 +358,7 @@ const registerSearchCommand = (
             mode: options.mode,
             case_sensitive: options.caseSensitive,
           },
-          directAnalysisOptions(
-            logger,
-            options.snapshot,
-            options.provider,
-            options["target-format"],
-            options["staging-dir"],
-          ),
+          directOptions(logger, options),
         ),
       ),
   });
